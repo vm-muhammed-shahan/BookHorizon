@@ -1,37 +1,65 @@
 const express = require("express");
 const app = express();
-require("dotenv").config();
+const path = require("path");
+const env = require("dotenv").config();
+const session = require("express-session");
+const passport = require("./config/passport");
 const db = require("./config/db");
-const path = require("path")
 const userRouter = require("./routes/userRouter");
-
-// Parse the PORT as an integer
-const PORT = parseInt(process.env.PORT, 10) || 3000;
-
+const adminRouter = require("./routes/adminRouter");
 db();
 
-
-
-
 app.use(express.json());
-app.use(express.urlencoded({extended:true}))
+app.use(express.urlencoded({ extended: true}));
+app.use(session({
+  secret:process.env.SESSION_SECRET,
+  resave:false,
+  saveUninitialized:true,
+  cookie:{
+    secure:false,
+    httpOnly:true,
+    maxAge:72*60*60*1000
+  }
+}))
 
-app.set("view engine","ejs");
-app.set("views",[path.join(__dirname,'views/user'),path.join(__dirname,'views/admin')]);
-app.use(express.static(path.join(__dirname,"public")));
-
-
-app.use("/",userRouter);
+app.use(passport.initialize());
+app.use(passport.session());
 
 
 
-
-
-// Add error handling for server start
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server Running on port ${PORT}`);
-}).on('error', (err) => {
-  console.error('Server startup error:', err);
+app.use((req,res,next)=>{
+  res.set("cache-control", 'no-store')
+  next();
 });
 
+
+
+app.set("view engine","ejs");
+app.set("views", [path.join(__dirname, "views/user"),path.join(__dirname,'views/admin')]);
+
+const publicPath = path.join(__dirname, "public");
+console.log("Static folder path:", publicPath); 
+app.use(express.static(publicPath));
+
+app.use((req, res, next) => {
+  // console.log("Session User:", req.session.user); // Debug log
+  next();
+});
+
+
+app.use("/", userRouter);
+app.use("/admin",adminRouter);
+
+
+
+  const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => {
+  console.log(`Server Running on Port ${PORT}`);
+});
+
+// console.log("NODEMAILER_EMAIL:", process.env.NODEMAILER_EMAIL);
+// console.log("NODEMAILER_PASSWORD:", process.env.NODEMAILER_PASSWORD);
+
+
 module.exports = app;
+
