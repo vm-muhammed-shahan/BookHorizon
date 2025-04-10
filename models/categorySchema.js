@@ -24,7 +24,7 @@ categoryOffer:{
   default: Date.now,
  }
 
-})
+});
 
 const Category = mongoose.model("Category", categorySchema);
 

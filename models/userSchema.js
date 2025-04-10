@@ -13,8 +13,8 @@ const userSchema = new Schema({
                         
   },
   googleId:{
-     type: String,
-    unique:true
+    type: String,
+    default:null
     
   },
 phone :{

@@ -1,0 +1,133 @@
+ <%- include("../../views/partials/admin/header") %>
+
+  <head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.css">
+  </head>
+  <div class="content-header">
+    <div>
+      <h2 class="content-title card-title">Products</h2>
+    </div>
+  </div>
+  <header class="card-header text-center mb-20">
+    <form action="" method="get" class="d-inline">
+      <div class="input-group input-group-sm border border-1 border-grey rounded-pill"
+        style="width: 500px; margin-left: 230px;">
+        <input type="text" class="form-control border-0 rounded-pill" placeholder="Search products or brands"
+          name="search">
+        <button class="btn  border-0" type="submit">Search</button>
+      </div>
+    </form>
+  </header>
+
+
+
+
+
+
+  <div class="right mt-5">
+    <table class="table table-striped align-middle text-center">
+      <thead>
+        <tr>
+          <th class="align-middle text-center"><b>Product Image</b></th>
+          <th class="align-middle text-center"><b>Product name</b></th>
+          <th class="align-middle text-center"><b>Category</b></th>
+          <th class="align-middle text-center"><b>Sale Price</b></th>
+          <th class="align-middle text-center"><b>Quantity</b></th>
+          <th class="align-middle text-center"><b>Action</b></th>
+          <th class="align-middle text-center"><b>Edit</b></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% for (let i=data.length - 1; i>= 0; i--) { %>
+          <tr>
+            <td class="align-middle text-center">
+              <% if (data[i].productImage && data[i].productImage.length> 0) { %>
+                <img src="/uploads/<%= data[i].productImage[0] %>" alt="Product Image"
+                  style="width: 60px; height: 60px; object-fit: cover; border-radius: 5px;">
+                <% } else { %>
+                  <img src="/path/to/default-image.jpg" alt="No Image" style="width: 60px; height: 60px;">
+                  <% } %>
+            </td>
+            <td class="align-middle text-center">
+              <%= data[i].productName %>
+            </td>
+            <td class="align-middle text-center">
+              <%= data[i].category.name %>
+            </td>
+            <td class="align-middle text-center">₹<%= data[i].salePrice %>
+            </td>
+            <td class="align-middle text-center">
+              <%= data[i].quantity %>
+            </td>
+
+
+            <td class="align-middle text-center">
+              <% if (!data[i].isBlocked) { %>
+                <a href="/admin/blockProduct?id=<%= data[i]._id %>" class="btn btn-danger btn-sm">Block</a>
+                <% } else { %>
+                  <a href="/admin/unblockProduct?id=<%= data[i]._id %>" class="btn btn-success btn-sm">Unblock</a>
+                  <% } %>
+            </td>
+            <td class="align-middle text-center">
+              <a href="/admin/editProduct?id=<%= data[i]._id %>" class="btn btn-info btn-sm">Edit</a>
+            </td>
+          </tr>
+          <% } %>
+      </tbody>
+    </table>
+  </div>
+  </div>
+  </div>
+
+
+
+
+  <div class="container mt-3">
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center mb-20" style="margin-right: 200px;">
+ 
+ 
+            <% for (let i = 1; i <= totalPages; i++) { %>
+            <li class="page-item <%=(i === currentPage) ? 'active' : '' %>">
+                <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+            </li>
+            <% } %>
+ 
+ 
+        </ul>
+    </nav>
+ </div>
+ 
+ 
+
+
+
+  <div class="container mt-3">
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <%- include("../../views/partials/admin/footer") %>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
