@@ -1,104 +1,13 @@
-// const User = require("../../models/userSchema");
-// const mongoose = require("mongoose");
-// const bcrypt = require("bcrypt");
-
-// const pageerror = (req, res) => {
-//   res.render("admin-error");
-// };
-
-// const loadLogin = (req, res) => {
-//   if (req.session.admin) {
-//     return res.redirect("/");
-//   }
-//   res.render("admin-login", { message: null });
-// };
-
-// const login = async (req, res) => {
-//   try {
-//     const { email, password } = req.body;
-//     const admin = await User.findOne({ email, isAdmin: true });
-
-//     if (admin) {
-//       const passwordMatch = await bcrypt.compare(password, admin.password); // ✅ Added await here
-
-//       if (passwordMatch) {
-//         req.session.admin = true;
-//         req.session.user = admin; // ✅ Save the user to session
-       
-//         return res.redirect("/admin/");
-//       } else {
-//         return res.redirect("/admin/login");
-//       }
-//     } else {
-//       return res.redirect("/admin/login");
-//     }
-
-//   } catch (error) {
-//     console.log("login error", error);
-//     return res.redirect("/pageerror");
-//   }
-// };
-
-// const loadDashboard = async (req, res) => {
-//   if (req.session.admin) {
-//     try {
-//       res.render("dashboard");
-//       console.log("Session User:", req.session.user);
-//     } catch (error) {
-//       res.redirect("/pageerror");
-//     }
-//   }
-// };
-
-// const logout = async (req, res) => {
-//   try {
-//     req.session.destroy(err => {
-//       if (err) {
-//         console.log("Error destroying session", err);
-//         return res.redirect("/pageerror");
-//       }
-//       res.redirect("/admin/login");
-//     });
-//   } catch (error) {
-//     console.log("unexpected error during logout", error);
-//     res.redirect("/pageerror");
-//   }
-// };
-
-// module.exports = {
-//   loadLogin,
-//   login,
-//   loadDashboard,
-//   pageerror,
-//   logout,
-// };
-                                                                    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const User = require("../../models/userSchema");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
-// Render admin error page
+// Page Error
 const pageerror = (req, res) => {
   res.render("admin-error");
 };
 
-// Load login page
+
 const loadLogin = (req, res) => {
   if (req.session.admin) {
     return res.redirect("/");
@@ -106,7 +15,7 @@ const loadLogin = (req, res) => {
   res.render("admin-login", { message: null });
 };
 
-// Admin login handler
+
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -132,7 +41,7 @@ const login = async (req, res) => {
   }
 };
 
-// Load dashboard
+
 const loadDashboard = async (req, res) => {
   if (req.session.admin) {
     try {
@@ -144,7 +53,7 @@ const loadDashboard = async (req, res) => {
   }
 };
 
-// Admin logout
+
 const logout = async (req, res) => {
   try {
     req.session.destroy(err => {
@@ -160,7 +69,7 @@ const logout = async (req, res) => {
   }
 };
 
-// ✅ AJAX handler for live customer search
+
 const getAjaxUsers = async (req, res) => {
   try {
     const search = req.query.search?.trim() || "";
@@ -186,6 +95,6 @@ module.exports = {
   loadDashboard,
   pageerror,
   logout,
-  getAjaxUsers, // ✅ Exported new AJAX search controller
+  getAjaxUsers,  
 };
 

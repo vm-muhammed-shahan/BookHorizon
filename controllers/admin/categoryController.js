@@ -1,5 +1,3 @@
-
-
 const Category = require("../../models/categorySchema");
 const Product = require("../../models/productSchema");
 
@@ -13,7 +11,7 @@ const categoryInfo = async (req, res) => {
     const query = search ? { name: { $regex: search, $options: "i" } } : {};
 
     const categoryData = await Category.find(query)
-      .sort({ createdAt: 1 })
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
@@ -25,7 +23,7 @@ const categoryInfo = async (req, res) => {
       currentPage: page,
       totalPages,
       totalCategories,
-      search, // Pass current search value to frontend
+      search, 
     });
 
   } catch (error) {
@@ -35,7 +33,7 @@ const categoryInfo = async (req, res) => {
 };
 
 
-// Add new category
+
 const addCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
@@ -51,12 +49,12 @@ const addCategory = async (req, res) => {
     res.json({ message: "Category added successfully" });
 
   } catch (error) {
-    console.error(error);
+    // console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-// Apply category offer
+
 const addCategoryOffer = async (req, res) => {
   try {
     const percentage = parseInt(req.body.percentage);
@@ -93,7 +91,7 @@ const addCategoryOffer = async (req, res) => {
   }
 };
 
-// Remove category offer
+
 const removeCategoryOffer = async (req, res) => {
   try {
     const categoryId = req.body.categoryId;
@@ -124,33 +122,28 @@ const removeCategoryOffer = async (req, res) => {
 };
 
 
-
 const getListCategory = async (req, res) => {
   try {
-    let id = req.query.id;
-    let page = req.query.page || 1; // Get current page
-    await Category.updateOne({ _id: id }, { $set: { isListed: false } });
-    res.redirect(`/admin/category?page=${page}`); // Preserve page
+    let id = req.body.id;
+    await Category.updateOne({ _id: id }, { $set: { isListed: true } });
+    res.json({ success: true, newStatus: "Unlisted", badgeClass: "alert-danger" });
   } catch (error) {
-    res.redirect("/pageerror");
+    res.json({ success: false });
   }
-}
+};
 
 
 const getUnlistCategory = async (req, res) => {
   try {
-    let id = req.query.id;
-    let page = req.query.page || 1; // Get current page
-    await Category.updateOne({ _id: id }, { $set: { isListed: true } });
-    res.redirect(`/admin/category?page=${page}`); // Preserve page
+    let id = req.body.id;
+    await Category.updateOne({ _id: id }, { $set: { isListed: false } });
+    res.json({ success: true, newStatus: "Listed", badgeClass: "alert-success" });
   } catch (error) {
-    res.redirect("/pageerror");
+    res.json({ success: false });
   }
-}
+};
 
 
-
-// Render edit category page
 const getEditCategory = async (req, res) => {
   try {
     const id = req.query.id;
@@ -162,7 +155,7 @@ const getEditCategory = async (req, res) => {
   }
 };
 
-// Update category
+
 const editCategory = async (req, res) => {
   try {
     const id = req.params.id;
@@ -191,6 +184,12 @@ const editCategory = async (req, res) => {
   }
 };
 
+
+
+
+
+
+
 module.exports = {
   categoryInfo,
   addCategory,
@@ -200,4 +199,5 @@ module.exports = {
   getUnlistCategory,
   getEditCategory,
   editCategory,
+  
 };

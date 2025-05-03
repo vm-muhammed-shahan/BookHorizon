@@ -1,36 +1,19 @@
-// const multer = require('multer');
-// const path = require('path');
-// const fs = require('fs');
-
-// const storage = multer.diskStorage({
-//   destination: (req, file, cb) => {
-//     const uploadPath = path.join(__dirname, '../../public/uploads/re-image');
-
-//     fs.mkdir(uploadPath, { recursive: true }, (err) => {
-//       if (err) return cb(err);
-//       cb(null, uploadPath);
-//     });
-//   },
-//   filename: (req, file, cb) => {
-//     const sanitizedName = file.originalname.replace(/\s+/g, '-');
-//     cb(null, Date.now() + '-' + sanitizedName);
-//   }
-// });
-
-// const upload = multer({ storage });
-
-// module.exports = upload;
-
+const fs = require('fs');
 const multer = require('multer');
 const path = require('path');
 
+function getRandomNumber(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'public/uploads/product-images');
+    cb(null, 'public/uploads');
   },
   filename: function (req, file, cb) {
+    console.log("File name:", file.originalname);
     const ext = path.extname(file.originalname);
-    cb(null, Date.now() + ext);
+    cb(null, Date.now() + getRandomNumber(0,10) + ext);
   }
 });
 

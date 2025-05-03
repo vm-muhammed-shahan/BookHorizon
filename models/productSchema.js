@@ -51,15 +51,17 @@ const productSchema = new Schema({
   }
 });
 
+
+
+productSchema.pre("save", function (next) {
+  if (this.quantity === 0) {
+    this.status = "Out of Stock";
+  } else if (this.status === "Out of Stock" && this.quantity > 0) {
+    this.status = "Available";
+  }
+  next();
+});
+
+
 const Product = mongoose.model("Product", productSchema);
 module.exports = Product; 
-
-
-
-
-
-
-
-
-
-
