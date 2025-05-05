@@ -39,13 +39,22 @@
     .text-center{
       color: white;
     }
+
+    .custom-alert {
+  background-color: #dc3545 !important; /* solid Bootstrap red */
+  color: white !important;              /* make text white */
+  border: none;
+  font-weight: bold;
+}
+
   </style>
 </head>
 <body>
   <div class="login-container">
     <h2 class="text-center">Admin Login</h2>
     <% if (message) { %>
-    <div class="alert alert-danger text-center"><%= message %></div>
+    <!-- <div class="alert alert-danger text-white text-center"><%= message %></div> -->
+    <div class="alert text-center custom-alert"><%= message %></div>
     <% } %>
     <form id="adminLoginForm" method="post" action="/admin/login">
       <div class="form-group">

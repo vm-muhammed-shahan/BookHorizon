@@ -6,6 +6,11 @@ const profileController = require("../controllers/user/profileController");
 const productController = require("../controllers/user/productController");
 const {userAuth} = require('../middlewares/auth');
 const user = require('../models/userSchema');
+
+
+
+
+
 router.use((req, res, next) => {
   // console.log("Session User:", req.session.user);
   next();
@@ -21,6 +26,8 @@ router.get('/auth/google/callback', passport.authenticate('google',{failureRedir
   console.log("Google Authenticated User:", req.session.user);
   res.redirect('/');
 });
+
+// shop page
 router.get("/login",userController.loadLogin);
 router.post("/login",userController.login);
 router.get("/",userController.loadHomepage);

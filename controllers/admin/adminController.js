@@ -21,7 +21,7 @@ const login = async (req, res) => {
     const { email, password } = req.body;
     const admin = await User.findOne({ email, isAdmin: true });
 
-    if (admin) {
+    if (admin) { 
       const passwordMatch = await bcrypt.compare(password, admin.password);
 
       if (passwordMatch) {
@@ -29,10 +29,10 @@ const login = async (req, res) => {
         req.session.user = admin;
         return res.redirect("/admin/");
       } else {
-        return res.redirect("/admin/login");
+        return res.render("admin-login", { message: "Invalid email or password" });
       }
     } else {
-      return res.redirect("/admin/login");
+      return res.render("admin-login", { message: "Invalid email or password" });
     }
 
   } catch (error) {
@@ -46,7 +46,7 @@ const loadDashboard = async (req, res) => {
   if (req.session.admin) {
     try {
       res.render("dashboard");
-      console.log("Session User:", req.session.user);
+      console.log("Admin session:", req.session.admin);
     } catch (error) {
       res.redirect("/pageerror");
     }
@@ -95,6 +95,6 @@ module.exports = {
   loadDashboard,
   pageerror,
   logout,
-  getAjaxUsers,  
+  getAjaxUsers,
 };
 

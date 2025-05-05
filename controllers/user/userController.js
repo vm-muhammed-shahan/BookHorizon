@@ -25,14 +25,12 @@ const loadHomepage = async (req, res) => {
       quantity: { $gt: 0 }
     }).populate('category')
       .sort({ createdAt: -1 })
-      .limit(4);
+      .limit(8);
     if (req.session.user) {
       const userData = await User.findOne({ _id: req.session.user._id });
     if (userData) {
       return res.render("home", { user: userData, products: productData });
-     
     }
-    
     } else {
       return res.render("home",{user: req.session.user || null, products: productData});
     }
@@ -41,6 +39,10 @@ const loadHomepage = async (req, res) => {
     res.status(500).send("Server error");
   }
 };
+
+
+
+
 
 
 // LoadSignup 
@@ -138,13 +140,13 @@ const securePassword = async (password) => {
 const verifyOtp = async (req, res) => {
   try {
     const { otp } = req.body;
-    console.log(otp);
+    // console.log(otp);
     if (otp === req.session.userOtp) {
       const user = req.session.userData
       const passwordHash = await securePassword(user.password);
       const saveUserData = new User({
         name: user.name,
-        email: user.email,
+        email: user.email, 
         phone: user.phone,
         password: passwordHash,
       })
@@ -198,6 +200,8 @@ const loadLogin = async (req, res) => {
     res.redirect("/pageNotFound")
   }
 }
+
+
 // Login
 const login = async (req, res) => {
   try {
@@ -265,7 +269,6 @@ const loadShoppingPage = async (req, res) => {
     } else {
       query.category = { $in: categoryIds };
     }
-
 
 
     let sortQuery = { createdAt: -1 }; // Default: latest
@@ -419,10 +422,6 @@ const filterByprice = async (req, res) => {
 
 
 
-
-
-
-
 // SearchProducts
 const searchProducts = async (req, res) => {
   try {
@@ -481,11 +480,6 @@ module.exports = {
   filterByprice,
   searchProducts,
 };
-
-
-
-
-
 
 
 

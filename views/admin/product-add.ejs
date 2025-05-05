@@ -7,103 +7,69 @@
 </head>
 
 <style>
-    .error-message {
-        color: red;
-    }
 
-    .thumbnails-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-bottom: 15px;
-    }
+.error-message {
+    color: red;
+    font-size: 0.85rem;
+    margin-top: 5px;
+    display: none;
+}
 
-    .thumbnail {
-        position: relative;
-        width: 100px;
-        height: 100px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        overflow: hidden;
-    }
+.thumbnails-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+}
 
-    .thumbnail img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
+.thumbnail {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+}
 
-    .remove-icon {
-        position: absolute;
-        top: 5px;
-        right: 5px;
-        background-color: rgba(255, 0, 0, 0.7);
-        color: white;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-    }
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
 
-    .edit-icon {
-        position: absolute;
-        bottom: 5px;
-        right: 5px;
-        background-color: rgba(0, 123, 255, 0.7);
-        color: white;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-    }
+.remove-icon, .edit-icon {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 50%;
+}
 
-    /* Modal styles */
-    .crop-modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.7);
-    }
+.remove-icon {
+    top: 5px;
+    right: 5px;
+}
 
-    .modal-content {
-        position: relative;
-        background-color: #fefefe;
-        margin: 5% auto;
-        padding: 20px;
-        border-radius: 5px;
-        width: 80%;
-        max-width: 800px;
-    }
+.edit-icon {
+    bottom: 5px;
+    right: 5px;
+}
 
-    .close-modal {
-        position: absolute;
-        top: 10px;
-        right: 15px;
-        font-size: 24px;
-        font-weight: bold;
-        cursor: pointer;
-    }
+#imageCount.complete {
+    color: green;
+    font-weight: bold;
+}
 
-    .crop-container {
-        height: 400px;
-        margin-bottom: 20px;
-    }
+#imageCount.incomplete {
+    color: red;
+}
 
-    .action-buttons {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-    }
 </style>
 
 <section class="content-main">
@@ -175,19 +141,16 @@
                         <div class="card mb-2">
                             <div class="card-header">
                                 <h4>Product Images</h4>
-                                <p class="text-muted small">Upload at least 1 image, maximum 3 images</p>
+                                <p class="text-muted small">Upload exactly 3 images (required)</p>
                             </div>
                             <div class="card-body">
                                 <div id="thumbnails-container" class="thumbnails-container"></div>
-
+                        
                                 <div class="mb-3">
-                                    
                                     <input class="form-control" type="file" id="imageInput" accept="image/png, image/jpeg, image/jpg" multiple>
                                     <div id="images-error" class="error-message"></div>
-                                    <small class="text-muted">Selected: <span id="imageCount">0</span>/3</small>
+                                    <small class="text-muted">Selected: <span id="imageCount">0</span>/3 (exactly 3 images required)</small>
                                 </div>
-
-                                
                             </div>
                         </div>
 
@@ -202,21 +165,6 @@
     </div>
 </section>
 
-<!-- Cropping Modal -->
-<div id="cropModal" class="crop-modal">
-    <div class="modal-content">
-        <span class="close-modal" onclick="closeModal()">&times;</span>
-        <h4>Crop Image</h4>
-        <div class="crop-container">
-            <img id="cropImage" src="">
-        </div>
-        <div class="action-buttons">
-            <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="saveCroppedImage()">Save Crop</button>
-        </div>
-    </div>
-</div>
-
 <script>
     
     document.getElementById('productForm').addEventListener('submit', async function (e) {
@@ -227,7 +175,6 @@
         
         const formData = new FormData(form);
 
-        
         selectedImages.forEach((imageObj) => {
             const blob = imageObj.croppedBlob || imageObj.originalFile;
             const file = new File([blob], imageObj.fileName, {
@@ -262,7 +209,7 @@
                 Swal.fire({
                     icon: 'error',
                     title: 'Oops...',
-                    text: 'Failed to add product. Please try again.',
+                    text: data.message || 'Failed to add product. Please try again.',
                     confirmButtonColor: '#d33'
                 });
             }
@@ -277,36 +224,41 @@
         }
     });
 
-    
     let cropper = null;
     let currentImageIndex = null;
     let selectedImages = [];
     const MAX_IMAGES = 3;
 
-    
     document.getElementById('imageInput').addEventListener('change', handleImageSelection);
 
-    
     function handleImageSelection(event) {
         const files = event.target.files;
-
         
+        // Clear previous error message
+        clearErrorMessage('images-error');
+        
+        // Check if adding these files would exceed the maximum
         if (selectedImages.length + files.length > MAX_IMAGES) {
-            displayErrorMessage('images-error', `Maximum ${MAX_IMAGES} images allowed.`);
+            const remaining = MAX_IMAGES - selectedImages.length;
+            if (remaining > 0) {
+                displayErrorMessage('images-error', `Please select exactly ${MAX_IMAGES} images. You can add ${remaining} more image${remaining !== 1 ? 's' : ''}.`);
+            } else {
+                displayErrorMessage('images-error', `Maximum ${MAX_IMAGES} images allowed. Please remove some images before adding more.`);
+            }
+            // Reset the input field so the same files can be selected again if needed
+            event.target.value = '';
             return;
         }
 
-        clearErrorMessage('images-error');
-
         for (let i = 0; i < files.length && selectedImages.length < MAX_IMAGES; i++) {
             const file = files[i];
-
             
+            // Check if file is an image
             if (!file.type.startsWith('image/')) {
                 continue;
             }
 
-           
+            // Create image object
             const imageObj = {
                 originalFile: file,
                 croppedBlob: null,
@@ -318,10 +270,21 @@
             addThumbnail(imageObj, selectedImages.length - 1);
         }
 
+        // Update counter and show appropriate message
         updateImageCounter();
+        
+        // Show validation message if not exactly 3 images
+        if (selectedImages.length < MAX_IMAGES) {
+            const remaining = MAX_IMAGES - selectedImages.length;
+            displayErrorMessage('images-error', `Please select exactly ${MAX_IMAGES} images. You need ${remaining} more image${remaining !== 1 ? 's' : ''}.`);
+        } else {
+            clearErrorMessage('images-error');
+        }
+        
+        // Reset the input field
+        event.target.value = '';
     }
 
-    
     function addThumbnail(imageObj, index) {
         const thumbnailsContainer = document.getElementById('thumbnails-container');
 
@@ -356,15 +319,21 @@
         thumbnailsContainer.appendChild(thumbnail);
     }
 
-    
     function removeImage(index) {
         URL.revokeObjectURL(selectedImages[index].blobUrl);
         selectedImages.splice(index, 1);
         refreshThumbnails();
         updateImageCounter();
+        
+        // Show validation message if not exactly 3 images
+        if (selectedImages.length < MAX_IMAGES) {
+            const remaining = MAX_IMAGES - selectedImages.length;
+            displayErrorMessage('images-error', `Please select exactly ${MAX_IMAGES} images. You need ${remaining} more image${remaining !== 1 ? 's' : ''}.`);
+        } else {
+            clearErrorMessage('images-error');
+        }
     }
 
-    
     function refreshThumbnails() {
         const container = document.getElementById('thumbnails-container');
         container.innerHTML = '';
@@ -374,12 +343,18 @@
         });
     }
 
-    
     function updateImageCounter() {
-        document.getElementById('imageCount').textContent = selectedImages.length;
+        const countElement = document.getElementById('imageCount');
+        countElement.textContent = selectedImages.length;
+        
+        // Update the counter with a visual indicator
+        if (selectedImages.length === MAX_IMAGES) {
+            countElement.style.color = 'green';
+        } else {
+            countElement.style.color = 'red';
+        }
     }
 
-    
     function openCropModal(index) {
         currentImageIndex = index;
         const imageObj = selectedImages[index];
@@ -387,7 +362,6 @@
         const modal = document.getElementById('cropModal');
         const cropImage = document.getElementById('cropImage');
 
-        
         cropImage.src = imageObj.blobUrl;
 
         cropImage.onload = function () {
@@ -407,7 +381,6 @@
         modal.style.display = 'block';
     }
 
-    
     function closeModal() {
         const modal = document.getElementById('cropModal');
         modal.style.display = 'none';
@@ -417,7 +390,6 @@
         }
     }
 
-    
     function saveCroppedImage() {
         if (!cropper || currentImageIndex === null) return;
 
@@ -451,7 +423,6 @@
         }, 'image/jpeg', 0.9);
     }
 
-   
     function validateForm() {
         clearErrorMessages();
         const name = document.getElementsByName('productName')[0].value;
@@ -495,10 +466,16 @@
                 isValid = false;
             }
         }
+        
+        // Update the image validation to require exactly 3 images
         if (selectedImages.length === 0) {
-            displayErrorMessage('images-error', 'Please select at least one image.');
+            displayErrorMessage('images-error', 'Please select product images.');
+            isValid = false;
+        } else if (selectedImages.length !== 3) {
+            displayErrorMessage('images-error', `Exactly 3 product images are required. You have ${selectedImages.length}.`);
             isValid = false;
         }
+        
         return isValid;
     }
 
@@ -506,6 +483,7 @@
         const errorElement = document.getElementById(elementId);
         errorElement.innerText = message;
         errorElement.style.display = "block";
+        errorElement.style.color = "red";
     }
 
     function clearErrorMessage(elementId) {

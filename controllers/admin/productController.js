@@ -35,8 +35,8 @@ const addProducts = async (req, res) => {
         return res.status(400).json();
       }
 
-      if(!req.files || req.files.length === 0) {
-        return res.status(400).json("Product images are required");
+      if(!req.files || req.files.length !== 3) {
+        return res.status(400).json("Exactly 3 product images are required");
       }
 
     
@@ -95,8 +95,6 @@ const addProducts = async (req, res) => {
 
 
 const getAllProducts = async (req, res) => {
-
-  //  console.log("product page called");
   try {
     const search = req.query.search || "";
     const page = parseInt(req.query.page) || 1;
@@ -127,7 +125,7 @@ const getAllProducts = async (req, res) => {
         totalPages: Math.ceil(count / limit),
         cat: category,
       })
-      
+
     } else {
       res.render("page-404");
     }
@@ -144,7 +142,6 @@ const blockProduct = async (req, res) => {
     res.redirect("/admin/products");
   } catch (error) {
     res.redirect("/pageerror")
-
   }
 }
 
@@ -200,7 +197,7 @@ const editProduct = async (req, res) => {
       for (const oldImage of product.productImage) {
         const imagePath = path.join(__dirname, '../../public/uploads/product-images/', oldImage);
         if (fs.existsSync(imagePath)) {
-          fs.unlinkSync(imagePath); // Delete the old image
+          fs.unlinkSync(imagePath); 
         }
       }
     }
@@ -228,11 +225,7 @@ product.quantity = data.quantity;
 if (images.length > 0) {
   product.productImage = images;
 }
-// if (product.quantity === 0) {
-//   product.status = "Out of Stock";
-// } else if (product.status === "Out of Stock" && product.quantity > 0) {
-//   product.status = "Available";
-// }
+
 await product.save(); 
     return res.status(200).json({ success: true, message:"product updated successfully" });
   } catch (error) {
