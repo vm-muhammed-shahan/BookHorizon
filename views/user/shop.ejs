@@ -254,6 +254,8 @@
   @media (max-width: 576px) { .product-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; } .shop-topbar { flex-direction: column; gap: 15px; } .search-form { width: 100%; } }
 </style>
 
+
+
 <div class="main-container">
   <section class="shop-page">
     <!-- Breadcrumb -->
@@ -266,16 +268,30 @@
 
   
     <div class="shop-topbar d-flex justify-content-between align-items-center mb-4">
-      <!-- Search Form -->
-      <form action="/search" method="POST" class="search-form d-flex">
-        <input type="text" name="query" placeholder="Search products..." class="form-control me-2" style="width: 250px;" />
+      <!-- Updated Search Form to use GET method -->
+      <form action="/search" method="GET" class="search-form d-flex">
+        <input type="text" name="query" placeholder="Search products..." class="form-control me-2" style="width: 250px;" value="<%= searchQuery || '' %>" />
+        <!-- Preserve other filters when searching -->
+        <% if (selectedCategory) { %>
+          <input type="hidden" name="category" value="<%= selectedCategory %>">
+        <% } %>
+        <% if (sortOption) { %>
+          <input type="hidden" name="sort" value="<%= sortOption %>">
+        <% } %>
         <button type="submit" class="btn btn-primary">Search</button>
       </form>
     
-      <!-- Sort Dropdown -->
+      <!-- Sort Dropdown - Now preserves search query too -->
       <form id="sortForm" method="GET" action="/shop" class="d-flex align-items-center">
         <% if (selectedCategory) { %>
           <input type="hidden" name="category" value="<%= selectedCategory %>">
+        <% } %>
+        <% if (searchQuery) { %>
+          <input type="hidden" name="query" value="<%= searchQuery %>">
+        <% } %>
+        <% if (typeof priceMin !== 'undefined' && priceMin !== null && typeof priceMax !== 'undefined' && priceMax !== null) { %>
+          <input type="hidden" name="priceMin" value="<%= priceMin %>">
+          <input type="hidden" name="priceMax" value="<%= priceMax %>">
         <% } %>
         <select name="sort" class="form-select" onchange="document.getElementById('sortForm').submit()" style="width: 200px;">
           <option value="">Sort By</option>
@@ -287,10 +303,6 @@
       </form>
     </div>
     
-
-
-
-
     <div class="product-list-container">
       <aside class="sidebar">
         <div class="filter-section">
@@ -298,23 +310,27 @@
           <ul>
             <% category.forEach(cat => { %>
               <li class="filter-item">
-                <a href="/filter?category=<%= cat._id %>"><%= cat.name %></a>
+                <!-- Updated category filter links to preserve search and sort -->
+                <a href="/filter?category=<%= cat._id %><%= searchQuery ? '&query=' + encodeURIComponent(searchQuery) : '' %><%= sortOption ? '&sort=' + sortOption : '' %>">
+                  <%= cat.name %>
+                </a>
               </li>
             <% }) %>
           </ul>
         </div>
         <div class="price-filter">
-          
-          <a href="/filterPrice?gt=0&lt=500<%= selectedCategory ? '&category=' + selectedCategory : '' %>">Under ₹500</a>
-          <a href="/filterPrice?gt=500&lt=1000<%= selectedCategory ? '&category=' + selectedCategory : '' %>">₹500 - ₹1000</a>
-          <a href="/filterPrice?gt=1000&lt=1500<%= selectedCategory ? '&category=' + selectedCategory : '' %>">₹1000 - ₹1500</a>
-          <a href="/filterPrice?gt=1500&lt=100000<%= selectedCategory ? '&category=' + selectedCategory : '' %>">Above ₹1500</a>
-
+          <!-- Updated price filter links to preserve search, category and sort -->
+          <a href="/filterPrice?gt=0&lt=500<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= searchQuery ? '&query=' + encodeURIComponent(searchQuery) : '' %><%= sortOption ? '&sort=' + sortOption : '' %>">Under ₹500</a>
+          <a href="/filterPrice?gt=500&lt=1000<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= searchQuery ? '&query=' + encodeURIComponent(searchQuery) : '' %><%= sortOption ? '&sort=' + sortOption : '' %>">₹500 - ₹1000</a>
+          <a href="/filterPrice?gt=1000&lt=1500<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= searchQuery ? '&query=' + encodeURIComponent(searchQuery) : '' %><%= sortOption ? '&sort=' + sortOption : '' %>">₹1000 - ₹1500</a>
+          <a href="/filterPrice?gt=1500&lt=100000<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= searchQuery ? '&query=' + encodeURIComponent(searchQuery) : '' %><%= sortOption ? '&sort=' + sortOption : '' %>">Above ₹1500</a>
         </div>
       </aside>
 
 
       <main class="product-grid">
+        
+        
         <% if (products && products.length) { %>
           <% products.forEach(prod => { %>
             <div class="product-card">
@@ -337,7 +353,6 @@
                   </div>
                 </div>
               </a>
-              <!-- <button class="add-to-cart-btn" onclick="event.stopPropagation(); addToCart('<%= prod._id %>')">Add to Cart</button> -->
               <% if (prod.status === 'Out of Stock') { %>
                 <span class="badge bg-danger" style="margin-bottom: 8px;">Sold Out</span>
                 <button class="add-to-cart-btn" disabled style="background-color: #ccc; cursor: not-allowed;">Out of Stock</button>
@@ -359,22 +374,21 @@
   
     <div class="pagination">
       <% if (currentPage > 1) { %>
-        <a class="btn" href="?page=<%= currentPage-1 %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= sortOption ? '&sort=' + sortOption : '' %>">Prev</a>
+        <a class="btn" href="?page=<%= currentPage-1 %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= sortOption ? '&sort=' + sortOption : '' %><%= searchQuery ? '&query=' + encodeURIComponent(searchQuery) : '' %><%= typeof priceMin !== 'undefined' && priceMin !== null && typeof priceMax !== 'undefined' && priceMax !== null ? '&priceMin=' + priceMin + '&priceMax=' + priceMax : '' %>">Prev</a>
       <% } %>
       
       <% for (let i = 1; i <= totalPages; i++) { %>
-        <a class="btn <%= currentPage === i ? 'active' : '' %>" href="?page=<%= i %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= sortOption ? '&sort=' + sortOption : '' %>"><%= i %></a>
+        <a class="btn <%= currentPage === i ? 'active' : '' %>" href="?page=<%= i %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= sortOption ? '&sort=' + sortOption : '' %><%= searchQuery ? '&query=' + encodeURIComponent(searchQuery) : '' %><%= typeof priceMin !== 'undefined' && priceMin !== null && typeof priceMax !== 'undefined' && priceMax !== null ? '&priceMin=' + priceMin + '&priceMax=' + priceMax : '' %>"><%= i %></a>
       <% } %>
       
       <% if (currentPage < totalPages) { %>
-        <a class="btn" href="?page=<%= currentPage+1 %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= sortOption ? '&sort=' + sortOption : '' %>">Next</a>
+        <a class="btn" href="?page=<%= currentPage+1 %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= sortOption ? '&sort=' + sortOption : '' %><%= searchQuery ? '&query=' + encodeURIComponent(searchQuery) : '' %><%= typeof priceMin !== 'undefined' && priceMin !== null && typeof priceMax !== 'undefined' && priceMax !== null ? '&priceMin=' + priceMin + '&priceMax=' + priceMax : '' %>">Next</a>
       <% } %>
     </div>
-    
-
-
   </section>
 </div>
+
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
 <script>

@@ -35,7 +35,7 @@ router.get("/logout",userController.logout);
 router.get("/shop",userController.loadShoppingPage);
 router.get("/filter", userController.filterProduct);
 router.get("/filterPrice", userController.filterByprice);
-router.post("/search", userController.searchProducts);
+router.get("/search", userController.searchProducts);
 // Profile  Management
 router.get("/forgot-password",profileController.getForgotPassPage);
 router.post("/forgot-email-valid",profileController.forgotEmailValid);

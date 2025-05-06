@@ -741,6 +741,219 @@
         font-size: 26px;
       }
     }
+
+
+
+    .related-products-section {
+  background-color: #f8f9fa;
+  padding: 50px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.related-products-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #3a86ff, #5e60ce, #5390d9);
+}
+
+.section-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 30px;
+  position: relative;
+  color: #2b2d42;
+  display: inline-block;
+}
+
+.section-title::after {
+  content: '';
+  display: block;
+  width: 70%;
+  height: 4px;
+  background: linear-gradient(90deg, #3a86ff, #5e60ce);
+  margin-top: 10px;
+  border-radius: 2px;
+}
+
+.products-slider {
+  padding: 10px 5px 30px;
+}
+
+.product-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  overflow: hidden;
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.product-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(58, 134, 255, 0.15);
+  border-color: rgba(58, 134, 255, 0.2);
+}
+
+.product-image-container {
+  height: 220px;
+  overflow: hidden;
+  position: relative;
+}
+
+.product-image-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 80%, rgba(0,0,0,0.03) 100%);
+}
+
+.product-image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.product-card:hover .product-image-container img {
+  transform: scale(1.08);
+}
+
+.product-info {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-grow: 1;
+}
+
+.product-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #2b2d42;
+  line-height: 1.4;
+  height: 44px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.price-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.product-price {
+  font-size: 20px;
+  font-weight: 700;
+  color: #3a86ff;
+}
+
+.original-price {
+  font-size: 14px;
+  color: #6c757d;
+  text-decoration: line-through;
+}
+
+.discount-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: linear-gradient(45deg, #ff3a51, #ff7676);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 20px;
+  z-index: 2;
+  box-shadow: 0 3px 10px rgba(255, 58, 81, 0.3);
+}
+
+.sold-out-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(108, 117, 125, 0.9);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+  z-index: 2;
+  backdrop-filter: blur(3px);
+}
+
+.add-to-cart-btn {
+  background: linear-gradient(45deg, #3a86ff, #5e60ce);
+  color: white;
+  border: none;
+  padding: 12px 15px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 10px;
+}
+
+.add-to-cart-btn:hover {
+  background: linear-gradient(45deg, #2563eb, #4f46e5);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(58, 134, 255, 0.3);
+}
+
+.add-to-cart-btn:active {
+  transform: translateY(0);
+}
+
+.add-to-cart-btn:disabled {
+  background: linear-gradient(45deg, #adb5bd, #ced4da);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.no-related-products {
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  padding: 30px;
+  text-align: center;
+  color: #6c757d;
+  font-size: 16px;
+  border: 1px dashed #dee2e6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767px) {
+  .related-products-section {
+    padding: 30px 0;
+  }
+  
+  .section-title {
+    font-size: 22px;
+  }
+  
+  .product-image-container {
+    height: 180px;
+  }
+}    
   </style>
 </head>
 <body>
@@ -1102,75 +1315,62 @@
                   </div>
                 </div>
                 
-                <div class="related-products mt-5 pt-5">
-                  <h2 class="title style-1 mb-4">Related Products</h2>
-                  <div class="row">
-                    <!-- Sample related products for demonstration -->
-                    <div class="col-md-3 col-sm-6 mb-4">
-                      <div class="related-product-card">
-                        <img src="/api/placeholder/250/200" alt="Related Product" class="related-product-img">
-                        <div class="related-product-info">
-                          <h3 class="related-product-title">
-                            <a href="#" class="text-decoration-none text-dark">Similar Product One</a>
-                          </h3>
-                          <div class="related-product-price">
-                            <span class="fw-bold text-primary">₹15,999</span>
-                            <span class="text-decoration-line-through text-muted">₹18,999</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                <section class="related-products-section">
+                  <div class="container my-5">
+                    <h2 class="section-title mb-4">Related Products</h2>
                     
-                    <div class="col-md-3 col-sm-6 mb-4">
-                      <div class="related-product-card">
-                        <img src="/api/placeholder/250/200" alt="Related Product" class="related-product-img">
-                        <div class="related-product-info">
-                          <h3 class="related-product-title">
-                            <a href="#" class="text-decoration-none text-dark">Similar Product Two</a>
-                          </h3>
-                          <div class="related-product-price">
-                            <span class="fw-bold text-primary">₹12,499</span>
-                            <span class="text-decoration-line-through text-muted">₹14,999</span>
+                    <% if (relatedProducts && relatedProducts.length > 0) { %>
+                      <div class="row products-slider">
+                        <% relatedProducts.forEach(relatedProd => { %>
+                          <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                            <div class="product-card h-100">
+                              <% const discount = Math.round((relatedProd.regularPrice - relatedProd.salePrice)/relatedProd.regularPrice*100);
+                                 if (discount > 0) { %>
+                                <div class="discount-badge"><i class="fas fa-tag me-1"></i><%= discount %>% OFF</div>
+                              <% } %>
+                              
+                              <% if (relatedProd.status === 'Out of Stock') { %>
+                                <div class="sold-out-badge"><i class="fas fa-exclamation-circle me-1"></i> Sold Out</div>
+                              <% } %>
+                              
+                              <a href="/productDetails?id=<%= relatedProd._id %>" class="text-decoration-none">
+                                <div class="product-image-container">
+                                  <img src="/uploads/<%= relatedProd.productImage[0] %>" alt="<%= relatedProd.productName %>" class="img-fluid" />
+                                </div>
+                                <div class="product-info">
+                                  <h5 class="product-name"><%= relatedProd.productName %></h5>
+                                  <div class="price-container">
+                                    <span class="product-price">₹<%= relatedProd.salePrice.toLocaleString('en-IN') %></span>
+                                    <% if (discount > 0) { %>
+                                      <span class="original-price">₹<%= relatedProd.regularPrice.toLocaleString('en-IN') %></span>
+                                    <% } %>
+                                  </div>
+                                </div>
+                              </a>
+                              
+                              <div class="px-3 pb-3 mt-auto">
+                                <% if (relatedProd.status === 'Out of Stock') { %>
+                                  <button class="add-to-cart-btn w-100" disabled>
+                                    <i class="fas fa-ban me-2"></i> Out of Stock
+                                  </button>
+                                <% } else { %>
+                                  <button class="add-to-cart-btn w-100" onclick="event.preventDefault(); addToCartQuick('<%= relatedProd._id %>')">
+                                    <i class="fas fa-shopping-cart me-2"></i> Add to Cart
+                                  </button>
+                                <% } %>
+                              </div>
+                            </div>
                           </div>
-                        </div>
+                        <% }) %>
                       </div>
-                    </div>
-                    
-                    <div class="col-md-3 col-sm-6 mb-4">
-                      <div class="related-product-card">
-                        <img src="/api/placeholder/250/200" alt="Related Product" class="related-product-img">
-                        <div class="related-product-info">
-                          <h3 class="related-product-title">
-                            <a href="#" class="text-decoration-none text-dark">Similar Product Three</a>
-                          </h3>
-                          <div class="related-product-price">
-                            <span class="fw-bold text-primary">₹9,999</span>
-                            <span class="text-decoration-line-through text-muted">₹12,999</span>
-                          </div>
-                        </div>
+                    <% } else { %>
+                      <div class="no-related-products">
+                        <i class="fas fa-search fa-3x mb-3 text-muted"></i>
+                        <p class="mb-0">No related products found at the moment.</p>
                       </div>
-                    </div>
-                    
-                    <div class="col-md-3 col-sm-6 mb-4">
-                      <div class="related-product-card">
-                        <img src="/api/placeholder/250/200" alt="Related Product" class="related-product-img">
-                        <div class="related-product-info">
-                          <h3 class="related-product-title">
-                            <a href="#" class="text-decoration-none text-dark">Similar Product Four</a>
-                          </h3>
-                          <div class="related-product-price">
-                            <span class="fw-bold text-primary">₹17,499</span>
-                            <span class="text-decoration-line-through text-muted">₹19,999</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div class="col-12 text-center mt-4">
-                      <a href="/shop" class="btn btn-outline-primary px-4 py-2">Browse More Products</a>
-                    </div>
+                    <% } %>
                   </div>
-                </div>
+                </section>
               </div>
             <% } %>
           </div>
@@ -1183,7 +1383,7 @@
   <div class="zoom-container" id="zoomContainer">
     <div class="zoom-img-wrapper">
       <img id="zoomImage" class="zoom-img" src="" alt="Zoomed product image">
-      <div class="zoom-counter" id="zoomCounter">1 / 4</div>
+      <div class="zoom-counter" id="zoomCounter">1 / 3</div>
     </div>
     <div class="zoom-controls">
       <div class="zoom-prev" id="zoomPrev"><i class="fas fa-chevron-left"></i></div>
@@ -1527,6 +1727,61 @@
         alert(message);
       }
     }
+
+
+
+
+
+    
+  
+
+
+
+
+  function addToCartQuick(productId) {
+  <% if (!user) { %>
+    window.location.href = '/login?redirect=productDetails?id=<%= product._id %>';
+    return;
+  <% } %>
+  
+  // Add visual feedback before the fetch
+  const button = event.currentTarget;
+  const originalText = button.innerHTML;
+  button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Adding...';
+  button.disabled = true;
+  
+  fetch('/cart/add', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      productId: productId,
+      quantity: 1  // Default to 1 for quick add
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      button.innerHTML = '<i class="fas fa-check me-1"></i> Added';
+      setTimeout(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+      }, 1500);
+      showAlert('Product added to cart!', 'success');
+    } else {
+      button.innerHTML = originalText;
+      button.disabled = false;
+      showAlert(data.message || 'Failed to add product to cart', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    button.innerHTML = originalText;
+    button.disabled = false;
+    showAlert('Something went wrong. Please try again.', 'error');
+  });
+}
   </script>
 </body>
 </html>
