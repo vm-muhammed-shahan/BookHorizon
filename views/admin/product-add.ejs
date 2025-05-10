@@ -233,11 +233,27 @@
 
     function handleImageSelection(event) {
         const files = event.target.files;
-        
         // Clear previous error message
         clearErrorMessage('images-error');
+
+
+       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    let invalidFiles = [];
+    
+    for (let i = 0; i < files.length; i++) {
+        if (!allowedTypes.includes(files[i].type)) {
+            invalidFiles.push(files[i].name);
+        }
+    }
+    
+    // Show error if invalid file types are found
+    if (invalidFiles.length > 0) {
+        displayErrorMessage('images-error', `Invalid file type(s): ${invalidFiles.join(', ')}. Only JPG, JPEG, PNG, and WEBP are allowed.`);
+        event.target.value = ''; // Reset the input
+        return;
+    }
         
-        // Check if adding these files would exceed the maximum
+        
         if (selectedImages.length + files.length > MAX_IMAGES) {
             const remaining = MAX_IMAGES - selectedImages.length;
             if (remaining > 0) {
@@ -253,11 +269,7 @@
         for (let i = 0; i < files.length && selectedImages.length < MAX_IMAGES; i++) {
             const file = files[i];
             
-            // Check if file is an image
-            if (!file.type.startsWith('image/')) {
-                continue;
-            }
-
+          
             // Create image object
             const imageObj = {
                 originalFile: file,
@@ -270,10 +282,9 @@
             addThumbnail(imageObj, selectedImages.length - 1);
         }
 
-        // Update counter and show appropriate message
         updateImageCounter();
         
-        // Show validation message if not exactly 3 images
+        
         if (selectedImages.length < MAX_IMAGES) {
             const remaining = MAX_IMAGES - selectedImages.length;
             displayErrorMessage('images-error', `Please select exactly ${MAX_IMAGES} images. You need ${remaining} more image${remaining !== 1 ? 's' : ''}.`);
@@ -281,7 +292,7 @@
             clearErrorMessage('images-error');
         }
         
-        // Reset the input field
+        
         event.target.value = '';
     }
 
@@ -449,25 +460,34 @@
         if (quantity.trim() === "" || isNaN(parseInt(quantity))) {
             displayErrorMessage('quantity-error', 'Please enter a valid quantity.');
             isValid = false;
-        } else if (parseInt(quantity) < 0) {
-            displayErrorMessage('quantity-error', 'Please enter a valid non-negative quantity.');
+        } else if (parseInt(quantity) <= 0) {
+            displayErrorMessage('quantity-error', 'Quantity must be greater than zero.');
             isValid = false;
         }
-        if (!price.trim() || !/^\d+(\.\d{1,2})?$/.test(price) || parseFloat(price) <= 0) {
-            displayErrorMessage('regularPrice-error', 'Please enter a valid positive price.');
-            isValid = false;
-        }
+        if (!price.trim()) {
+        displayErrorMessage('regularPrice-error', 'Please enter a regular price.');
+        isValid = false;
+    } else if (!/^\d+(\.\d{1,2})?$/.test(price)) {
+        displayErrorMessage('regularPrice-error', 'Please enter a valid price format (e.g., 19.99).');
+        isValid = false;
+    } else if (parseFloat(price) <= 0) {
+        displayErrorMessage('regularPrice-error', 'Regular price must be greater than zero.');
+        isValid = false;
+    }
         if (salePrice.trim() !== "") {
-            if (!/^\d+(\.\d{1,2})?$/.test(salePrice) || parseFloat(salePrice) < 0) {
-                displayErrorMessage('salePrice-error', 'Please enter a valid non-negative price.');
-                isValid = false;
-            } else if (parseFloat(price) <= parseFloat(salePrice)) {
-                displayErrorMessage('salePrice-error', 'Sale price must be less than regular price.');
-                isValid = false;
-            }
+        if (!/^\d+(\.\d{1,2})?$/.test(salePrice)) {
+            displayErrorMessage('salePrice-error', 'Please enter a valid price format (e.g., 19.99).');
+            isValid = false;
+        } else if (parseFloat(salePrice) <= 0) {
+            displayErrorMessage('salePrice-error', 'Sale price must be greater than zero.');
+            isValid = false;
+        } else if (parseFloat(price) <= parseFloat(salePrice)) {
+            displayErrorMessage('salePrice-error', 'Sale price must be less than regular price.');
+            isValid = false;
         }
+    }
         
-        // Update the image validation to require exactly 3 images
+        
         if (selectedImages.length === 0) {
             displayErrorMessage('images-error', 'Please select product images.');
             isValid = false;

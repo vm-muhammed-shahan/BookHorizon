@@ -3,6 +3,7 @@ const Category = require("../../models/categorySchema");
 const User = require("../../models/userSchema");
 const fs = require("fs");
 const path = require("path");
+const { session } = require("passport");
 
 
 const getProductAddPage = async (req, res) => {
@@ -30,39 +31,66 @@ const addProducts = async (req, res) => {
       salePrice,
       quantity,
       } = req.body;
-
       if(!productName || !description || !category || !regularPrice || !salePrice || !quantity) {
-        return res.status(400).json();
+        return res.status(400).json({
+          success: false,
+        message: "All required fields must be filled"
+        });
       }
-
       if(!req.files || req.files.length !== 3) {
-        return res.status(400).json("Exactly 3 product images are required");
-      }
-
-    
+      return res.status(400).json({
+        success: false,
+        message: "Exactly 3 product images are required"
+      });
+    }
+    const regPrice = parseFloat(regularPrice);
+    const discPrice = salePrice ? parseFloat(salePrice) : 0;
+    if (isNaN(regPrice) || regPrice <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Regular price must be a positive number greater than zero"
+      });
+    }
+    if (salePrice && (isNaN(discPrice) || discPrice <= 0)) {
+      return res.status(400).json({
+        success: false,
+        message: "Sale price must be a positive number greater than zero"
+      });
+    }
+    if (discPrice && discPrice >= regPrice) {
+      return res.status(400).json({
+        success: false,
+        message: "Sale price must be less than regular price"
+      });
+    }
+     const productQty = parseInt(quantity);
+    if (isNaN(productQty) || productQty <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Quantity must be a positive number greater than zero"
+      });
+    }
     const productExist = await Product.findOne({
       productName: productName
     });
-    console.log(productExist)
-    if (productExist) {
-      // console.log("Product already exists:", productName);
-       return res.status(400).json("Product already exists, please try with another name");
+if (productExist) {
+      return res.status(400).json({
+        success: false,
+        message: "Product already exists, please try with another name"
+      });
     }
-
     const categoryId = await Category.findOne({ name: category });
-
     if(!categoryId) {
-      // console.log("Invalid category name:", category);
-      return res.status(400).json("Invalid category name");
+      return res.status(400).json({
+        success: false,
+        message: "Invalid category name"
+      });
     }
-  
     const images = [];
     const imageDir = path.join(__dirname, '../../public/uploads');
     if (!fs.existsSync(imageDir)) {
       fs.mkdirSync(imageDir, { recursive: true });
     }
-
-    // console.log("Uploaded files:", req.files);
     if (req.files && req.files.length > 0) {
       for (let i = 0; i < req.files.length; i++) {
         const originalImagePath = req.files[i].path;
@@ -70,28 +98,29 @@ const addProducts = async (req, res) => {
         images.push(req.files[i].filename);
       }
     }
-
     const newProduct = new Product({
       productName,
       description,
       category: categoryId._id,
-      regularPrice,
-      salePrice,
+      regularPrice: regPrice,
+      salePrice: discPrice || undefined,
       createdOn: new Date(),
-      quantity,
+      quantity: productQty,
       productImage: images,
       status: 'Available',
     });
-
     await newProduct.save();
-    // console.log("Product saved successfully:", newProduct);
-    return res.status(200).json({success:true});
-    
+    return res.status(200).json({success: true, message: "Product added successfully"}); 
   } catch (error) {
-    // console.error("Error saving product", error);
-    return res.status(500).json({success:false})
+    console.error("Error saving product", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "An error occurred while adding the product"
+    });
   }
 }
+
+
 
 
 const getAllProducts = async (req, res) => {
@@ -99,63 +128,94 @@ const getAllProducts = async (req, res) => {
     const search = req.query.search || "";
     const page = parseInt(req.query.page) || 1;
     const limit = 6;
-
     const productData = await Product.find({
       $or: [
-
         { productName: { $regex: new RegExp(".*" + search + ".*", "i") } },
-
       ],
     })
-      .limit(limit).skip((page - 1) * limit).populate('category').exec();
-    console.log(productData)
-
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate('category')
+      .exec();
+    console.log(productData.map(p => ({ 
+      name: p.productName, 
+      createdAt: p.createdAt,
+      dateFormatted: p.createdAt ? new Date(p.createdAt).toISOString() : 'undefined' 
+    })));
     const count = await Product.find({
       $or: [
         { productName: { $regex: new RegExp(".*" + search + ".*", "i") } },
       ],
     }).countDocuments();
-
     const category = await Category.find({ isListed: true });
-
     if (category) {
       res.render("products", {
         data: productData,
         currentPage: page,
         totalPages: Math.ceil(count / limit),
         cat: category,
-      })
-
+        session: req.session
+      });
     } else {
       res.render("page-404");
     }
   } catch (error) {
+    console.error("Error in getAllProducts:", error);
     res.redirect("/pageerror");
   }
 };
+
+
 
 
 const blockProduct = async (req, res) => {
   try {
     let id = req.query.id;
     await Product.updateOne({ _id: id }, { $set: { isBlocked: true } });
+
+    req.session.blockUnblockMessage = {
+      type: 'success',
+      title: 'Product Blocked',
+      text: 'The product has been successfully blocked.'
+    };
+
     res.redirect("/admin/products");
   } catch (error) {
-    res.redirect("/pageerror")
+    // Set an error message in session flash data
+    req.session.blockUnblockMessage = {
+      type: 'error',
+      title: 'Error',
+      text: 'Failed to block the product. Please try again.'
+    };
+    res.redirect("/admin/products");
   }
-}
+};
 
 
 const unblockProduct = async (req, res) => {
   try {
     let id = req.query.id;
     await Product.updateOne({ _id: id }, { $set: { isBlocked: false } });
+    
+    // Set a success message in session flash data
+    req.session.blockUnblockMessage = {
+      type: 'success',
+      title: 'Product Unblocked',
+      text: 'The product has been successfully unblocked.'
+    };
+    
     res.redirect("/admin/products");
   } catch (error) {
-    res.redirect("/pageerror")
-
+    // Set an error message in session flash data
+    req.session.blockUnblockMessage = {
+      type: 'error',
+      title: 'Error',
+      text: 'Failed to unblock the product. Please try again.'
+    };
+    res.redirect("/admin/products");
   }
-}
+};
 
 
 const getEditProduct = async (req, res) => {

@@ -6,6 +6,18 @@ function getRandomNumber(min, max) {
   return Math.random() * (max - min) + min;
 }
 
+const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
+
+const fileFilter = (req, file, cb) => {
+  if (ALLOWED_FILE_TYPES.includes(file.mimetype)) {
+    cb(null, true); // Accept file
+  } else {
+    cb(new Error(`Invalid file type. Only ${ALLOWED_FILE_TYPES.join(', ')} are allowed.`), false);
+  }
+};
+
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, 'public/uploads');
@@ -16,7 +28,8 @@ const storage = multer.diskStorage({
     cb(null, Date.now() + getRandomNumber(0,10) + ext);
   }
 });
-
-const uploads = multer({ storage: storage });
-
+const uploads = multer({ storage: storage, fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, 
+  } });
 module.exports = uploads;

@@ -3,7 +3,6 @@ const User = require("../../models/userSchema");
    
 const customerInfo = async (req, res) => {
   try {
-
     let search = "";
     if (req.query.search) {
       search = req.query.search;
@@ -12,7 +11,6 @@ const customerInfo = async (req, res) => {
     if (req.query.page) {
       page = parseInt(req.query.page)
     }
-
     const limit = 5;
     const userData = await User.find({
       isAdmin: false,
@@ -25,7 +23,6 @@ const customerInfo = async (req, res) => {
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .exec();
-
     const count = await User.find({
       isAdmin: false,
       $or: [
@@ -35,7 +32,6 @@ const customerInfo = async (req, res) => {
 
       ],
     }).countDocuments();
-
     res.render("customers", {
       data: userData,
       totalPages: Math.ceil(count / limit),

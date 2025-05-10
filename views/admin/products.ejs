@@ -32,7 +32,7 @@
         </tr>
       </thead>
       <tbody>
-        <% for (let i=data.length - 1; i>= 0; i--) { %>
+        <% for (let i=0; i<data.length ; i++) { %>
           <tr>
             <td class="align-middle text-center">
               <% if (data[i].productImage && data[i].productImage.length> 0) { %>
@@ -55,9 +55,13 @@
             </td>
             <td class="align-middle text-center">
               <% if (!data[i].isBlocked) { %>
-                <a href="/admin/blockProduct?id=<%= data[i]._id %>" class="btn btn-danger btn-sm">Block</a>
+                <button type="button" class="btn btn-danger btn-sm blockProduct" 
+                  data-product-id="<%= data[i]._id %>" 
+                  data-product-name="<%= data[i].productName %>">Block</button>
                 <% } else { %>
-                  <a href="/admin/unblockProduct?id=<%= data[i]._id %>" class="btn btn-success btn-sm">Unblock</a>
+                  <button type="button" class="btn btn-success btn-sm unblockProduct" 
+                  data-product-id="<%= data[i]._id %>"
+                  data-product-name="<%= data[i].productName %>">Unblock</button>
                   <% } %>
             </td>
             <td class="align-middle text-center">
@@ -87,4 +91,68 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  
+  <script>
+    // Check for flash messages from the server and display them
+    <% if (typeof session !== 'undefined' && session.blockUnblockMessage) { %>
+      // Show the alert message from the server
+      document.addEventListener('DOMContentLoaded', function() {
+        Swal.fire({
+          icon: '<%= session.blockUnblockMessage.type %>',
+          title: '<%= session.blockUnblockMessage.title %>',
+          text: '<%= session.blockUnblockMessage.text %>',
+          timer: 3000,
+          timerProgressBar: true
+        });
+      });
+      <% 
+      // Clear the message so it doesn't show again on refresh
+      delete session.blockUnblockMessage; 
+      %>
+    <% } %>
+    // Block product confirmation
+    $(document).on('click', '.blockProduct', function() {
+      const productId = $(this).data('product-id');
+      const productName = $(this).data('product-name');
+      
+      Swal.fire({
+        title: 'Block Product?',
+        html: `Are you sure you want to block <strong>${productName}</strong>?<br>This will hide the product from customers.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, block it!',
+        cancelButtonText: 'Cancel'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Redirect to block the product
+          window.location.href = `/admin/blockProduct?id=${productId}`;
+        }
+      });
+    });
+
+    // Unblock product confirmation
+    $(document).on('click', '.unblockProduct', function() {
+      const productId = $(this).data('product-id');
+      const productName = $(this).data('product-name');
+      
+      Swal.fire({
+        title: 'Unblock Product?',
+        html: `Are you sure you want to unblock <strong>${productName}</strong>?<br>This will make the product visible to customers again.`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, unblock it!',
+        cancelButtonText: 'Cancel'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Redirect to unblock the product
+          window.location.href = `/admin/unblockProduct?id=${productId}`;
+        }
+      });
+    });
+  </script>
+  
   <%- include("../../views/partials/admin/footer") %>

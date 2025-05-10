@@ -7,9 +7,9 @@ const categoryController = require("../controllers/admin/categoryController");
 const brandController = require("../controllers/admin/brandController");
 const productController = require("../controllers/admin/productController");
 const uploads = require("../helpers/multer");
-
-
 const { userAuth, adminAuth } = require("../middlewares/auth");
+
+
 
 // Page Error
 router.get("/pageerror", adminController.pageerror);

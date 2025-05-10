@@ -245,8 +245,6 @@ const logout = async (req, res) => {
 }
 
 
-
-// Updated loadShoppingPage function
 const loadShoppingPage = async (req, res) => {
   console.log("shop page loaded");
   try {
@@ -257,7 +255,7 @@ const loadShoppingPage = async (req, res) => {
     
     const selectedCategory = req.query.category || null;
     const sortOption = req.query.sort || null;
-    const searchQuery = req.query.query || null;  // Added search query parameter
+    const searchQuery = req.query.query || null;  
     const page = parseInt(req.query.page) || 1;
     const limit = 9;
     const skip = (page - 1) * limit;
@@ -267,28 +265,27 @@ const loadShoppingPage = async (req, res) => {
       // quantity: { $gt: 0 },
     };
     
-    // Apply category filter
+    
     if (selectedCategory) {
       query.category = selectedCategory;
     } else {
       query.category = { $in: categoryIds };
     }
     
-    // Apply search filter if present
     if (searchQuery) {
       query.productName = { $regex: ".*" + searchQuery + ".*", $options: "i" };
     }
 
-    let sortQuery = { createdAt: -1 }; // Default: latest
+    let sortQuery = { createdAt: -1 };
 
     if (sortOption === 'lowToHigh') {
-      sortQuery = { salePrice: 1 }; // ascending price
+      sortQuery = { salePrice: 1 }; 
     } else if (sortOption === 'highToLow') {
-      sortQuery = { salePrice: -1 }; // descending price
+      sortQuery = { salePrice: -1 }; 
     } else if (sortOption === 'aToZ') {
-      sortQuery = { productName: 1 }; // ascending name
+      sortQuery = { productName: 1 }; 
     } else if (sortOption === 'zToA') {
-      sortQuery = { productName: -1 }; // descending name
+      sortQuery = { productName: -1 }; 
     }
 
     const products = await Product.find(query)
@@ -311,7 +308,7 @@ const loadShoppingPage = async (req, res) => {
       totalPages: totalPages,
       selectedCategory: selectedCategory,
       sortOption: sortOption,
-      searchQuery: searchQuery  // Pass search query to template
+      searchQuery: searchQuery 
     });
   } catch (error) {
     console.log("Error loading shop:", error);
@@ -319,14 +316,13 @@ const loadShoppingPage = async (req, res) => {
   }
 };
 
-// Updated filterProduct function to maintain search and sort
 const filterProduct = async (req, res) => {
   try {
     console.log("Filtering products by category");
     const user = req.session.user;
     const selectedCategory = req.query.category;
-    const sortOption = req.query.sort || "";  // Preserve sort
-    const searchQuery = req.query.query || ""; // Preserve search
+    const sortOption = req.query.sort || "";  
+    const searchQuery = req.query.query || ""; 
     
     console.log("Category ID:", selectedCategory);
     const findCategory = selectedCategory ? await Category.findOne({ _id: selectedCategory }) : null;
@@ -335,13 +331,10 @@ const filterProduct = async (req, res) => {
       return res.redirect("/shop");
     }
     
-    // Redirect to the shop page with the category as a query parameter
-    // This will ensure all filters are processed in one place
     let redirectUrl = `/shop?category=${selectedCategory}`;
     if (sortOption) redirectUrl += `&sort=${sortOption}`;
     if (searchQuery) redirectUrl += `&query=${encodeURIComponent(searchQuery)}`;
     
-    // Save search history if user is logged in
     if (user && user._id) {
       const userData = await User.findOne({ _id: user._id });
       if (userData) {
@@ -361,29 +354,25 @@ const filterProduct = async (req, res) => {
   }
 };
 
-// Updated filterByPrice function to maintain search, sort and category
+
 const filterByprice = async (req, res) => {
   try {
-    console.log("Filtering by price");
-    console.log("Price range:", req.query.gt, "-", req.query.lt);
     
+    console.log("Price range:", req.query.gt, "-", req.query.lt);
     const minPrice = parseFloat(req.query.gt);
     const maxPrice = parseFloat(req.query.lt);
     const selectedCategory = req.query.category || null;
     const sortOption = req.query.sort || "";
     const searchQuery = req.query.query || "";
     
-    // Instead of rendering directly, redirect to the shop page with all filters
-    let redirectUrl = `/shop?`;
+       let redirectUrl = `/shop?`;
     
-    // Add price filters to the shop page URL
+    
     redirectUrl += `priceMin=${minPrice}&priceMax=${maxPrice}`;
     
-    // Add other filters if present
     if (selectedCategory) redirectUrl += `&category=${selectedCategory}`;
     if (sortOption) redirectUrl += `&sort=${sortOption}`;
     if (searchQuery) redirectUrl += `&query=${encodeURIComponent(searchQuery)}`;
-    
     return res.redirect(redirectUrl);
   } catch (error) {
     console.log("Filter by price error:", error);
@@ -391,19 +380,13 @@ const filterByprice = async (req, res) => {
   }
 };
 
-// Updated searchProducts function to handle GET and maintain filters
 const searchProducts = async (req, res) => {
   try {
-    console.log("Searching products");
-    // Get search query from URL query parameters (since we'll change to GET)
     const searchQuery = req.query.query;
     console.log("Search query:", searchQuery);
     
-    // Get other filters to maintain them
     const selectedCategory = req.query.category || null;
     const sortOption = req.query.sort || "";
-    
-    // Redirect to shop with all parameters
     let redirectUrl = `/shop?query=${encodeURIComponent(searchQuery)}`;
     if (selectedCategory) redirectUrl += `&category=${selectedCategory}`;
     if (sortOption) redirectUrl += `&sort=${sortOption}`;
@@ -415,7 +398,7 @@ const searchProducts = async (req, res) => {
   }
 };
 
-// Update the loadShoppingPage to handle price filters
+
 const updatedLoadShoppingPage = async (req, res) => {
   console.log("shop page loaded");
   try {
@@ -438,33 +421,29 @@ const updatedLoadShoppingPage = async (req, res) => {
       // quantity: { $gt: 0 },
     };
     
-    // Apply category filter
+    
     if (selectedCategory) {
       query.category = selectedCategory;
     } else {
       query.category = { $in: categoryIds };
     }
     
-    // Apply search filter if present
+    
     if (searchQuery) {
       query.productName = { $regex: ".*" + searchQuery + ".*", $options: "i" };
     }
-    
-    // Apply price filter if present
     if (priceMin !== null && priceMax !== null) {
       query.salePrice = { $gte: priceMin, $lte: priceMax };
     }
-
-    let sortQuery = { createdAt: -1 }; // Default: latest
-
+    let sortQuery = { createdAt: -1 }; 
     if (sortOption === 'lowToHigh') {
-      sortQuery = { salePrice: 1 }; // ascending price
+      sortQuery = { salePrice: 1 }; 
     } else if (sortOption === 'highToLow') {
-      sortQuery = { salePrice: -1 }; // descending price
+      sortQuery = { salePrice: -1 }; 
     } else if (sortOption === 'aToZ') {
-      sortQuery = { productName: 1 }; // ascending name
+      sortQuery = { productName: 1 }; 
     } else if (sortOption === 'zToA') {
-      sortQuery = { productName: -1 }; // descending name
+      sortQuery = { productName: -1 }; 
     }
 
     const products = await Product.find(query)
@@ -539,7 +518,7 @@ const productDetails = async (req, res) => {
         _id: { $ne: productId },
         category: { $ne: product.category._id }, 
         isBlocked: false,
-        // quantity: { $gt: 0 } // Optional: Only include in-stock products
+        // quantity: { $gt: 0 } 
       })
       .limit(additionalCount)
       .sort({ createdAt: -1 });
@@ -556,7 +535,6 @@ const productDetails = async (req, res) => {
       user: userData, 
       quantity,
       relatedProducts: allRelatedProducts
-      // reviews: reviews // If you have a review model
     });
     
   } catch (error) {
@@ -578,7 +556,7 @@ module.exports = {
   pageNotFound,
   login,
   logout,
-  loadShoppingPage: updatedLoadShoppingPage, // Use the updated function
+  loadShoppingPage: updatedLoadShoppingPage, 
   filterProduct,
   filterByprice,
   searchProducts,

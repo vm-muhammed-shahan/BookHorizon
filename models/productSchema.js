@@ -44,11 +44,9 @@ const productSchema = new Schema({
     enum: ["Available", "Out of Stock", "Discontinued"],
     required: true,
     default: "Available",
-  },
-  createdAt:{
-    type:Date,
-    default:Date.now
   }
+},{
+     timestamps: true
 });
 
 
