@@ -4,6 +4,7 @@ const User = require("../../models/userSchema");
 const fs = require("fs");
 const path = require("path");
 const { session } = require("passport");
+const { getRandomNumber } = require("../../helpers/multer");
 
 
 const getProductAddPage = async (req, res) => {
@@ -198,7 +199,6 @@ const unblockProduct = async (req, res) => {
     let id = req.query.id;
     await Product.updateOne({ _id: id }, { $set: { isBlocked: false } });
     
-    // Set a success message in session flash data
     req.session.blockUnblockMessage = {
       type: 'success',
       title: 'Product Unblocked',
@@ -207,7 +207,6 @@ const unblockProduct = async (req, res) => {
     
     res.redirect("/admin/products");
   } catch (error) {
-    // Set an error message in session flash data
     req.session.blockUnblockMessage = {
       type: 'error',
       title: 'Error',
@@ -222,96 +221,182 @@ const getEditProduct = async (req, res) => {
   try {
     const id = req.query.id;
     const product = await Product.findOne({ _id: id });
+    
+    // Check if product exists
+    if (!product) {
+      console.error("Product not found with ID:", id);
+      return res.redirect("/pageerror");
+    }
+    
     const category = await Category.find({});
+    
+    // Make sure productImage is always an array
+    if (!product.productImage) {
+      product.productImage = [];
+    }
+    
     res.render("edit-product", {
       product: product,
-      cat: category,
-      productImage: product.productImage
-    })
+      cat: category
+    });
   } catch (error) {
+    console.error("Error in getEditProduct:", error);
     res.redirect("/pageerror");
-
   }
 };
-
 
 const editProduct = async (req, res) => {
   try {
     const id = req.params.id;
     const product = await Product.findOne({ _id: id });
+    
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+    
     const data = req.body;
+    console.log("Received data:", data);
+    console.log("Received files:", req.files);
+    
+    // Check for duplicate product name
     const existingProduct = await Product.findOne({
       productName: data.productName,
       _id: { $ne: id }
-    })
+    });
+    
     if (existingProduct) {
-      return res.status(400).json({ error: "product with this name  already exists. Please try with another name" });
+      return res.status(400).json({ 
+        error: "Product with this name already exists. Please try with another name" 
+      });
     }
-    const images = [];
-    if (req.files && req.files.length > 0) {
-      for (let i = 0; i < req.files.length; i++) {
-        images.push(req.files[i].filename);
-      }
-    }
-    if (req.files && req.files.length > 0 && product.productImage && product.productImage.length > 0) {
-      for (const oldImage of product.productImage) {
-        const imagePath = path.join(__dirname, '../../public/uploads/product-images/', oldImage);
-        if (fs.existsSync(imagePath)) {
-          fs.unlinkSync(imagePath); 
+    
+    // Process images - create an array to hold final images
+    let finalImages = [];
+    
+    // First, add existing images that were not removed
+    if (data.existingImages) {
+      for (const index in data.existingImages) {
+        const imageName = data.existingImages[index];
+        if (imageName && imageName.trim() !== '') {
+          finalImages[parseInt(index)] = imageName;
         }
       }
     }
-const updateFields = {
-      productName: data.productName,
-      description: data.description,
-      category: data.category,
-      regularPrice: data.regularPrice,
-      salePrice: data.salePrice,
-      quantity: data.quantity,
+    
+    // Process uploaded files - with the new multer.fields approach
+    if (req.files) {
+      for (let i = 0; i < 3; i++) {
+        const fieldName = `images[${i}]`;
+        if (req.files[fieldName] && req.files[fieldName].length > 0) {
+          const file = req.files[fieldName][0];
+          
+          // If replacing an existing image, delete the old one
+          if (finalImages[i]) {
+            const oldImagePath = path.join(__dirname, '../../public/uploads/', finalImages[i]);
+            if (fs.existsSync(oldImagePath)) {
+              try {
+                fs.unlinkSync(oldImagePath);
+                console.log(`Deleted old image: ${finalImages[i]}`);
+              } catch (err) {
+                console.error(`Error deleting old image: ${err}`);
+              }
+            }
+          }
+          
+          // Add the new image
+          finalImages[i] = file.filename;
+        }
+      }
     }
-    if (images.length > 0) {
-      updateFields.productImage =  images ;
+    
+    // Handle cropped images if they exist (base64)
+    if (data.croppedImages) {
+      for (const index in data.croppedImages) {
+        const imageData = data.croppedImages[index];
+        if (imageData && imageData.trim() !== '' && imageData.startsWith('data:image')) {
+          // This is a base64 image that was cropped
+          const i = parseInt(index);
+          
+          // Remove the image type prefix (data:image/jpeg;base64,)
+          const base64Data = imageData.replace(/^data:image\/\w+;base64,/, "");
+          const buffer = Buffer.from(base64Data, 'base64');
+          
+          // Generate filename
+          const filename = `${Date.now()}_${getRandomNumber(0, 10)}_cropped.jpeg`;
+          const filePath = path.join(__dirname, '../../public/uploads/', filename);
+          
+          // If replacing an existing image, delete the old one
+          if (finalImages[i]) {
+            const oldImagePath = path.join(__dirname, '../../public/uploads/', finalImages[i]);
+            if (fs.existsSync(oldImagePath)) {
+              try {
+                fs.unlinkSync(oldImagePath);
+                console.log(`Deleted old image: ${finalImages[i]}`);
+              } catch (err) {
+                console.error(`Error deleting old image: ${err}`);
+              }
+            }
+          }
+          
+          // Write the new image
+          fs.writeFileSync(filePath, buffer);
+          finalImages[i] = filename;
+        }
+      }
     }
-
-    // await Product.findByIdAndUpdate(id, updateFields, { new: true });
-
-product.productName = data.productName;
-product.description = data.description;
-product.category = data.category;
-product.regularPrice = data.regularPrice;
-product.salePrice = data.salePrice;
-product.quantity = data.quantity;
-
-if (images.length > 0) {
-  product.productImage = images;
-}
-
-await product.save(); 
-    return res.status(200).json({ success: true, message:"product updated successfully" });
+    
+    // Remove undefined elements and ensure we have exactly 3 images
+    finalImages = finalImages.filter(img => img !== undefined);
+    
+    if (finalImages.length < 3) {
+      return res.status(400).json({ error: "Product must have exactly 3 images" });
+    }
+    
+    // Update product fields
+    product.productName = data.productName;
+    product.description = data.description;
+    product.category = data.category;
+    product.regularPrice = data.regularPrice;
+    product.salePrice = data.salePrice;
+    product.quantity = data.quantity;
+    product.productImage = finalImages;
+    
+    await product.save();
+    
+    return res.status(200).json({ 
+      success: true, 
+      message: "Product updated successfully" 
+    });
   } catch (error) {
-    console.error(error);
-    res.redirect("/pageerror");
+    console.error("Error in editProduct:", error);
+    return res.status(500).json({ 
+      error: "An error occurred while updating the product" 
+    });
   }
-}
-
-
+};
 
 const deleteSingleImage = async (req, res) => {
   try {
     const { imageNameToServer, productIdToServer } = req.body;
-    const product = await Product.findByIdAndUpdate(productIdToServer, { $pull: { productImage: imageNameToServer } });
-    const imagePath = path.join("public", "uploads", "re-image", imageNameToServer);
+    const product = await Product.findByIdAndUpdate(productIdToServer, 
+      { $pull: { productImage: imageNameToServer } });
+    
+    const imagePath = path.join("public", "uploads", "product-images", imageNameToServer);
     if (fs.existsSync(imagePath)) {
       await fs.unlinkSync(imagePath);
-      console.log(`Image ${imageNameToServer} delete successfully`);
+      console.log(`Image ${imageNameToServer} deleted successfully`);
     } else {
       console.log(`Image ${imageNameToServer} not found`);
     }
+    
     res.send({ status: true });
   } catch (error) {
-    res.redirect("/pageerror")
+    console.error("Error in deleteSingleImage:", error);
+    res.status(500).json({ error: "An error occurred while deleting the image" });
   }
 }
+
+
 
 
 

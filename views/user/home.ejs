@@ -4,6 +4,19 @@
     
     <style>
         
+
+        :root {
+            --primary-color: #1e918b;
+            --dark-color:    #2d3748;
+            --light-bg:      #f8f9fa;
+            --light:         #fff;
+            --border-radius: 12px;
+            --transition:    0.3s ease;
+            --card-gap:      25px;
+            --card-max-width: 280px;
+            --image-height:  250px;
+        }
+
         
         .btn {
             display: inline-block;
@@ -11,7 +24,7 @@
             font-size: 16px;
             font-weight: bold;
             color: #fff;
-            background-color: #ff6b6b;
+            background-color: #1e0c0c;
             border: none;
             border-radius: 5px;
             transition: background-color 0.3s, transform 0.3s;
@@ -20,7 +33,7 @@
         }
 
         .btn:hover {
-            background-color: #ff4c4c;
+            background-color: #180b0b;
             transform: translateY(-2px);
         }
 
@@ -108,16 +121,7 @@
             margin-bottom: 10px;
         }
 
-        .product-content-wrap a {
-            display: inline-block;
-            padding: 8px 12px;
-            background-color: #ff6b6b;
-            color: white;
-            text-transform: uppercase;
-            font-size: 14px;
-            border-radius: 4px;
-            text-decoration: none;
-        }
+        
 
         .product-content-wrap a:hover {
             background-color: #ff4c4c;
@@ -127,19 +131,40 @@
             display: flex;
             flex-direction: column;
         }
+
+
+        .add-to-cart-btn {
+        margin: 12px 20px 20px;
+        padding: 10px 0;
+        background: var(--dark-color);
+        color: var(--light);
+        font-weight: 600;
+        text-transform: uppercase;
+        border: none;
+        border-radius: var(--border-radius);
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        transition: background var(--transition), transform var(--transition);
+        align-self: center;
+        width: calc(100% - 40px);
+        text-align: center;          
+        display: inline-block;       
+        text-decoration: none;       
+        }
+
+      .add-to-cart-btn:hover {
+      background: var(--primary-color);
+      transform: translateY(-2px);
+     }
+
     </style>
+
     <section class="hero">
         <div class="hero__slider owl-carousel">
             <div class="hero__items set-bg" data-setbg="img/hero/hero-1.png">
                 <div class="container">
                     <div class="row">
                         <div class="col-xl-5 col-lg-7 col-md-8">
-                            <!-- <div class="hero__text">
-                                <h6>Summer Collection</h6>
-                                <h2> Fall–Winter 2030 Book Collection</h2>
-                                <p>Discover timeless reads and new favorites. Ethically sourced, passionately selected.</p>
-                                <a href="#" class="primary-btn">Shop now <span class="arrow_right"></span></a>
-                            </div> -->
                         </div>
                     </div>
                 </div>
@@ -148,12 +173,6 @@
                 <div class="container">
                     <div class="row">
                         <div class="col-xl-5 col-lg-7 col-md-8">
-                            <!-- <div class="hero__text">
-                                <h6>Summer Collection</h6>
-                                <h2>Fall - Winter Collections 2030</h2>
-                                <p>A specialist label creating luxury essentials.</p>
-                                <a href="#" class="primary-btn">Shop now <span class="arrow_right"></span></a>
-                            </div> -->
                         </div>
                     </div>
                 </div>
@@ -229,7 +248,8 @@
                   <div class="product-content-wrap">
                     <h6><%= products[i].productName %></h6>
                     <h5>₹ <%= products[i].salePrice %></h5>
-                    <a href="/addToCart?id=<%= products[i]._id %>">Add to cart</a>
+                    <a class="add-to-cart-btn" href="/addToCart?id=<%= products[i]._id %>"> Add to cart</a>
+
                   </div>
                 </div>
               </div>

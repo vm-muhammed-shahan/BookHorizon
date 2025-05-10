@@ -189,12 +189,12 @@
                 </div>
                 
                 <div class="mb-4">
-                  <label class="form-label">Product Images</label>
-                  <p class="text-muted small">Upload up to 3 images. Click on an image to crop it.</p>
+                  <label class="form-label">Product Images <span class="text-danger">*</span></label>
+                  <p class="text-muted small">Upload exactly 3 images. Click on an image to crop it.</p>
                   
-                  <div class="row mb-3">
+                  <div class="row mb-3" id="image-container">
                     <% for(let i = 0; i < 3; i++) { %>
-                      <div class="col-md-3 mb-3">
+                      <div class="col-md-4 mb-3">
                         <div class="card position-relative image-upload-box" data-index="<%= i %>">
                           <div class="card-body p-2 text-center">
                             <% if(product.productImage && product.productImage[i]) { %>
@@ -210,7 +210,7 @@
                             <% } %>
                             
                             <input type="file" class="form-control form-control-sm image-input" id="image<%= i %>" 
-       name="images" accept="image/png, image/jpeg, image/jpg, image/webp" data-index="<%= i %>">
+                              name="images[<%= i %>]" accept="image/png, image/jpeg, image/jpg, image/webp" data-index="<%= i %>">
                             
                             <% if(product.productImage && product.productImage[i]) { %>
                               <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 remove-image-btn" 
@@ -224,6 +224,10 @@
                         </div>
                       </div>
                     <% } %>
+                  </div>
+                  <div class="alert alert-warning" id="image-warning" style="display: none;">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Product must have exactly 3 images. Please upload all required images.
                   </div>
                 </div>
                 
@@ -243,7 +247,7 @@
     </footer>
   </div>
 
-  
+  <!-- Image Crop Modal -->
   <div class="modal fade" id="imageCropModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
@@ -264,7 +268,7 @@
     </div>
   </div>
 
-  
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
@@ -277,7 +281,7 @@
       let currentImageIndex;
       const cropModal = new bootstrap.Modal(document.getElementById('imageCropModal'));
       
-      
+      // Image upload and cropping
       document.querySelectorAll('.image-input').forEach(input => {
         input.addEventListener('change', function(e) {
           const file = e.target.files[0];
@@ -309,7 +313,7 @@
         });
       });
       
-      
+      // Complete Crop button action
       document.getElementById('cropButton').addEventListener('click', function() {
         if (!cropper) return;
         
@@ -348,16 +352,37 @@
           removeBtn.addEventListener('click', handleRemoveImage);
         }
         
+        updateImageWarning();
+        
+        // Ensure modal is closed and cropper is destroyed
         cropModal.hide();
-        cropper.destroy();
-        cropper = null;
+        
+        // Additional timeout to ensure the modal is fully hidden
+        setTimeout(() => {
+          if (cropper) {
+            cropper.destroy();
+            cropper = null;
+          }
+          
+          // Remove the backdrop if it's still present
+          const backdrop = document.querySelector('.modal-backdrop');
+          if (backdrop) {
+            backdrop.remove();
+          }
+          
+          // Remove modal-open class from body
+          document.body.classList.remove('modal-open');
+          document.body.style.overflow = '';
+          document.body.style.paddingRight = '';
+        }, 300);
       });
       
-      
+      // Remove image button action
       function handleRemoveImage(e) {
         const index = this.dataset.index;
         const container = document.querySelector(`.image-upload-box[data-index="${index}"]`);
         const previewImg = container.querySelector('.img-preview');
+        
         if (previewImg) {
           previewImg.remove();
           
@@ -368,23 +393,45 @@
           container.querySelector('.card-body').prepend(placeholder);
         }
         
+        // Clear the file input
         container.querySelector('.image-input').value = '';
         container.querySelector('.cropped-data').value = '';
         
+        // Clear the existing image input but keep the name attribute
         const existingImageInput = container.querySelector(`input[name="existingImages[${index}]"]`);
         if (existingImageInput) existingImageInput.value = '';
         
         this.remove();
+        updateImageWarning();
       }
       
+      // Add event listeners to remove buttons
       document.querySelectorAll('.remove-image-btn').forEach(btn => {
         btn.addEventListener('click', handleRemoveImage);
       });
 
-     
+      // Function to check image count and show/hide warning
+      function updateImageWarning() {
+        const filledSlots = document.querySelectorAll('.img-preview').length;
+        const emptySlots = document.querySelectorAll('.img-placeholder').length;
+        const totalSlots = filledSlots + emptySlots;
+        
+        const warningElement = document.getElementById('image-warning');
+        if (filledSlots < 3) {
+          warningElement.style.display = 'block';
+        } else {
+          warningElement.style.display = 'none';
+        }
+      }
+      
+      // Initialize warning status
+      updateImageWarning();
+
+      // Form validation
       function validateForm() {
         const productName = document.querySelector('input[name="productName"]').value;
         const category = document.querySelector('select[name="category"]').value;
+        const imageCount = document.querySelectorAll('.img-preview').length;
         
         if (!productName || !category) {
           Swal.fire({
@@ -395,18 +442,30 @@
           });
           return false;
         }
+        
+        if (imageCount < 3) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Image Validation Error',
+            text: 'Product must have exactly 3 images',
+            confirmButtonColor: '#3085d6'
+          });
+          return false;
+        }
+        
         return true;
       }
 
-      
+      // Form submission handler
       document.getElementById('edit-product-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         if (!validateForm()) {
           return;
         }
+        
         const formData = new FormData(this);
         
-      
+        // Show loading indicator
         Swal.fire({
           icon: 'info',
           title: 'Saving...',
@@ -453,41 +512,3 @@
 
 
    
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
