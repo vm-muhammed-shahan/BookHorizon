@@ -1,22 +1,158 @@
+
+
 <%- include("../../views/partials/admin/header") %>
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6 mt-60">
-            <form method="post" action="/admin/editCategory/<%=category._id%>">
-                <div class="d-grid text-end mt-30 col-md-5">
-                    <button class="btn btn-primary" type="submit">Update category</button>
-                </div>
-                <div class="mb-4 mt-30">
-                    <label for="product_name" class="form-label">Name</label>
-                    <input type="text" name="categoryName" value="<%=category.name%>" class="form-control border" />
-                </div>
-                
-                <div class="mb-4">
-                    <label class="form-label">Description</label>
-                    <textarea name="description" class="form-control border"><%=category.description%></textarea>
-                </div>
-            </form>
+    
+<div class="container-fluid py-4">
+  <!-- Header Section -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark">Edit Category</h2>
+    <a href="/admin/category" class="btn btn-outline-dark">
+      <i class="fas fa-arrow-left me-1"></i>Back to Categories
+    </a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="card shadow-sm">
+    <div class="card-body p-4">
+      <div class="row justify-content-center">
+        <div class="col-md-8">
+          <form method="post" action="/admin/editCategory/<%=category._id%>" onsubmit="return validateEditForm(event)">
+            <div class="mb-3">
+              <label for="product_name" class="form-label">Name</label>
+              <input 
+                type="text" 
+                name="categoryName" 
+                value="<%=category.name%>" 
+                class="form-control" 
+                id="category_name" 
+                required 
+              />
+              <div id="name-error" class="error-message"></div>
+            </div>
+            
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <textarea 
+                name="description" 
+                class="form-control" 
+                id="descriptionId" 
+                rows="4"
+                required
+              ><%=category.description%></textarea>
+              <div id="description-error" class="error-message"></div>
+            </div>
+            
+            <% if(category.categoryOffer) { %>
+            <div class="mb-3">
+              <label class="form-label">Current Offer</label>
+              <div class="input-group">
+                <input 
+                  type="text" 
+                  class="form-control bg-light" 
+                  value="<%=category.categoryOffer%>" 
+                  disabled
+                />
+                <span class="input-group-text">%</span>
+              </div>
+            </div>
+            <% } %>
+            
+            <div class="d-flex justify-content-between mt-4">
+              <a href="/admin/category" class="btn btn-outline-dark">
+                Cancel
+              </a>
+              <button class="btn btn-dark" type="submit">
+                Update Category
+              </button>
+            </div>
+          </form>
         </div>
+      </div>
     </div>
+  </div>
 </div>
+
+<style>
+  .error-message {
+    color: #dc3545;
+    font-size: 0.85rem;
+    margin-top: 5px;
+  }
+  
+  .form-control:focus {
+    border-color: #212529;
+    box-shadow: 0 0 0 0.25rem rgba(33, 37, 41, 0.25);
+  }
+  
+  .btn-dark {
+    background-color: #212529;
+    border-color: #212529;
+  }
+  
+  .btn-outline-dark {
+    color: #212529;
+    border-color: #212529;
+  }
+  
+  .btn-outline-dark:hover {
+    background-color: #212529;
+    color: #fff;
+  }
+  
+  .card {
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.125);
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
+<script>
+  function validateEditForm(event) {
+    clearErrorMessages();
+    const name = document.getElementById("category_name").value.trim();
+    const description = document.getElementById("descriptionId").value.trim();
+    let isValid = true;
+
+    if (name === "") {
+      displayErrorMessage("name-error", "Please enter a name");
+      isValid = false;
+    } else if (!/^[a-zA-Z\s]+$/.test(name)) {
+      displayErrorMessage("name-error", "Category name should contain only alphabetic characters");
+      isValid = false;
+    }
+
+    if (description === "") {
+      displayErrorMessage("description-error", "Please enter a description");
+      isValid = false;
+    }
+    
+    if (!isValid) {
+      event.preventDefault();
+    } else {
+      Swal.fire({
+        icon: 'success',
+        title: 'Updating...',
+        text: 'Category is being updated',
+        showConfirmButton: false,
+        timer: 1500
+      });
+    }
+    return isValid;
+  }
+
+  function displayErrorMessage(elementId, message) {
+    let errorElement = document.getElementById(elementId);
+    errorElement.innerText = message;
+    errorElement.style.display = "block";
+  }
+
+  function clearErrorMessages() {
+    const errorElements = document.getElementsByClassName("error-message");
+    Array.from(errorElements).forEach((element) => {
+      element.innerText = '';
+      element.style.display = 'none';
+    });
+  }
+</script>
+
 <%- include("../../views/partials/admin/footer") %>

@@ -23,7 +23,8 @@ const categoryInfo = async (req, res) => {
       currentPage: page,
       totalPages,
       totalCategories,
-      search, 
+      search,
+      limit
     });
 
   } catch (error) {
@@ -160,24 +161,23 @@ const editCategory = async (req, res) => {
   try {
     const id = req.params.id;
     const { categoryName, description } = req.body;
-
-    const duplicate = await Category.findOne({ name: categoryName, _id: { $ne: id } });
+    const duplicate = await Category.findOne({
+  name: { $regex: `^${categoryName}$`, $options: 'i' },
+  _id: { $ne: id }
+});
     if (duplicate) {
       return res.status(400).json({ error: "Category name already in use" });
     }
-
     const updated = await Category.findByIdAndUpdate(
       id,
       { name: categoryName, description },
       { new: true }
     );
-
     if (updated) {
       res.redirect("/admin/category");
     } else {
       res.status(404).json({ error: "Category not found" });
     }
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });

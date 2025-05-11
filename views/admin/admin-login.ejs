@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,42 +19,91 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      background-image: url('/img/adminlogin.png');
-      background-size: cover;
-      background-position: center;
+      background-color: #f5f5f5;
       font-family: 'Nunito Sans', sans-serif;
-       color: white;
     }
+    
     .login-container {
       width: 100%;
-      max-width: 500px;
-      padding: 20px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      background-color: hsl(193, 80%, 17%);
+      max-width: 400px;
+      padding: 30px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+      background-color: white;
       border-radius: 8px;
+      text-align: center;
     }
-    .error-message {
-      color: red;
-      font-size: 0.875rem;
+    
+    .form-group {
+      margin-bottom: 20px;
+      text-align: left;
     }
-    .text-center{
+    
+    .form-control {
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 100%;
+      background-color: #f9f9f9;
+      transition: border-color 0.3s;
+    }
+    
+    .form-control:focus {
+      border-color: #000;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+    }
+    
+    label {
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: block;
+      color: #333;
+    }
+    
+    .btn-primary {
+      background-color: #000;
+      border: none;
+      padding: 12px;
+      font-weight: 600;
+      width: 100%;
+      border-radius: 4px;
       color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
     }
-
+    
+    .btn-primary:hover {
+      background-color: #333;
+    }
+    
+    .error-message {
+      color: #dc3545;
+      font-size: 0.875rem;
+      margin-top: 5px;
+      text-align: left;
+    }
+    
+    h2 {
+      color: #000;
+      margin-bottom: 25px;
+      font-weight: 700;
+    }
+    
     .custom-alert {
-  background-color: #dc3545 !important; /* solid Bootstrap red */
-  color: white !important;              /* make text white */
-  border: none;
-  font-weight: bold;
-}
-
+      background-color: #dc3545 !important;
+      color: white !important;
+      border: none;
+      font-weight: 600;
+      padding: 12px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
   <div class="login-container">
-    <h2 class="text-center">Admin Login</h2>
+    <h2>Admin Login</h2>
     <% if (message) { %>
-    <!-- <div class="alert alert-danger text-white text-center"><%= message %></div> -->
     <div class="alert text-center custom-alert"><%= message %></div>
     <% } %>
     <form id="adminLoginForm" method="post" action="/admin/login">
@@ -79,7 +129,7 @@
         />
         <div id="passwordError" class="error-message"></div>
       </div>
-      <button type="submit" class="btn btn-primary btn-block">Log In</button>
+      <button type="submit" class="btn btn-primary">Log In</button>
     </form>
   </div>
   <script src="/js/jquery.min.js"></script>

@@ -42,8 +42,8 @@ router.post("/editCategory/:id", adminAuth, categoryController.editCategory);
 router.get("/addProducts", adminAuth, productController.getProductAddPage);
 router.post("/addProducts", uploads.array('productImages', 3), adminAuth, productController.addProducts);
 router.get("/products", adminAuth, productController.getAllProducts);
-router.get("/blockProduct", adminAuth, productController.blockProduct);
-router.get("/unblockProduct", adminAuth, productController.unblockProduct);
+router.post("/blockProduct/:id", adminAuth, productController.blockProduct);
+router.post("/unblockProduct/:id", adminAuth, productController.unblockProduct);
 router.get("/editProduct", adminAuth, productController.getEditProduct);
 router.post("/editProduct/:id", adminAuth, 
   uploads.fields([

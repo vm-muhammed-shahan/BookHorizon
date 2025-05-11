@@ -169,50 +169,41 @@ const getAllProducts = async (req, res) => {
 
 
 
-
 const blockProduct = async (req, res) => {
   try {
-    let id = req.query.id;
+    let id = req.params.id;
     await Product.updateOne({ _id: id }, { $set: { isBlocked: true } });
-
-    req.session.blockUnblockMessage = {
-      type: 'success',
+    res.json({
+      success: true,
       title: 'Product Blocked',
       text: 'The product has been successfully blocked.'
-    };
-
-    res.redirect("/admin/products");
+    });
   } catch (error) {
-    // Set an error message in session flash data
-    req.session.blockUnblockMessage = {
-      type: 'error',
+    res.status(500).json({
+      success: false,
       title: 'Error',
       text: 'Failed to block the product. Please try again.'
-    };
-    res.redirect("/admin/products");
+    });
   }
 };
 
 
+
 const unblockProduct = async (req, res) => {
   try {
-    let id = req.query.id;
+    let id = req.params.id;
     await Product.updateOne({ _id: id }, { $set: { isBlocked: false } });
-    
-    req.session.blockUnblockMessage = {
-      type: 'success',
+    res.json({
+      success: true,
       title: 'Product Unblocked',
       text: 'The product has been successfully unblocked.'
-    };
-    
-    res.redirect("/admin/products");
+    });
   } catch (error) {
-    req.session.blockUnblockMessage = {
-      type: 'error',
+    res.status(500).json({
+      success: false,
       title: 'Error',
       text: 'Failed to unblock the product. Please try again.'
-    };
-    res.redirect("/admin/products");
+    });
   }
 };
 
