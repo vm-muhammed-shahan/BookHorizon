@@ -1,5 +1,4 @@
-
-  <%- include("../../views/partials/admin/header") %>
+<%- include("../../views/partials/admin/header") %>
 
   <head>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.css">
@@ -57,73 +56,65 @@
             </td>
             <td class="align-middle text-center action-cell-<%= data[i]._id %>">
               <% if (!data[i].isBlocked) { %>
-                <button type="button" class="btn btn-danger btn-sm blockProduct" 
-                  data-product-id="<%= data[i]._id %>" 
+                <button type="button" class="btn btn-danger btn-sm blockProduct" data-product-id="<%= data[i]._id %>"
                   data-product-name="<%= data[i].productName %>">Block</button>
                 <% } else { %>
-                  <button type="button" class="btn btn-success btn-sm unblockProduct" 
-                  data-product-id="<%= data[i]._id %>"
-                  data-product-name="<%= data[i].productName %>">Unblock</button>
+                  <button type="button" class="btn btn-success btn-sm unblockProduct"
+                    data-product-id="<%= data[i]._id %>" data-product-name="<%= data[i].productName %>">Unblock</button>
                   <% } %>
             </td>
             <td class="align-middle text-center">
-              <a href="/admin/editProduct?id=<%= data[i]._id %>" class="btn btn-info btn-sm">Edit</a>
+              <a href="/admin/editProduct?id=<%= data[i]._id %>" class="btn btn-dark  btn-sm">Edit</a>
             </td>
           </tr>
           <% } %>
       </tbody>
     </table>
   </div>
+
+
+
+
+  <div class="container mt-3">
+    <nav aria-label="Page navigation">
+      <ul class="pagination justify-content-center mb-20" style="margin-right: 200px;">
+
+        <% if (currentPage> 1) { %>
+          <li class="page-item">
+            <a class="page-link" href="?page=<%= currentPage - 1 %>">
+              <i class="fas fa-chevron-left"></i>
+            </a>
+          </li>
+          <% } else { %>
+            <li class="page-item disabled">
+              <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+            </li>
+            <% } %>
+
+              <% for (let i=1; i <=totalPages; i++) { %>
+                <li class="page-item <%= (i === currentPage) ? 'active' : '' %>">
+                  <a class="page-link <%= (i === currentPage) ? 'bg-dark text-white' : 'text-dark' %>"
+                    href="?page=<%= i %>">
+                    <%= i %>
+                  </a>
+                </li>
+                <% } %>
+
+                  <% if (currentPage < totalPages) { %>
+                    <li class="page-item">
+                      <a class="page-link" href="?page=<%= currentPage + 1 %>">
+                        <i class="fas fa-chevron-right"></i>
+                      </a>
+                    </li>
+                    <% } else { %>
+                      <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+                      </li>
+                      <% } %>
+
+      </ul>
+    </nav>
   </div>
-  </div>
-
-
-
-
-
-   <div class="container mt-3">
-  <nav aria-label="Page navigation">
-    <ul class="pagination justify-content-center mb-20" style="margin-right: 200px;">
-      
-      <% if (currentPage > 1) { %>
-        <li class="page-item">
-          <a class="page-link" href="?page=<%= currentPage - 1 %>">
-            <i class="fas fa-chevron-left"></i>
-          </a>
-        </li>
-      <% } else { %>
-        <li class="page-item disabled">
-          <span class="page-link"><i class="fas fa-chevron-left"></i></span>
-        </li>
-      <% } %>
-
-      <% for (let i = 1; i <= totalPages; i++) { %>
-        <li class="page-item <%= (i === currentPage) ? 'active' : '' %>">
-          <a class="page-link <%= (i === currentPage) ? 'bg-dark text-white' : 'text-dark' %>" href="?page=<%= i %>">
-            <%= i %>
-          </a>
-        </li>
-      <% } %>
-
-      <% if (currentPage < totalPages) { %>
-        <li class="page-item">
-          <a class="page-link" href="?page=<%= currentPage + 1 %>">
-            <i class="fas fa-chevron-right"></i>
-          </a>
-        </li>
-      <% } else { %>
-        <li class="page-item disabled">
-          <span class="page-link"><i class="fas fa-chevron-right"></i></span>
-        </li>
-      <% } %>
-
-    </ul>
-  </nav>
-</div>
-
-
-      
-
 
 
 
@@ -132,12 +123,12 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
   <script src="https://kit.fontawesome.com/16d4885483.js" crossorigin="anonymous"></script>
-  
+
   <script>
-    // Check for flash messages from the server and display them
+    
     <% if (typeof session !== 'undefined' && session.blockUnblockMessage) { %>
-      // Show the alert message from the server
-      document.addEventListener('DOMContentLoaded', function() {
+      
+      document.addEventListener('DOMContentLoaded', function () {
         Swal.fire({
           icon: '<%= session.blockUnblockMessage.type %>',
           title: '<%= session.blockUnblockMessage.title %>',
@@ -146,88 +137,87 @@
           timerProgressBar: true
         });
       });
-      <% 
-      // Clear the message so it doesn't show again on refresh
-      delete session.blockUnblockMessage; 
+      <%
+        
+        delete session.blockUnblockMessage; 
       %>
     <% } %>
-    
-    // Block product confirmation
-    $(document).on('click', '.blockProduct', function () {
-      const productId = $(this).data('product-id');
-      const productName = $(this).data('product-name');
-      
-      Swal.fire({
-        title: 'Block Product?',
-        html: `Are you sure you want to block <strong>${productName}</strong>?<br>This will hide the product from customers.`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Yes, block it!',
-        cancelButtonText: 'Cancel'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          // Show loading state
-          Swal.fire({
-            title: 'Processing...',
-            text: 'Please wait while we process your request',
-            allowOutsideClick: false,
-            didOpen: () => {
-              Swal.showLoading();
-            }
-          });
-          
-          fetch(`/admin/blockProduct/${productId}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              // Update button without reloading the page
-              const actionCell = $(`.action-cell-${productId}`);
-              actionCell.html(`
+
+      $(document).on('click', '.blockProduct', function () {
+        const productId = $(this).data('product-id');
+        const productName = $(this).data('product-name');
+
+        Swal.fire({
+          title: 'Block Product?',
+          html: `Are you sure you want to block <strong>${productName}</strong>?<br>This will hide the product from customers.`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#3085d6',
+          confirmButtonText: 'Yes, block it!',
+          cancelButtonText: 'Cancel'
+        }).then((result) => {
+          if (result.isConfirmed) {
+           
+            Swal.fire({
+              title: 'Processing...',
+              text: 'Please wait while we process your request',
+              allowOutsideClick: false,
+              didOpen: () => {
+                Swal.showLoading();
+              }
+            });
+
+            fetch(`/admin/blockProduct/${productId}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            })
+              .then(response => response.json())
+              .then(data => {
+                if (data.success) {
+                  
+                  const actionCell = $(`.action-cell-${productId}`);
+                  actionCell.html(`
                 <button type="button" class="btn btn-success btn-sm unblockProduct" 
                   data-product-id="${productId}"
                   data-product-name="${productName}">Unblock</button>
               `);
-              
-              // Show success message
-              Swal.fire({
-                icon: 'success',
-                title: data.title,
-                text: data.text,
-                timer: 8000,
-                timerProgressBar: true
-              });
-            } else {
-              Swal.fire({
-                icon: 'error',
-                title: data.title,
-                text: data.text
-              });
-            }
-          })
-          .catch(err => {
-            Swal.fire({
-              icon: 'error',
-              title: 'Error',
-              text: 'Something went wrong while processing your request'
-            });
-            console.error('Error:', err);
-          });
-        }
-      });
-    });
 
-    // Unblock product confirmation
+                  
+                  Swal.fire({
+                    icon: 'success',
+                    title: data.title,
+                    text: data.text,
+                    timer: 8000,
+                    timerProgressBar: true
+                  });
+                } else {
+                  Swal.fire({
+                    icon: 'error',
+                    title: data.title,
+                    text: data.text
+                  });
+                }
+              })
+              .catch(err => {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Error',
+                  text: 'Something went wrong while processing your request'
+                });
+                console.error('Error:', err);
+              });
+          }
+        });
+      });
+
+    
     $(document).on('click', '.unblockProduct', function () {
       const productId = $(this).data('product-id');
       const productName = $(this).data('product-name');
-      
+
       Swal.fire({
         title: 'Unblock Product?',
         html: `Are you sure you want to unblock <strong>${productName}</strong>?<br>This will make the product visible to customers again.`,
@@ -239,7 +229,7 @@
         cancelButtonText: 'Cancel'
       }).then((result) => {
         if (result.isConfirmed) {
-          // Show loading state
+          
           Swal.fire({
             title: 'Processing...',
             text: 'Please wait while we process your request',
@@ -248,51 +238,51 @@
               Swal.showLoading();
             }
           });
-          
+
           fetch(`/admin/unblockProduct/${productId}`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             }
           })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              // Update button without reloading the page
-              const actionCell = $(`.action-cell-${productId}`);
-              actionCell.html(`
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                
+                const actionCell = $(`.action-cell-${productId}`);
+                actionCell.html(`
                 <button type="button" class="btn btn-danger btn-sm blockProduct" 
                   data-product-id="${productId}"
                   data-product-name="${productName}">Block</button>
               `);
-              
-              // Show success message
-              Swal.fire({
-                icon: 'success',
-                title: data.title,
-                text: data.text,
-                timer: 8000,
-                timerProgressBar: true
-              });
-            } else {
+
+                
+                Swal.fire({
+                  icon: 'success',
+                  title: data.title,
+                  text: data.text,
+                  timer: 8000,
+                  timerProgressBar: true
+                });
+              } else {
+                Swal.fire({
+                  icon: 'error',
+                  title: data.title,
+                  text: data.text
+                });
+              }
+            })
+            .catch(err => {
               Swal.fire({
                 icon: 'error',
-                title: data.title,
-                text: data.text
+                title: 'Error',
+                text: 'Something went wrong while processing your request'
               });
-            }
-          })
-          .catch(err => {
-            Swal.fire({
-              icon: 'error',
-              title: 'Error',
-              text: 'Something went wrong while processing your request'
+              console.error('Error:', err);
             });
-            console.error('Error:', err);
-          });
         }
       });
     });
   </script>
-  
+
   <%- include("../../views/partials/admin/footer") %>

@@ -38,7 +38,7 @@ const categoryInfo = async (req, res) => {
 const addCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
-    const existingCategory = await Category.findOne({ name: { $regex: new RegExp('^' + name + '$', 'i') }  });
+    const existingCategory = await Category.findOne({ name: { $regex: new RegExp('^' + name + '$', 'i') } });
 
     if (existingCategory) {
       return res.status(400).json({ error: "Category already exists" });
@@ -162,9 +162,9 @@ const editCategory = async (req, res) => {
     const id = req.params.id;
     const { categoryName, description } = req.body;
     const duplicate = await Category.findOne({
-  name: { $regex: `^${categoryName}$`, $options: 'i' },
-  _id: { $ne: id }
-});
+      name: { $regex: `^${categoryName}$`, $options: 'i' },
+      _id: { $ne: id }
+    });
     if (duplicate) {
       return res.status(400).json({ error: "Category name already in use" });
     }
@@ -199,5 +199,5 @@ module.exports = {
   getUnlistCategory,
   getEditCategory,
   editCategory,
-  
+
 };

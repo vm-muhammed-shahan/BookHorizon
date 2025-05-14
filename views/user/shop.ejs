@@ -268,10 +268,10 @@
 
   
     <div class="shop-topbar d-flex justify-content-between align-items-center mb-4">
-      <!-- Updated Search Form to use GET method -->
+      
       <form action="/search" method="GET" class="search-form d-flex">
         <input type="text" name="query" placeholder="Search products..." class="form-control me-2" style="width: 250px;" value="<%= searchQuery || '' %>" />
-        <!-- Preserve other filters when searching -->
+        
         <% if (selectedCategory) { %>
           <input type="hidden" name="category" value="<%= selectedCategory %>">
         <% } %>
@@ -281,7 +281,6 @@
         <button type="submit" class="btn btn-primary">Search</button>
       </form>
     
-      <!-- Sort Dropdown - Now preserves search query too -->
       <form id="sortForm" method="GET" action="/shop" class="d-flex align-items-center">
         <% if (selectedCategory) { %>
           <input type="hidden" name="category" value="<%= selectedCategory %>">
@@ -310,16 +309,15 @@
           <ul>
             <% category.forEach(cat => { %>
               <li class="filter-item">
-                <!-- Updated category filter links to preserve search and sort -->
                 <a href="/filter?category=<%= cat._id %><%= searchQuery ? '&query=' + encodeURIComponent(searchQuery) : '' %><%= sortOption ? '&sort=' + sortOption : '' %>">
                   <%= cat.name %>
                 </a>
               </li>
             <% }) %>
-          </ul>
+          </ul> 
         </div>
         <div class="price-filter">
-          <!-- Updated price filter links to preserve search, category and sort -->
+          
           <a href="/filterPrice?gt=0&lt=500<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= searchQuery ? '&query=' + encodeURIComponent(searchQuery) : '' %><%= sortOption ? '&sort=' + sortOption : '' %>">Under ₹500</a>
           <a href="/filterPrice?gt=500&lt=1000<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= searchQuery ? '&query=' + encodeURIComponent(searchQuery) : '' %><%= sortOption ? '&sort=' + sortOption : '' %>">₹500 - ₹1000</a>
           <a href="/filterPrice?gt=1000&lt=1500<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= searchQuery ? '&query=' + encodeURIComponent(searchQuery) : '' %><%= sortOption ? '&sort=' + sortOption : '' %>">₹1000 - ₹1500</a>
@@ -400,4 +398,4 @@
   });
 </script>
 
-<%- include("../../views/partials/user/footer") %> -->
+<%- include("../../views/partials/user/footer") %> 

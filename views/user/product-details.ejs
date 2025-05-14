@@ -1005,7 +1005,6 @@
                     <div class="detail-gallery">
                       <div class="product-image-slider mb-4" id="productImageSlider">
                         <% 
-                        // Create image array while avoiding duplicates
                         let imageArray;
                         if (Array.isArray(product.productImage)) {
                           imageArray = [...new Set(product.productImage)];
@@ -1051,7 +1050,7 @@
                                 <i class="<%= i < 4 ? 'fas' : 'far' %> fa-star"></i>
                               <% } %>
                             </div>
-                            <span class="rating-count">(25 reviews)</span>
+                            <span class="rating-count">( reviews)</span>
                           </div>
                         </div>
                       </div>
