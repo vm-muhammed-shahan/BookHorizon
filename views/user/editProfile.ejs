@@ -1,0 +1,223 @@
+<div class="edit-profile-container">
+  <div class="form-header">
+    <h2>Edit Profile</h2>
+  </div>
+
+  <!-- PROFILE UPDATE FORM (Name + Phone) -->
+  <form method="POST" action="/profile/edit" class="profile-form" id="profileForm">
+    <div class="form-group">
+      <label for="name" class="form-label">Name</label>
+      <input type="text" id="name" name="name" value="<%= user.name %>" required class="form-input" />
+      <small class="error-text" id="nameError"></small>
+    </div>
+    <div class="form-group">
+      <label for="phone" class="form-label">Phone</label>
+      <input type="tel" id="phone" name="phone" value="<%= user.phone || '' %>" class="form-input" pattern="[0-9]{10}" />
+      <small class="help-text">Enter a 10-digit phone number</small>
+      <small class="error-text" id="phoneError"></small>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="submit-btn">Update Profile</button>
+      <a href="/profile" class="cancel-btn">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .edit-profile-container {
+    max-width: 600px;
+    margin: 30px auto;
+    padding: 30px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .form-header {
+    margin-bottom: 30px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 15px;
+  }
+  
+  .form-header h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #000;
+    margin: 0;
+  }
+  
+  .profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .form-label {
+    font-weight: 600;
+    color: #000;
+    font-size: 14px;
+  }
+  
+  .form-input {
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    transition: border 0.3s ease;
+  }
+  
+  .form-input:focus {
+    border-color: #000;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  }
+  
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 10px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+  }
+  
+  .submit-btn {
+    padding: 12px 24px;
+    background-color: #000;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .submit-btn:hover {
+    background-color: #333;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  }
+  
+  .cancel-btn {
+    padding: 12px 24px;
+    background-color: #f5f5f5;
+    color: #333;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+  
+  .cancel-btn:hover {
+    background-color: #e5e5e5;
+  }
+  
+  .help-text {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+  }
+  
+  .error-text {
+    font-size: 12px;
+    color: #e53935;
+    margin-top: 4px;
+    display: none;
+  }
+  
+  .form-input.error {
+    border-color: #e53935;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('profileForm');
+    const nameInput = document.getElementById('name');
+    const phoneInput = document.getElementById('phone');
+    const nameError = document.getElementById('nameError');
+    const phoneError = document.getElementById('phoneError');
+    
+    // Validate form on submit
+    form.addEventListener('submit', function(event) {
+      let isValid = true;
+      
+      // Validate name
+      if (!nameInput.value.trim()) {
+        nameInput.classList.add('error');
+        nameError.textContent = 'Name is required';
+        nameError.style.display = 'block';
+        isValid = false;
+      } else {
+        nameInput.classList.remove('error');
+        nameError.style.display = 'none';
+      }
+      
+      // Validate phone (if provided)
+      if (phoneInput.value.trim()) {
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(phoneInput.value.trim())) {
+          phoneInput.classList.add('error');
+          phoneError.textContent = 'Please enter a valid 10-digit phone number';
+          phoneError.style.display = 'block';
+          isValid = false;
+        } else {
+          phoneInput.classList.remove('error');
+          phoneError.style.display = 'none';
+        }
+      } else {
+        // Phone is optional, so no error
+        phoneInput.classList.remove('error');
+        phoneError.style.display = 'none';
+      }
+      
+      if (!isValid) {
+        event.preventDefault();
+      }
+    });
+    
+    // Real-time validation for phone number
+    phoneInput.addEventListener('input', function() {
+      const value = phoneInput.value.trim();
+      
+      // Remove non-numeric characters
+      phoneInput.value = value.replace(/\D/g, '');
+      
+      // Check if phone is valid when there's input
+      if (value) {
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(value)) {
+          phoneInput.classList.add('error');
+          phoneError.textContent = 'Please enter a valid 10-digit phone number';
+          phoneError.style.display = 'block';
+        } else {
+          phoneInput.classList.remove('error');
+          phoneError.style.display = 'none';
+        }
+      } else {
+        // Phone is optional, so no error when empty
+        phoneInput.classList.remove('error');
+        phoneError.style.display = 'none';
+      }
+    });
+  });
+</script>
+
+
+
+

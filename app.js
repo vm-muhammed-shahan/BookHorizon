@@ -15,7 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
   cookie: {
     secure: false,
     httpOnly: true,
@@ -45,6 +45,11 @@ app.use('/vendor', express.static(path.join(__dirname, 'node_modules')));
 
 app.use("/", userRouter);
 app.use("/admin", adminRouter);
+
+
+
+
+
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

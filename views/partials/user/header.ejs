@@ -1,4 +1,9 @@
- <!DOCTYPE html>
+ 
+     
+
+
+
+<!DOCTYPE html>
 <html lang="zxx">
 
 <head>
@@ -22,8 +27,10 @@
     <link rel="stylesheet" href="css/owl.carousel.min.css" type="text/css">
     <link rel="stylesheet" href="css/slicknav.min.css" type="text/css">
     <link rel="stylesheet" href="css/style.css" type="text/css">
-<style>
+    <link rel="stylesheet" href="./user-assets/css/maind134.css">
+   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
+<style>
      .header_nav_option .sign-in-link{
       font-size: 16px;
       color: #333;
@@ -66,7 +73,15 @@
   z-index: 500;
 }
 
-
+.icon-link {
+  color: #333;
+  font-size: 18px;
+  margin-right: 15px;
+  text-decoration: none;
+}
+.icon-link:hover {
+  color: #ff7f50;
+}
 
 </style>
 </head>
@@ -109,20 +124,26 @@
                         <ul>
                             <li class="active"><a href="/">Home</a></li>
                             <li><a href="/shop">Shop</a></li>
-                                
+                             
                             
                         </ul>
                     </nav>
                 </div>
                 <div class="col-lg-3 col-md-3">
                     <div class="header__nav__option">
+                        <a href="/wishlist" class="icon-link" title="Wishlist">
+                            <i class="fas fa-heart"></i>
+                        </a>
+                        <a href="/cart" class="icon-link" title="Cart">
+                            <i class="fas fa-shopping-cart"></i>
+                        </a>
                               
                       <%if(user){%>
                         <div class="dropdown">
                           <a href="#" class="sign-in-link"><%=user.name%></a>
                           <div class="dropdown-content">
 
-                            <a href="/userProfile">Profile</a>
+                            <a href="/profile">Profile</a>
                             <a href="/logout">Logout</a>
 
                           </div>
@@ -140,13 +161,6 @@
            
         </div>
     </header>
-     
-
-
-
-
-
-
 
 
 

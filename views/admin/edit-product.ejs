@@ -109,6 +109,16 @@
       padding: 1rem;
       margin-top: auto;
     }
+    
+    .price-info {
+      font-size: 0.8rem;
+      margin-top: 0.25rem;
+    }
+    
+    .price-error {
+      color: var(--danger-color);
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -157,21 +167,25 @@
                 <div class="row mb-4">
                   <div class="col-lg-4">
                     <div class="mb-3">
-                      <label class="form-label">Regular Price</label>
+                      <label class="form-label">Regular Price <span class="text-danger">*</span></label>
                       <div class="input-group">
                         <span class="input-group-text">₹</span>
-                        <input type="number" class="form-control" name="regularPrice" value="<%= product.regularPrice %>" min="0" step="0.01" required>
+                        <input type="number" class="form-control" name="regularPrice" value="<%= product.regularPrice %>" min="0.01" step="0.01" required>
                       </div>
+                      <small class="price-info text-muted">Must be greater than zero</small>
+                      <small class="price-error regular-price-error">Regular price must be greater than zero</small>
                     </div>
                   </div>
                   
                   <div class="col-lg-4">
                     <div class="mb-3">
-                      <label class="form-label">Sale Price</label>
+                      <label class="form-label">Sale Price <span class="text-danger">*</span></label>
                       <div class="input-group">
                         <span class="input-group-text">₹</span>
                         <input type="number" class="form-control" name="salePrice" value="<%= product.salePrice %>" min="0" step="0.01" required>
                       </div>
+                      <small class="price-info text-muted">Must be less than regular price</small>
+                      <small class="price-error sale-price-error">Sale price must be less than regular price</small>
                     </div>
                   </div>
                   
@@ -275,238 +289,323 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      
-      let cropper;
-      let currentImageIndex;
-      const cropModal = new bootstrap.Modal(document.getElementById('imageCropModal'));
-      
-      // Image upload and cropping
-      document.querySelectorAll('.image-input').forEach(input => {
-        input.addEventListener('change', function(e) {
-          const file = e.target.files[0];
-          currentImageIndex = this.dataset.index;
-          
-          if (file) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-              document.getElementById('cropImage').src = event.target.result;
-              cropModal.show();
-              
-              document.getElementById('imageCropModal').addEventListener('shown.bs.modal', function() {
-                if (cropper) {
-                  cropper.destroy();
-                }
-                
-                cropper = new Cropper(document.getElementById('cropImage'), {
-                  aspectRatio: NaN, 
-                  viewMode: 2,
-                  responsive: true,
-                  zoomable: true,
-                  scalable: true,
-                  movable: true
-                });
-              }, { once: true });
-            };
-            reader.readAsDataURL(file);
-          }
-        });
-      });
-      
-      // Complete Crop button action
-      document.getElementById('cropButton').addEventListener('click', function() {
-        if (!cropper) return;
-        
-        const canvas = cropper.getCroppedCanvas({
-          width: 600,
-          height: 600,
-          fillColor: '#fff'
-        });
-        
-        const croppedImageData = canvas.toDataURL('image/jpeg');
-        document.getElementById(`croppedImage${currentImageIndex}`).value = croppedImageData;
-        
-        const previewContainer = document.querySelector(`.image-upload-box[data-index="${currentImageIndex}"]`);
-        
-        let previewImg = previewContainer.querySelector('.img-preview');
-        if (!previewImg) {
-          const placeholder = previewContainer.querySelector('.img-placeholder');
-          if (placeholder) placeholder.remove();
-          
-          previewImg = document.createElement('img');
-          previewImg.className = 'img-preview img-fluid mb-2';
-          previewImg.alt = `Product image ${parseInt(currentImageIndex) + 1}`;
-          previewImg.style = "width: 100%; height: 150px; object-fit: cover; border-radius: 5px;";
-          previewContainer.querySelector('.card-body').prepend(previewImg);
-        }
-        
-        previewImg.src = croppedImageData;
-        
-        if (!previewContainer.querySelector('.remove-image-btn')) {
-          const removeBtn = document.createElement('button');
-          removeBtn.type = 'button';
-          removeBtn.className = 'btn btn-sm btn-danger position-absolute top-0 end-0 remove-image-btn';
-          removeBtn.dataset.index = currentImageIndex;
-          removeBtn.innerHTML = '<i class="fas fa-times"></i>';
-          previewContainer.appendChild(removeBtn);
-          removeBtn.addEventListener('click', handleRemoveImage);
-        }
-        
-        updateImageWarning();
-        
-        // Ensure modal is closed and cropper is destroyed
-        cropModal.hide();
-        
-        // Additional timeout to ensure the modal is fully hidden
-        setTimeout(() => {
-          if (cropper) {
-            cropper.destroy();
-            cropper = null;
-          }
-          
-          // Remove the backdrop if it's still present
-          const backdrop = document.querySelector('.modal-backdrop');
-          if (backdrop) {
-            backdrop.remove();
-          }
-          
-          // Remove modal-open class from body
-          document.body.classList.remove('modal-open');
-          document.body.style.overflow = '';
-          document.body.style.paddingRight = '';
-        }, 300);
-      });
-      
-      // Remove image button action
-      function handleRemoveImage(e) {
-        const index = this.dataset.index;
-        const container = document.querySelector(`.image-upload-box[data-index="${index}"]`);
-        const previewImg = container.querySelector('.img-preview');
-        
-        if (previewImg) {
-          previewImg.remove();
-          
-          const placeholder = document.createElement('div');
-          placeholder.className = 'img-placeholder mb-2 d-flex align-items-center justify-content-center bg-light';
-          placeholder.style = "width: 100%; height: 150px; border-radius: 5px;";
-          placeholder.innerHTML = '<i class="fas fa-image fa-3x text-muted"></i>';
-          container.querySelector('.card-body').prepend(placeholder);
-        }
-        
-        // Clear the file input
-        container.querySelector('.image-input').value = '';
-        container.querySelector('.cropped-data').value = '';
-        
-        // Clear the existing image input but keep the name attribute
-        const existingImageInput = container.querySelector(`input[name="existingImages[${index}]"]`);
-        if (existingImageInput) existingImageInput.value = '';
-        
-        this.remove();
-        updateImageWarning();
-      }
-      
-      // Add event listeners to remove buttons
-      document.querySelectorAll('.remove-image-btn').forEach(btn => {
-        btn.addEventListener('click', handleRemoveImage);
-      });
+  
 
-      // Function to check image count and show/hide warning
-      function updateImageWarning() {
-        const filledSlots = document.querySelectorAll('.img-preview').length;
-        const emptySlots = document.querySelectorAll('.img-placeholder').length;
-        const totalSlots = filledSlots + emptySlots;
-        
-        const warningElement = document.getElementById('image-warning');
-        if (filledSlots < 3) {
-          warningElement.style.display = 'block';
-        } else {
-          warningElement.style.display = 'none';
-        }
-      }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+document.addEventListener('DOMContentLoaded', function() {
+  
+  let cropper;
+  let currentImageIndex;
+  const cropModal = new bootstrap.Modal(document.getElementById('imageCropModal'));
+  
+  // Price validation elements
+  const regularPriceInput = document.querySelector('input[name="regularPrice"]');
+  const salePriceInput = document.querySelector('input[name="salePrice"]');
+  const regularPriceError = document.querySelector('.regular-price-error');
+  const salePriceError = document.querySelector('.sale-price-error');
+  
+  // Add real-time price validation
+  function validatePrices() {
+    const regularPrice = parseFloat(regularPriceInput.value);
+    const salePrice = parseFloat(salePriceInput.value);
+    
+    // Validate regular price is greater than 0
+    if (regularPrice <= 0) {
+      regularPriceError.style.display = 'block';
+      regularPriceInput.classList.add('is-invalid');
+      return false;
+    } else {
+      regularPriceError.style.display = 'none';
+      regularPriceInput.classList.remove('is-invalid');
+    }
+    
+    // Validate sale price is less than regular price
+    if (salePrice >= regularPrice) {
+      salePriceError.style.display = 'block';
+      salePriceInput.classList.add('is-invalid');
+      return false;
+    } else {
+      salePriceError.style.display = 'none';
+      salePriceInput.classList.remove('is-invalid');
+    }
+    
+    return true;
+  }
+  
+  // Add event listeners for price validation
+  regularPriceInput.addEventListener('input', validatePrices);
+  salePriceInput.addEventListener('input', validatePrices);
+  
+  // Run initial validation
+  validatePrices();
+  
+  // Image upload and cropping
+  document.querySelectorAll('.image-input').forEach(input => {
+    input.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      currentImageIndex = this.dataset.index;
       
-      // Initialize warning status
-      updateImageWarning();
-
-      // Form validation
-      function validateForm() {
-        const productName = document.querySelector('input[name="productName"]').value;
-        const category = document.querySelector('select[name="category"]').value;
-        const imageCount = document.querySelectorAll('.img-preview').length;
-        
-        if (!productName || !category) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Validation Error',
-            text: 'Please fill in all required fields',
-            confirmButtonColor: '#3085d6'
-          });
-          return false;
-        }
-        
-        if (imageCount < 3) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Image Validation Error',
-            text: 'Product must have exactly 3 images',
-            confirmButtonColor: '#3085d6'
-          });
-          return false;
-        }
-        
-        return true;
-      }
-
-      // Form submission handler
-      document.getElementById('edit-product-form').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        if (!validateForm()) {
-          return;
-        }
-        
-        const formData = new FormData(this);
-        
-        // Show loading indicator
-        Swal.fire({
-          icon: 'info',
-          title: 'Saving...',
-          text: 'Your product is being updated',
-          showConfirmButton: false,
-          allowOutsideClick: false,
-          allowEscapeKey: false
-        });
-
-        try {
-          const response = await fetch('/admin/editProduct/<%= product._id %>', {
-            method: 'POST',
-            body: formData
-          });
-          const result = await response.json();
-          if (result.success) {
-            Swal.fire({
-              icon: 'success',
-              title: 'Product Updated',
-              text: result.message,
-              confirmButtonColor: '#3085d6'
-            }).then(() => {
-              window.location.href = '/admin/products';
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          document.getElementById('cropImage').src = event.target.result;
+          cropModal.show();
+          
+          document.getElementById('imageCropModal').addEventListener('shown.bs.modal', function() {
+            if (cropper) {
+              cropper.destroy();
+            }
+            
+            cropper = new Cropper(document.getElementById('cropImage'), {
+              aspectRatio: NaN, 
+              viewMode: 2,
+              responsive: true,
+              zoomable: true,
+              scalable: true,
+              movable: true
             });
-          } else {
-            Swal.fire({
-              icon: 'error',
-              title: 'Error',
-              text: result.error || 'An error occurred'
-            });
-          }
-        } catch (error) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'An error occurred while updating the product'
-          });
-        }
-      });
+          }, { once: true });
+        };
+        reader.readAsDataURL(file);
+      }
     });
-  </script>
+  });
+  
+  // Complete Crop button action
+  document.getElementById('cropButton').addEventListener('click', function() {
+    if (!cropper) return;
+    
+    const canvas = cropper.getCroppedCanvas({
+      width: 600,
+      height: 600,
+      fillColor: '#fff'
+    });
+    
+    const croppedImageData = canvas.toDataURL('image/jpeg');
+    document.getElementById(`croppedImage${currentImageIndex}`).value = croppedImageData;
+    
+    const previewContainer = document.querySelector(`.image-upload-box[data-index="${currentImageIndex}"]`);
+    
+    let previewImg = previewContainer.querySelector('.img-preview');
+    if (!previewImg) {
+      const placeholder = previewContainer.querySelector('.img-placeholder');
+      if (placeholder) placeholder.remove();
+      
+      previewImg = document.createElement('img');
+      previewImg.className = 'img-preview img-fluid mb-2';
+      previewImg.alt = `Product image ${parseInt(currentImageIndex) + 1}`;
+      previewImg.style = "width: 100%; height: 150px; object-fit: cover; border-radius: 5px;";
+      previewContainer.querySelector('.card-body').prepend(previewImg);
+    }
+    
+    previewImg.src = croppedImageData;
+    
+    if (!previewContainer.querySelector('.remove-image-btn')) {
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn btn-sm btn-danger position-absolute top-0 end-0 remove-image-btn';
+      removeBtn.dataset.index = currentImageIndex;
+      removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+      previewContainer.appendChild(removeBtn);
+      removeBtn.addEventListener('click', handleRemoveImage);
+    }
+    
+    updateImageWarning();
+    
+    // Ensure modal is closed and cropper is destroyed
+    cropModal.hide();
+    
+    // Additional timeout to ensure the modal is fully hidden
+    setTimeout(() => {
+      if (cropper) {
+        cropper.destroy();
+        cropper = null;
+      }
+      
+      // Remove the backdrop if it's still present
+      const backdrop = document.querySelector('.modal-backdrop');
+      if (backdrop) {
+        backdrop.remove();
+      }
+      
+      // Remove modal-open class from body
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    }, 300);
+  });
+  
+  // Remove image button action
+  function handleRemoveImage(e) {
+    const index = this.dataset.index;
+    const container = document.querySelector(`.image-upload-box[data-index="${index}"]`);
+    const previewImg = container.querySelector('.img-preview');
+    
+    if (previewImg) {
+      previewImg.remove();
+      
+      const placeholder = document.createElement('div');
+      placeholder.className = 'img-placeholder mb-2 d-flex align-items-center justify-content-center bg-light';
+      placeholder.style = "width: 100%; height: 150px; border-radius: 5px;";
+      placeholder.innerHTML = '<i class="fas fa-image fa-3x text-muted"></i>';
+      container.querySelector('.card-body').prepend(placeholder);
+    }
+    
+    // Clear the file input
+    container.querySelector('.image-input').value = '';
+    container.querySelector('.cropped-data').value = '';
+    
+    // Clear the existing image input but keep the name attribute
+    const existingImageInput = container.querySelector(`input[name="existingImages[${index}]"]`);
+    if (existingImageInput) existingImageInput.value = '';
+    
+    this.remove();
+    updateImageWarning();
+  }
+  
+  // Add event listeners to remove buttons
+  document.querySelectorAll('.remove-image-btn').forEach(btn => {
+    btn.addEventListener('click', handleRemoveImage);
+  });
+
+  // Function to check image count and show/hide warning
+  function updateImageWarning() {
+    const filledSlots = document.querySelectorAll('.img-preview').length;
+    const emptySlots = document.querySelectorAll('.img-placeholder').length;
+    const totalSlots = filledSlots + emptySlots;
+    
+    const warningElement = document.getElementById('image-warning');
+    if (filledSlots < 3) {
+      warningElement.style.display = 'block';
+    } else {
+      warningElement.style.display = 'none';
+    }
+  }
+  
+  // Initialize warning status
+  updateImageWarning();
+
+  // Form validation
+  function validateForm() {
+    const productName = document.querySelector('input[name="productName"]').value;
+    const category = document.querySelector('select[name="category"]').value;
+    const imageCount = document.querySelectorAll('.img-preview').length;
+    const regularPrice = parseFloat(document.querySelector('input[name="regularPrice"]').value);
+    const salePrice = parseFloat(document.querySelector('input[name="salePrice"]').value);
+    
+    // Check required fields
+    if (!productName || !category) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Validation Error',
+        text: 'Please fill in all required fields',
+        confirmButtonColor: '#3085d6'
+      });
+      return false;
+    }
+    
+    // Check image count
+    if (imageCount < 3) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Image Validation Error',
+        text: 'Product must have exactly 3 images',
+        confirmButtonColor: '#3085d6'
+      });
+      return false;
+    }
+    
+    // Check regular price is greater than zero
+    if (regularPrice <= 0) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Price Validation Error',
+        text: 'Regular price must be greater than zero',
+        confirmButtonColor: '#3085d6'
+      });
+      regularPriceInput.focus();
+      return false;
+    }
+    
+    // Check sale price is less than regular price
+    if (salePrice >= regularPrice) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Price Validation Error',
+        text: 'Sale price must be less than regular price',
+        confirmButtonColor: '#3085d6'
+      });
+      salePriceInput.focus();
+      return false;
+    }
+    
+    return true;
+  }
+
+  // Form submission handler
+  document.getElementById('edit-product-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if (!validateForm()) {
+      return;
+    }
+    
+    const formData = new FormData(this);
+    
+    // Show loading indicator
+    Swal.fire({
+      icon: 'info',
+      title: 'Saving...',
+      text: 'Your product is being updated',
+      showConfirmButton: false,
+      allowOutsideClick: false,
+      allowEscapeKey: false
+    });
+
+    try {
+      const response = await fetch('/admin/editProduct/<%= product._id %>', {
+        method: 'POST',
+        body: formData
+      });
+      const result = await response.json();
+      if (result.success) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Product Updated',
+          text: result.message,
+          confirmButtonColor: '#3085d6'
+        }).then(() => {
+          window.location.href = '/admin/products';
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: result.error || 'An error occurred'
+        });
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'An error occurred while updating the product'
+      });
+    }
+  });
+});
+</script>
 </body>
 </html>
 

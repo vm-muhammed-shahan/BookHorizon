@@ -30,7 +30,7 @@ const productDetails = async (req, res) => {
     }
     // if (Array.isArray(product.productImage)) {
     //   product.productImage = [...new Set(product.productImage)];
-    // }
+    // }8
     const category = await Category.findById(product.category);
     const relatedProducts = await Product.find({
       category: product.category,
@@ -42,7 +42,7 @@ const productDetails = async (req, res) => {
       user: userData,
       product: product,
       quantity: product.quantity,
-      category: category,
+       category: category,
       relatedProducts: relatedProducts
     });
   } catch (error) {

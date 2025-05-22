@@ -1,9 +1,22 @@
 const User = require("../../models/userSchema");
+const Address = require('../../models/addressSchema');
+const Order = require('../../models/orderSchema');
 const Category = require("../../models/categorySchema");
 const Product = require("../../models/productSchema");
 const env = require("dotenv").config();
 const nodemailer = require("nodemailer");
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const { session } = require("passport");
+
+
+
+
+
+
+
+
+
 
 
 // Page not Found 
@@ -14,6 +27,34 @@ const pageNotFound = async (req, res) => {
     res.redirect("/pageNotFound");
   }
 }
+
+
+
+
+
+const postNewPassword = async (req, res) => {
+  try {
+    const { newPass1, newPass2 } = req.body;
+    const email = req.session.email;
+    if (newPass1 === newPass2) {
+      const passwordHash = await securePassword(newPass1);
+      await User.updateOne(
+        { email: email },
+        { $set: { password: passwordHash } }
+      )
+      res.redirect("/login");
+    } else {
+      res.render("reset-password", { message: 'passwords do not match' });
+    }
+  } catch (error) {
+    res.redirect("/pageNotFound");
+  }
+}
+
+
+
+
+
 
 
 // LoadHomePage  
@@ -168,6 +209,8 @@ const verifyOtp = async (req, res) => {
 }
 
 
+
+
 // Resendotp
 const resendOtp = async (req, res) => {
   try {
@@ -189,6 +232,8 @@ const resendOtp = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error. Please try again." });
   }
 };
+
+
 
 
 // Loadlogin
@@ -248,96 +293,25 @@ const logout = async (req, res) => {
 }
 
 
-// const loadShoppingPage = async (req, res) => {
-//   console.log("shop page loaded");
-//   try {
-//     const user = req.session.user;
-//     const userData = user ? await User.findOne({ _id: user._id }) : null;
-//     const categories = await Category.find({ isListed: true });
-//     const categoryIds = categories.map((category) => category._id.toString());
 
-//     const selectedCategory = req.query.category || null;
-//     const sortOption = req.query.sort || null;
-//     const searchQuery = req.query.query || null;
-//     const page = parseInt(req.query.page) || 1;
-//     const limit = 9;
-//     const skip = (page - 1) * limit;
-
-//     const query = {
-//       isBlocked: false,
-//       // quantity: { $gt: 0 },
-//     };
-
-
-//     if (selectedCategory) {
-//       query.category = selectedCategory;
-//     } else {
-//       query.category = { $in: categoryIds };
-//     }
-
-//     if (searchQuery) {
-//       query.productName = { $regex: ".*" + searchQuery + ".*", $options: "i" };
-//     }
-
-//     let sortQuery = { createdAt: -1 };
-
-//     if (sortOption === 'lowToHigh') {
-//       sortQuery = { salePrice: 1 };
-//     } else if (sortOption === 'highToLow') {
-//       sortQuery = { salePrice: -1 };
-//     } else if (sortOption === 'aToZ') {
-//       sortQuery = { productName: 1 };
-//     } else if (sortOption === 'zToA') {
-//       sortQuery = { productName: -1 };
-//     }
-
-//     const products = await Product.find(query)
-//       .sort(sortQuery)
-//       .skip(skip)
-//       .limit(limit);
-//     const totalproducts = await Product.countDocuments(query);
-//     const totalPages = Math.ceil(totalproducts / limit);
-//     const categoriesWithIds = categories.map((category) => ({
-//       _id: category._id,
-//       name: category.name,
-//     }));
-
-//     res.render("shop", {
-//       user: userData,
-//       products: products,
-//       category: categoriesWithIds,
-//       totalProducts: totalproducts,
-//       currentPage: page,
-//       totalPages: totalPages,
-//       selectedCategory: selectedCategory,
-//       sortOption: sortOption,
-//       searchQuery: searchQuery
-//     });
-//   } catch (error) {
-//     console.log("Error loading shop:", error);
-//     res.status(500).render("errorPage", { message: "Something went wrong" });
-//   }
-// };
 
 const filterProduct = async (req, res) => {
   try {
-    console.log("Filtering products by category");
+    // console.log("Filtering products by category");
     const user = req.session.user;
     const selectedCategory = req.query.category;
     const sortOption = req.query.sort || "";
     const searchQuery = req.query.query || "";
 
-    console.log("Category ID:", selectedCategory);
+    // console.log("Category ID:", selectedCategory);
     const findCategory = selectedCategory ? await Category.findOne({ _id: selectedCategory }) : null;
     if (selectedCategory && !findCategory) {
       console.log("Category not found");
       return res.redirect("/shop");
     }
-
     let redirectUrl = `/shop?category=${selectedCategory}`;
     if (sortOption) redirectUrl += `&sort=${sortOption}`;
     if (searchQuery) redirectUrl += `&query=${encodeURIComponent(searchQuery)}`;
-
     if (user && user._id) {
       const userData = await User.findOne({ _id: user._id });
       if (userData) {
@@ -349,7 +323,6 @@ const filterProduct = async (req, res) => {
         await userData.save();
       }
     }
-
     return res.redirect(redirectUrl);
   } catch (error) {
     console.log("Filter product error:", error);
@@ -361,18 +334,14 @@ const filterProduct = async (req, res) => {
 const filterByprice = async (req, res) => {
   try {
 
-    console.log("Price range:", req.query.gt, "-", req.query.lt);
+    // console.log("Price range:", req.query.gt, "-", req.query.lt);
     const minPrice = parseFloat(req.query.gt);
     const maxPrice = parseFloat(req.query.lt);
     const selectedCategory = req.query.category || null;
     const sortOption = req.query.sort || "";
     const searchQuery = req.query.query || "";
-
     let redirectUrl = `/shop?`;
-
-
     redirectUrl += `priceMin=${minPrice}&priceMax=${maxPrice}`;
-
     if (selectedCategory) redirectUrl += `&category=${selectedCategory}`;
     if (sortOption) redirectUrl += `&sort=${sortOption}`;
     if (searchQuery) redirectUrl += `&query=${encodeURIComponent(searchQuery)}`;
@@ -386,8 +355,7 @@ const filterByprice = async (req, res) => {
 const searchProducts = async (req, res) => {
   try {
     const searchQuery = req.query.query;
-    console.log("Search query:", searchQuery);
-
+    // console.log("Search query:", searchQuery);
     const selectedCategory = req.query.category || null;
     const sortOption = req.query.sort || "";
     let redirectUrl = `/shop?query=${encodeURIComponent(searchQuery)}`;
@@ -406,40 +374,31 @@ const updatedLoadShoppingPage = async (req, res) => {
   try {
     const user = req.session.user;
     const userData = user ? await User.findOne({ _id: user._id }) : null;
-
     const categories = await Category.find({ isListed: true });
     const categoryIds = categories.map((category) => category._id.toString());
-
     const selectedCategory = req.query.category || null;
     const sortOption = req.query.sort || null;
     const searchQuery = req.query.query || null;
     const priceMin = req.query.priceMin ? parseFloat(req.query.priceMin) : null;
     const priceMax = req.query.priceMax ? parseFloat(req.query.priceMax) : null;
-
     const page = parseInt(req.query.page) || 1;
     const limit = 9;
     const skip = (page - 1) * limit;
-
     const query = {
       isBlocked: false,
       // quantity: { $gt: 0 },
     };
-
-
     if (selectedCategory) {
       query.category = selectedCategory;
     } else {
       query.category = { $in: categoryIds };
     }
-
     if (searchQuery) {
       query.productName = { $regex: ".*" + searchQuery + ".*", $options: "i" };
     }
-
     if (priceMin !== null && priceMax !== null) {
       query.salePrice = { $gte: priceMin, $lte: priceMax };
     }
-
     let sortQuery = { createdAt: -1 };
     if (sortOption === 'lowToHigh') {
       sortQuery = { salePrice: 1 };
@@ -450,14 +409,12 @@ const updatedLoadShoppingPage = async (req, res) => {
     } else if (sortOption === 'zToA') {
       sortQuery = { productName: -1 };
     }
-
     const products = await Product.find(query)
       .sort(sortQuery)
       .skip(skip)
       .limit(limit);
     const totalproducts = await Product.countDocuments(query);
     const totalPages = Math.ceil(totalproducts / limit);
-
     const categoriesWithIds = categories.map((category) => ({
       _id: category._id,
       name: category.name,
@@ -486,6 +443,135 @@ const updatedLoadShoppingPage = async (req, res) => {
 
 
 
+//profile controller 
+
+
+
+const getProfile = async (req, res) => {
+  try {
+    const userId = req.session.user._id;
+    const user = await User.findById(userId);
+    const addressDoc = await Address.findOne({ userId });
+
+    res.render("profile", {
+      user,
+      addresses: addressDoc?.address || []
+    });
+  } catch (err) {
+    console.error("Error loading profile", err);
+    res.status(500).send("Server Error");
+  }
+};
+
+
+
+
+const editProfilePage = async (req, res) => {
+  try {
+    const user = await User.findById(req.session.user._id);
+    res.render("editProfile", { user });
+  } catch (err) {
+    console.error("Error loading edit profile", err);
+    res.status(500).send("Server Error");
+  }
+};
+
+
+const updateProfile = async (req, res) => {
+  try {
+    const { name, phone, email } = req.body;
+    const user = await User.findById(req.session.user._id);
+    user.name = name;
+    user.phone = phone;
+    await user.save();
+
+    res.redirect("/profile");
+  } catch (err) {
+    console.error("Error updating profile", err);
+    res.status(500).send("Server Error");
+  }
+};
+
+
+
+
+const changePassword = async (req,res)=>{
+  try {
+    
+    res.render("change-password")
+
+  } catch (error) {
+    
+     res.redirect("/pageNotPage")
+
+  }
+}
+
+
+
+
+
+const changePasswordValid = async(req,res)=>{
+  try {
+     const {email} = req.body;
+     const userExists = await User.findOne({email});
+     if(userExists){
+      const otp = generateOtp();
+      const emailSent = await sendVerificationEmail(email,otp)
+      if(emailSent){
+        req.session.userOtp = otp;
+        req.session.userData = req.body;
+        req.session.email = email;
+        res.render("change-password-otp",{
+           user: req.session.user || null
+        });
+        console.log("OTP:", otp);
+        
+      }else{
+        res.json({
+          success:false,
+          message: "Failed to send otp. please try again"
+        })
+      }
+     }else {
+      res.render("change-password",{
+        message: "User with this emal does not  exist",
+         user: req.session.user || null
+      
+      })
+     }
+  } catch (error) {
+    console.log("Error in change password validation", Error);
+    res.redirect("/pageNotFound");
+  }
+}
+
+
+
+
+
+
+const verifyChangePassOtp = async (req,res) => {
+  try {
+    
+    const enteredOtp = req.body.otp;
+    if(enteredOtp=== req.session.userOtp){
+
+     res.json({success:true, redirectUrl:"/reset-password"})
+
+    }else {
+      res.json({success: false, message: "OTP not matching"})
+    }
+
+  } catch (error) {
+    res.status(500).json({success:false, message: "An error occured.please try again later"})
+  }
+}
+
+
+
+
+ 
 
 
 
@@ -504,4 +590,15 @@ module.exports = {
   filterProduct,
   filterByprice,
   searchProducts,
+
+
+
+postNewPassword,
+getProfile,
+editProfilePage,
+updateProfile,
+changePassword,
+changePasswordValid,
+verifyChangePassOtp,
+
 };

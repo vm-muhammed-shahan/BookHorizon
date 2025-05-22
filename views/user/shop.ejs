@@ -223,6 +223,11 @@
     transition: all var(--transition);
     z-index: 2;
     color: #e2e2e2;
+    text-decoration: none;
+  }
+  .wishlist-btn:hover {
+    background: rgba(255,255,255,1);
+    transform: translateY(-2px);
   }
   .wishlist-btn.active { color: #ff5252; }
 
@@ -336,9 +341,10 @@
                  if (discount > 0) { %>
                 <div class="discount-badge"><%= discount %>% OFF</div>
               <% } %>
-              <button class="wishlist-btn" onclick="event.stopPropagation(); toggleWishlist(this);">
+              <!-- Updated wishlist button to be a link that goes to /addToWishlist route -->
+              <a href="/addToWishlist?id=<%= prod._id %>" class="wishlist-btn" onclick="event.stopPropagation();">
                 <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              </button>
+              </a>
               <a href="/productDetails?id=<%= prod._id %>">
                 <div class="product-image-container">
                   <img src="/uploads/<%= prod.productImage[0] %>" alt="<%= prod.productName %>" />
@@ -390,11 +396,18 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
 <script>
+
+
+       
+
+         
+
+
+
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.price-filter a, .filter-item a, .search-form').forEach(el => el.addEventListener('click', showLoadingOverlay));
     window.addToCart = id => { const btn = event.target; btn.textContent = 'Added!'; btn.style.backgroundColor = '#38a169'; setTimeout(() => { btn.textContent = 'Add to Cart'; btn.style.backgroundColor = ''; }, 1500); };
-    window.toggleWishlist = el => el.classList.toggle('active');
-    window.showLoadingOverlay = () => { const overlay = document.querySelector('.loading-overlay'); overlay.classList.add('active'); setTimeout(() => overlay.classList.remove('active'), 800); };
+    window.showLoadingOverlay = () => { const overlay = document.querySelector('.loading-overlay'); if (overlay) overlay.classList.add('active'); setTimeout(() => { if (overlay) overlay.classList.remove('active'); }, 800); };
   });
 </script>
 

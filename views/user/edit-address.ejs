@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Edit Address</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <h1>Edit Address</h1>
+  <form action="/address/edit/<%= address._id %>" method="POST">
+    <label>Address Type: <input type="text" name="addressType" value="<%= address.addressType %>" required></label><br>
+    <label>Name: <input type="text" name="name" value="<%= address.name %>" required></label><br>
+    <label>City: <input type="text" name="city" value="<%= address.city %>" required></label><br>
+    <label>Landmark: <input type="text" name="landMark" value="<%= address.landMark %>" required></label><br>
+    <label>State: <input type="text" name="state" value="<%= address.state %>" required></label><br>
+    <label>Pincode: <input type="number" name="pincode" value="<%= address.pincode %>" required></label><br>
+    <label>Phone: <input type="text" name="phone" value="<%= address.phone %>" required></label><br>
+    <label>Alt Phone: <input type="text" name="altPhone" value="<%= address.altPhone %>" required></label><br>
+    <label><input type="checkbox" name="isDefault" <%= address.isDefault ? 'checked' : '' %>> Set as Default</label><br>
+    <button type="submit">Save Changes</button>
+  </form>
+  <a href="/profile">Back to Profile</a>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<%- include("../../views/partials/user/header") %>
+<h2>Checkout</h2>
+
+<form method="POST" action="/checkout/place-order">
+  <h3>Select Address</h3>
+  <% if (addresses.length === 0) { %>
+    <p>No address added yet. <a href="/profile/address">Add Address</a></p>
+  <% } else { %>
+    <% addresses.forEach((address, i) => { %>
+      <label>
+        <input type="radio" name="selectedAddressIndex" value="<%= i %>" <%= address.isDefault ? 'checked' : '' %> />
+        <strong><%= address.addressType %></strong><br>
+        <%= address.name %>, <%= address.city %>, <%= address.state %> - <%= address.pincode %><br>
+        Phone: <%= address.phone %>, Alt: <%= address.altPhone %><br><br>
+      </label>
+    <% }) %>
+  <% } %>
+
+  <h3>Cart Summary</h3>
+  <% items.forEach(item => { %>
+    <div>
+      <img src="<%= item.productId.imageUrl %>" width="80">
+      <strong><%= item.productId.name %></strong><br>
+      Qty: <%= item.quantity %> × ₹<%= item.price %> = ₹<%= item.totalPrice %><br><br>
+    </div>
+  <% }) %>
+
+  <hr>
+  <p>Subtotal: ₹<%= summary.total %></p>
+  <p>Tax (5%): ₹<%= summary.tax.toFixed(2) %></p>
+  <p>Shipping: ₹<%= shipping %></p>
+  <h3>Total: ₹<%= grandTotal.toFixed(2) %></h3>
+
+  <button type="submit">Place Order (COD)</button>
+</form>
+
+<%- include("../../views/partials/user/footer") %>

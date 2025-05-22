@@ -9,13 +9,12 @@ const userSchema = new Schema({
   },
   email: {
     type: String,
-    required:true
-                        
+    required:true,
+    unique: true                    
   },
   googleId:{
     type: String,
     default:null
-    
   },
 phone :{
   type: String,
@@ -78,7 +77,24 @@ searchHistory:[{
     type: Date,
     default:Date.now
   }
-}]
+}],
+profileImage: {
+  type: String,
+  default: null
+},
+// emailVerificationToken: {
+//   type: String,
+//   default: null
+// },
+// newEmailTemp: {
+//   type: String,
+//   default: null
+// },
+// emailVerificationExpires: {
+//   type: Date,
+//   default: null
+// }
+
 })
 
 const user = mongoose.model("User",userSchema);

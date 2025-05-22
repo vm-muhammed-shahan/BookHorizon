@@ -50,7 +50,7 @@ const addCategory = async (req, res) => {
     res.json({ message: "Category added successfully" });
 
   } catch (error) {
-    // console.error(error);
+     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };

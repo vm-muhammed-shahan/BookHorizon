@@ -1,0 +1,102 @@
+<style>
+  /* Black and white color scheme */
+  .orders-container {
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    color: #000;
+  }
+  
+  h2 {
+    border-bottom: 2px solid #000;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+  
+  .order {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    margin-bottom: 20px;
+    padding: 15px 20px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .order h4 {
+    margin-top: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .order p {
+    margin: 10px 0;
+    color: #555;
+  }
+  
+  .order ul {
+    margin: 15px 0;
+    padding-left: 20px;
+  }
+  
+  .order li {
+    margin-bottom: 5px;
+  }
+  
+  .order-actions {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+  }
+  
+  .order a {
+    display: inline-block;
+    padding: 8px 12px;
+    background-color: #fff;
+    color: #000;
+    text-decoration: none;
+    border: 1px solid #000;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    margin-right: 10px;
+  }
+  
+  .order a:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .status-pending {
+    color: #555;
+  }
+  
+  .status-shipped {
+    color: #000;
+    font-weight: bold;
+  }
+  
+  .status-delivered {
+    color: #333;
+    font-weight: bold;
+  }
+</style>
+
+<div class="orders-container">
+  <h2>Your Orders</h2>
+  <% orders.forEach(order => { %>
+    <div class="order">
+      <h4>Order #<%= order.orderId %> - <span class="status-<%= order.status.toLowerCase() %>"><%= order.status %></span></h4>
+      <p>Date: <%= order.createdOn.toDateString() %></p>
+      <ul>
+        <% order.orderedItems.forEach(item => { %>
+          <li><%= item.product.name %> x<%= item.quantity %></li>
+        <% }) %>
+      </ul>
+      <div class="order-actions">
+        <a href="/orders/<%= order.orderId %>">View Details</a>
+        <a href="/orders/invoice/<%= order.orderId %>">Download Invoice</a>
+      </div>
+    </div>
+  <% }) %>
+</div>

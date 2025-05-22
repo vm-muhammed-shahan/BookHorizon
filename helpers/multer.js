@@ -10,7 +10,7 @@ const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'
 
 const fileFilter = (req, file, cb) => {
   if (ALLOWED_FILE_TYPES.includes(file.mimetype)) {
-    cb(null, true); // Accept file
+    cb(null, true); 
   } else {
     cb(new Error(`Invalid file type. Only ${ALLOWED_FILE_TYPES.join(', ')} are allowed.`), false);
   }
@@ -27,12 +27,12 @@ const storage = multer.diskStorage({
   }
 });
 
-// Use fields instead of array to handle multiple fields with array-like naming
+
 const uploads = multer({ 
   storage: storage, 
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 5 * 1024 * 1024, 
   } 
 });
 
