@@ -1,37 +1,1028 @@
 <%- include("../../views/partials/user/header") %>
-<h2>Checkout</h2>
 
-<form method="POST" action="/checkout/place-order">
-  <h3>Select Address</h3>
-  <% if (addresses.length === 0) { %>
-    <p>No address added yet. <a href="/profile/address">Add Address</a></p>
-  <% } else { %>
-    <% addresses.forEach((address, i) => { %>
-      <label>
-        <input type="radio" name="selectedAddressIndex" value="<%= i %>" <%= address.isDefault ? 'checked' : '' %> />
-        <strong><%= address.addressType %></strong><br>
-        <%= address.name %>, <%= address.city %>, <%= address.state %> - <%= address.pincode %><br>
-        Phone: <%= address.phone %>, Alt: <%= address.altPhone %><br><br>
-      </label>
-    <% }) %>
-  <% } %>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
 
-  <h3>Cart Summary</h3>
-  <% items.forEach(item => { %>
-    <div>
-      <img src="<%= item.productId.imageUrl %>" width="80">
-      <strong><%= item.productId.name %></strong><br>
-      Qty: <%= item.quantity %> × ₹<%= item.price %> = ₹<%= item.totalPrice %><br><br>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #ffffff;
+        color: #333;
+        line-height: 1.6;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .header {
+        text-align: center;
+        margin-bottom: 3rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #000;
+    }
+
+    .header h1 {
+        font-size: 2.5rem;
+        font-weight: 300;
+        letter-spacing: 2px;
+        color: #000;
+    }
+
+    .checkout-form {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 3rem;
+    }
+
+    .main-content {
+        background: #fff;
+    }
+
+    .sidebar {
+        background: #f8f8f8;
+        padding: 2rem;
+        border: 1px solid #e0e0e0;
+        height: fit-content;
+        position: sticky;
+        top: 2rem;
+    }
+
+    .section {
+        margin-bottom: 3rem;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: #000;
+        border-bottom: 1px solid #e0e0e0;
+        padding-bottom: 0.5rem;
+    }
+
+    /* Address Section */
+    .address-section {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .no-address {
+        text-align: center;
+        padding: 2rem;
+        background: #f9f9f9;
+        border: 2px dashed #ccc;
+    }
+
+    .add-address-btn {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        background: #000;
+        color: #fff;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+    }
+
+    .add-address-btn:hover {
+        background: #333;
+        transform: translateY(-1px);
+    }
+
+    .address-card {
+        border: 2px solid #e0e0e0;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .address-card:hover {
+        border-color: #000;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .address-card.selected {
+        border-color: #000;
+        background: #f9f9f9;
+    }
+
+    .address-radio {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 20px;
+        height: 20px;
+    }
+
+    .address-type {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+        color: #000;
+    }
+
+    .address-details {
+        color: #666;
+        margin-bottom: 0.5rem;
+    }
+
+    .address-phone {
+        color: #888;
+        font-size: 0.9rem;
+    }
+
+    .address-actions {
+        margin-top: 1rem;
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn-edit {
+        padding: 0.5rem 1rem;
+        background: transparent;
+        border: 1px solid #000;
+        color: #000;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .btn-edit:hover {
+        background: #000;
+        color: #fff;
+    }
+
+    /* Payment Method Section */
+    .payment-section {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .payment-method {
+        border: 2px solid #e0e0e0;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        display: flex;
+        align-items: center;
+        background: #fff;
+    }
+
+    .payment-method:hover {
+        border-color: #000;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .payment-method.selected {
+        border-color: #000;
+        background: #f9f9f9;
+    }
+
+    .payment-radio {
+        margin-right: 1rem;
+        width: 20px;
+        height: 20px;
+    }
+
+    .payment-icon {
+        width: 50px;
+        height: 50px;
+        margin-right: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1.5rem;
+    }
+
+    .payment-details {
+        flex: 1;
+    }
+
+    .payment-name {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 0.3rem;
+        color: #000;
+    }
+
+    .payment-description {
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .razorpay-logo {
+        background: linear-gradient(135deg, #3395ff 0%, #1976d2 100%);
+        color: white;
+        font-weight: bold;
+        font-size: 0.8rem;
+    }
+
+    .cod-icon {
+        background: #4caf50;
+        color: white;
+    }
+
+    /* Product Section */
+    .product-item {
+        display: flex;
+        align-items: center;
+        padding: 1.5rem;
+        border: 1px solid #e0e0e0;
+        margin-bottom: 1rem;
+        background: #fff;
+    }
+
+    .product-image {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border: 1px solid #e0e0e0;
+        margin-right: 1.5rem;
+    }
+
+    .product-details {
+        flex: 1;
+    }
+
+    .product-name {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+        color: #000;
+    }
+
+    .product-quantity {
+        color: #666;
+        margin-bottom: 0.5rem;
+    }
+
+    .product-price {
+        font-weight: 600;
+        color: #000;
+        font-size: 1.1rem;
+    }
+
+    /* Order Summary */
+    .order-summary {
+        background: #fff;
+    }
+
+    .summary-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        color: #000;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .summary-row:last-child {
+        border-bottom: none;
+    }
+
+    .summary-row.total {
+        font-weight: 600;
+        font-size: 1.2rem;
+        color: #000;
+        border-top: 2px solid #000;
+        padding-top: 1rem;
+        margin-top: 1rem;
+    }
+
+    .discount {
+        color: #d32f2f;
+    }
+
+    /* Payment Info */
+    .payment-info {
+        text-align: center;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #f5f5f5;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .payment-method-display {
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Place Order Button */
+    .place-order-btn {
+        width: 100%;
+        padding: 1rem;
+        background: #000;
+        color: #fff;
+        border: none;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 2rem;
+        letter-spacing: 1px;
+    }
+
+    .place-order-btn:hover {
+        background: #333;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .place-order-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+    }
+
+    .modal.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .modal-content {
+        background: #fff;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        animation: slideIn 0.3s ease;
+    }
+
+    .modal-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-title {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #000;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #666;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+
+    .close-btn:hover {
+        background: #f0f0f0;
+        color: #000;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 4px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #000;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .modal-footer {
+        padding: 1.5rem;
+        border-top: 1px solid #e0e0e0;
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: #000;
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        background: #333;
+    }
+
+    .btn-primary:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        background: #f8f8f8;
+        color: #333;
+        border: 1px solid #e0e0e0;
+    }
+
+    .btn-secondary:hover {
+        background: #e0e0e0;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .checkout-form {
+            grid-template-columns: 1fr;
+        }
+        
+        .sidebar {
+            position: static;
+        }
+        
+        .container {
+            padding: 1rem;
+        }
+        
+        .product-item {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .product-image {
+            margin-right: 0;
+            margin-bottom: 1rem;
+        }
+        
+        .payment-method {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .payment-icon {
+            margin-right: 0;
+            margin-bottom: 1rem;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .modal-content {
+            width: 95%;
+            margin: 1rem;
+        }
+    }
+
+    .loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
+    .error-message {
+        color: #d32f2f;
+        background: #ffebee;
+        padding: 1rem;
+        border: 1px solid #ffcdd2;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+
+    .success-message {
+        color: #2e7d32;
+        background: #e8f5e8;
+        padding: 1rem;
+        border: 1px solid #c8e6c9;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+</style>
+
+<div class="container">
+    <div class="header">
+        <h1>CHECKOUT</h1>
     </div>
-  <% }) %>
 
-  <hr>
-  <p>Subtotal: ₹<%= summary.total %></p>
-  <p>Tax (5%): ₹<%= summary.tax.toFixed(2) %></p>
-  <p>Shipping: ₹<%= shipping %></p>
-  <h3>Total: ₹<%= grandTotal.toFixed(2) %></h3>
+    <form method="POST" action="/checkout/place-order" id="checkoutForm">
+        <div class="checkout-form">
+            <div class="main-content">
+                <!-- Address Selection -->
+                <div class="section">
+                    <h2 class="section-title">Delivery Address</h2>
+                    <div class="address-section">
+                        <% if (addresses.length === 0) { %>
+                            <div class="no-address">
+                                <h3>No Delivery Address Found</h3>
+                                <p>Please add a delivery address to continue with your order.</p>
+                                <a href="/profile/address" class="add-address-btn">ADD NEW ADDRESS</a>
+                            </div>
+                        <% } else { %>
+                            <div id="addressList">
+                                <% addresses.forEach((address, i) => { %>
+                                    <div class="address-card <%= address.isDefault ? 'selected' : '' %>" onclick="selectAddress(this, <%= i %>)">
+                                        <input type="radio" name="selectedAddressIndex" value="<%= i %>" class="address-radio" <%= address.isDefault ? 'checked' : '' %> />
+                                        <div class="address-type"><%= address.addressType.toUpperCase() %></div>
+                                        <div class="address-details">
+                                            <%= address.name %><br>
+                                            <%= address.city %>, <%= address.state %> - <%= address.pincode %>
+                                        </div>
+                                        <div class="address-phone">
+                                            Phone: <%= address.phone %><% if (address.altPhone) { %> | Alt: <%= address.altPhone %><% } %>
+                                        </div>
+                                        <div class="address-actions">
+                                            <button type="button" class="btn-edit" data-index="<%= i %>">EDIT</button>
+                                        </div>
+                                    </div>
+                                <% }) %>
+                            </div>
+                            <a href="/profile/address" class="add-address-btn">ADD NEW ADDRESS</a>
+                        <% } %>
+                    </div>
+                </div>
 
-  <button type="submit">Place Order (COD)</button>
-</form>
+                <!-- Payment Method Selection -->
+                <div class="section">
+                    <h2 class="section-title">Payment Method</h2>
+                    <div class="payment-section">
+                        <div class="payment-method selected" onclick="selectPaymentMethod(this, 'cod')">
+                            <input type="radio" name="paymentMethod" value="cod" class="payment-radio" checked />
+                            <div class="payment-icon cod-icon">💰</div>
+                            <div class="payment-details">
+                                <div class="payment-name">Cash on Delivery</div>
+                                <div class="payment-description">Pay when your order is delivered to your doorstep</div>
+                            </div>
+                        </div>
+                        
+                        <div class="payment-method" onclick="selectPaymentMethod(this, 'razorpay')">
+                            <input type="radio" name="paymentMethod" value="razorpay" class="payment-radio" />
+                            <div class="payment-icon razorpay-logo">RZP</div>
+                            <div class="payment-details">
+                                <div class="payment-name">Online Payment</div>
+                                <div class="payment-description">Pay securely using UPI, Cards, Net Banking via Razorpay</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-<%- include("../../views/partials/user/footer") %>
+                <!-- Products in Cart -->
+                <div class="section">
+                    <h2 class="section-title">Order Items</h2>
+                    
+                    <% items.forEach(item => { %>
+                        <div class="product-item">
+                            <% if (item.productId && item.productId.productImage && item.productId.productImage.length > 0) { %>
+                                <img src="/Uploads/<%= item.productId.productImage[0] %>" alt="<%= item.productId.productName || 'Product' %>" class="product-image">
+                            <% } else { %>
+                                <img src="/images/placeholder.png" alt="No Image Available" class="product-image">
+                            <% } %>
+                            <div class="product-details">
+                                <div class="product-name"><%= item.productId.productName || 'Unknown Product' %></div>
+                                <div class="product-quantity">Quantity: <%= item.quantity %> × ₹<%= item.price.toFixed(2) %></div>
+                                <div class="product-price">₹<%= ((item.price || 0) * (item.quantity || 1)).toFixed(2) %></div>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            </div>
+
+            <!-- Order Summary Sidebar -->
+            <div class="sidebar">
+                <div class="order-summary">
+                    <h3 class="summary-title">ORDER SUMMARY</h3>
+                    
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span>₹<%= summary.subTotal.toFixed(2) %></span>
+                    </div>
+                    
+                    <div class="summary-row">
+                        <span>Tax (5%)</span>
+                        <span>₹<%= summary.tax.toFixed(2) %></span>
+                    </div>
+                    
+                    <div class="summary-row">
+                        <span>Shipping</span>
+                        <span>₹<%= summary.shipping %></span>
+                    </div>
+                    
+                    <% if (summary.discount > 0) { %>
+                        <div class="summary-row discount">
+                            <span>Discount</span>
+                            <span>-₹<%= summary.discount.toFixed(2) %></span>
+                        </div>
+                    <% } %>
+                    
+                    <div class="summary-row total">
+                        <span>TOTAL</span>
+                        <span>₹<%= summary.finalAmount.toFixed(2) %></span>
+                    </div>
+                </div>
+
+                <div class="payment-info">
+                    <div class="payment-method-display" id="selectedPaymentDisplay">
+                        Selected: Cash on Delivery
+                    </div>
+                    <div id="paymentDescription">
+                        Pay when your order is delivered
+                    </div>
+                </div>
+
+                <button type="submit" class="place-order-btn" id="placeOrderBtn">
+                    PLACE ORDER
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Edit Address Modal -->
+<div id="editAddressModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Edit Address</h2>
+            <button type="button" class="close-btn" onclick="closeEditModal()">×</button>
+        </div>
+        <form id="editAddressForm">
+            <div class="modal-body">
+                <div id="modalMessage"></div>
+                
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" id="editName" name="name" class="form-input" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Phone</label>
+                        <input type="tel" id="editPhone" name="phone" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Alternative Phone</label>
+                        <input type="tel" id="editAltPhone" name="altPhone" class="form-input" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Landmark</label>
+                    <input type="text" id="editLandmark" name="landMark" class="form-input" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">City</label>
+                        <input type="text" id="editCity" name="city" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">State</label>
+                        <input type="text" id="editState" name="state" class="form-input" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Pincode</label>
+                        <input type="text" id="editPincode" name="pincode" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Address Type</label>
+                        <select id="editAddressType" name="addressType" class="form-input" required>
+                            <option value="home">Home</option>
+                            <option value="work">Work</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Is Default Address</label>
+                    <input type="checkbox" id="editIsDefault" name="isDefault" class="form-input">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="saveAddressBtn">Update Address</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Store addresses data for JavaScript access
+    const addressesData = <%- JSON.stringify(addresses) %>;
+    let currentEditingIndex = -1;
+
+    function selectAddress(element, index) {
+        // Remove selected class from all address cards
+        document.querySelectorAll('.address-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        // Add selected class to clicked card
+        element.classList.add('selected');
+        
+        // Check the radio button
+        element.querySelector('.address-radio').checked = true;
+    }
+
+    function selectPaymentMethod(element, method) {
+        // Remove selected class from all payment methods
+        document.querySelectorAll('.payment-method').forEach(method => {
+            method.classList.remove('selected');
+        });
+        
+        // Add selected class to clicked method
+        element.classList.add('selected');
+        
+        // Check the radio button
+        element.querySelector('.payment-radio').checked = true;
+        
+        // Update payment display in sidebar
+        updatePaymentDisplay(method);
+    }
+
+    function updatePaymentDisplay(method) {
+        const displayElement = document.getElementById('selectedPaymentDisplay');
+        const descriptionElement = document.getElementById('paymentDescription');
+        
+        if (method === 'cod') {
+            displayElement.textContent = 'Selected: Cash on Delivery';
+            descriptionElement.textContent = 'Pay when your order is delivered';
+        } else if (method === 'razorpay') {
+            displayElement.textContent = 'Selected: Online Payment';
+            descriptionElement.textContent = 'Secure payment via Razorpay';
+        }
+    }
+
+    function openEditModal(event, addressIndex) {
+        event.stopPropagation(); // Prevent address selection
+        
+        currentEditingIndex = addressIndex;
+        const address = addressesData[addressIndex];
+        
+        // Populate form fields
+        document.getElementById('editName').value = address.name || '';
+        document.getElementById('editPhone').value = address.phone || '';
+        document.getElementById('editAltPhone').value = address.altPhone || '';
+        document.getElementById('editLandmark').value = address.landMark || '';
+        document.getElementById('editCity').value = address.city || '';
+        document.getElementById('editState').value = address.state || '';
+        document.getElementById('editPincode').value = address.pincode || '';
+        document.getElementById('editAddressType').value = address.addressType || 'home';
+        document.getElementById('editIsDefault').checked = address.isDefault || false;
+        
+        // Show modal
+        const modal = document.getElementById('editAddressModal');
+        modal.style.display = 'flex';
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditModal() {
+        const modal = document.getElementById('editAddressModal');
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+        document.body.style.overflow = 'auto';
+        clearModalMessage();
+        currentEditingIndex = -1;
+    }
+
+    function showModalMessage(message, type = 'error') {
+        const messageDiv = document.getElementById('modalMessage');
+        messageDiv.innerHTML = `<div class="${type === 'success' ? 'success-message' : 'error-message'}">${message}</div>`;
+    }
+
+    function clearModalMessage() {
+        document.getElementById('modalMessage').innerHTML = '';
+    }
+
+    function updateAddressCard(index, updatedAddress) {
+        const addressCard = document.querySelectorAll('.address-card')[index];
+        if (addressCard) {
+            const addressType = addressCard.querySelector('.address-type');
+            const addressDetails = addressCard.querySelector('.address-details');
+            const addressPhone = addressCard.querySelector('.address-phone');
+            
+            addressType.textContent = updatedAddress.addressType.toUpperCase();
+            addressDetails.innerHTML = `${updatedAddress.name}<br>${updatedAddress.city}, ${updatedAddress.state} - ${updatedAddress.pincode}`;
+            addressPhone.textContent = `Phone: ${updatedAddress.phone}${updatedAddress.altPhone ? ` | Alt: ${updatedAddress.altPhone}` : ''}`;
+            if (updatedAddress.isDefault) {
+                document.querySelectorAll('.address-card').forEach(card => card.classList.remove('selected'));
+                addressCard.classList.add('selected');
+                addressCard.querySelector('.address-radio').checked = true;
+            }
+        }
+    }
+
+    // Handle edit address form submission
+    document.getElementById('editAddressForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        if (currentEditingIndex === -1) return;
+        
+        const saveBtn = document.getElementById('saveAddressBtn');
+        const originalText = saveBtn.textContent;
+        
+        // Show loading state
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Updating...';
+        clearModalMessage();
+        
+        // Get form data
+        const formData = new FormData(this);
+        const addressData = Object.fromEntries(formData);
+        addressData.isDefault = formData.get('isDefault') === 'on';
+        
+        try {
+            // Get the original address ID
+            const originalAddress = addressesData[currentEditingIndex];
+            const addressId = originalAddress._id || originalAddress.id;
+            
+            const response = await fetch(`/profile/addresses/edit/${addressId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(addressData)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                // Update the addresses data and UI
+                addressesData[currentEditingIndex] = { ...addressesData[currentEditingIndex], ...addressData };
+                updateAddressCard(currentEditingIndex, addressesData[currentEditingIndex]);
+                
+                showModalMessage('Address updated successfully!', 'success');
+                
+                // Close modal after short delay
+                setTimeout(() => {
+                    closeEditModal();
+                }, 1500);
+            } else {
+                showModalMessage(result.message || 'Failed to update address. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error updating address:', error);
+            showModalMessage('Network error. Please check your connection and try again.');
+        } finally {
+            // Reset button state
+            saveBtn.disabled = false;
+            saveBtn.textContent = originalText;
+        }
+    });
+
+    // Form submission handling
+    document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+        const selectedAddress = document.querySelector('input[name="selectedAddressIndex"]:checked');
+        const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
+        
+        // Validation
+        if (!selectedAddress) {
+            e.preventDefault();
+            alert('Please select a delivery address');
+            return;
+        }
+        
+        if (!selectedPayment) {
+            e.preventDefault();
+            alert('Please select a payment method');
+            return;
+        }
+        
+        // Show loading state
+        const submitBtn = document.getElementById('placeOrderBtn');
+        
+        if (selectedPayment.value === 'cod') {
+            submitBtn.textContent = 'PROCESSING ORDER...';
+        } else {
+            submitBtn.textContent = 'REDIRECTING TO PAYMENT...';
+        }
+        
+        submitBtn.disabled = true;
+        
+        // Add loading class to form
+        this.classList.add('loading');
+    });
+
+    // Close modal when clicking outside
+    document.getElementById('editAddressModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeEditModal();
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('editAddressModal').classList.contains('show')) {
+            closeEditModal();
+        }
+    });
+
+    // Initialize payment display on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
+        if (selectedPayment) {
+            updatePaymentDisplay(selectedPayment.value);
+        }
+
+        // Add event listeners for edit buttons
+        document.querySelectorAll('.btn-edit').forEach(button => {
+            button.addEventListener('click', function(event) {
+                const index = parseInt(this.getAttribute('data-index'), 10);
+                openEditModal(event, index);
+            });
+        });
+    });
+</script>

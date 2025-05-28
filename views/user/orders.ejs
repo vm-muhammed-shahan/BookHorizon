@@ -84,19 +84,27 @@
 
 <div class="orders-container">
   <h2>Your Orders</h2>
-  <% orders.forEach(order => { %>
-    <div class="order">
-      <h4>Order #<%= order.orderId %> - <span class="status-<%= order.status.toLowerCase() %>"><%= order.status %></span></h4>
-      <p>Date: <%= order.createdOn.toDateString() %></p>
-      <ul>
-        <% order.orderedItems.forEach(item => { %>
-          <li><%= item.product.name %> x<%= item.quantity %></li>
-        <% }) %>
-      </ul>
-      <div class="order-actions">
-        <a href="/orders/<%= order.orderId %>">View Details</a>
-        <a href="/orders/invoice/<%= order.orderId %>">Download Invoice</a>
+  <% if (!orders || orders.length === 0) { %>
+    <p>No orders found.</p>
+  <% } else { %>
+    <% orders.forEach(order => { %>
+      <div class="order">
+        <h4>Order #<%= order.orderId %> - <span class="status-<%= order.status.toLowerCase() %>"><%= order.status %></span></h4>
+        <p>Date: <%= order.createdOn.toDateString() %></p>
+        <ul>
+          <% if (!order.orderedItems || order.orderedItems.length === 0) { %>
+            <li>No items in this order.</li>
+          <% } else { %>
+            <% order.orderedItems.forEach(item => { %>
+              <li><%= item.product.name %> x<%= item.quantity %></li>
+            <% }) %>
+          <% } %>
+        </ul>
+        <div class="order-actions">
+          <a href="/orders/<%= order.orderId %>">View Details</a>
+          <a href="/orders/invoice/<%= order.orderId %>">Download Invoice</a>
+        </div>
       </div>
-    </div>
-  <% }) %>
+    <% }) %>
+  <% } %>
 </div>

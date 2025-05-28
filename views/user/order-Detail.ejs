@@ -1,0 +1,122 @@
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    color: #000;
+    background-color: #fff;
+    line-height: 1.6;
+  }
+  h2 {
+    border-bottom: 2px solid #000;
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+  }
+  ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  li {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 10px;
+    background-color: #f9f9f9;
+  }
+  button {
+    background-color: #333;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  button:hover {
+    background-color: #000;
+  }
+  input[type="text"] {
+    padding: 6px;
+    border: 1px solid #ccc;
+    margin-right: 10px;
+    width: 200px;
+  }
+  form {
+    margin-top: 10px;
+    display: inline-block;
+  }
+  p.total {
+    font-weight: bold;
+    font-size: 1.2em;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+  }
+  .status {
+    display: inline-block;
+    padding: 3px 8px;
+    background-color: #eee;
+    border-radius: 3px;
+  }
+  .order-meta {
+    margin-bottom: 20px;
+  }
+</style>
+
+<div class="order-container">
+  <h2>Order Detail: <%= order.orderId %></h2>
+  <div class="order-meta">
+    <p><strong>Status:</strong> <span class="status"><%= order.status %></span></p>
+    <p><strong>Ordered On:</strong> <%= order.createdOn.toDateString() %></p>
+    <p><strong>Payment Method:</strong> <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment' %></p>
+    <p><strong>Delivery Address:</strong>
+      <% if (order.address && order.address.address && order.address.address[order.selectedAddressIndex]) { %>
+        <% const addr = order.address.address[order.selectedAddressIndex]; %>
+        <%= addr.name || 'N/A' %>, 
+        <%= addr.city || 'N/A' %>, 
+        <%= addr.state || 'N/A' %> - 
+        <%= addr.pincode || 'N/A' %><br>
+        Phone: <%= addr.phone || 'N/A' %>
+        <% if (addr.altPhone) { %> | Alt: <%= addr.altPhone %> <% } %>
+      <% } else { %>
+        Address not available
+      <% } %>
+    </p>
+  </div>
+
+  <ul>
+    <% if (!order.orderedItems || order.orderedItems.length === 0) { %>
+      <li>No items in this order.</li>
+    <% } else { %>
+      <% order.orderedItems.forEach(item => { %>
+        <li>
+          <% if (item.product && item.product.productImage && item.product.productImage.length > 0) { %>
+            <img src="/Uploads/<%= item.product.productImage[0] %>" alt="<%= item.product.productName || 'Product' %>" style="width: 50px; height: 50px; margin-right: 10px;">
+          <% } else { %>
+            <img src="/images/placeholder.png" alt="No Image Available" style="width: 50px; height: 50px; margin-right: 10px;">
+          <% } %>
+          <strong><%= item.product.productName || 'Unknown Product' %></strong> - ₹<%= item.price %> x<%= item.quantity %>
+          <% if (order.status === 'Pending' || order.status === 'processing') { %>
+            <form method="POST" action="/orders/cancel">
+              <input type="hidden" name="orderId" value="<%= order.orderId %>">
+              <input type="hidden" name="productId" value="<%= item.product._id %>">
+              <button type="submit">Cancel</button>
+            </form>
+          <% } %>
+          <% if (order.status === 'Delivered') { %>
+            <form method="POST" action="/orders/return">
+              <input type="hidden" name="orderId" value="<%= order.orderId %>">
+              <input type="hidden" name="productId" value="<%= item.product._id %>">
+              <input type="text" name="reason" required placeholder="Reason for return">
+              <button type="submit">Return</button>
+            </form>
+          <% } %>
+        </li>
+      <% }) %>
+    <% } %>
+  </ul>
+
+  <div class="order-summary">
+    <p><strong>Subtotal:</strong> ₹<%= order.totalPrice %></p>
+    <p><strong>Shipping Charge:</strong> ₹<%= order.shippingCharge %></p>
+    <% if (order.discount > 0) { %>
+      <p><strong>Discount:</strong> -₹<%= order.discount %></p>
+    <% } %>
+    <p class="total"><strong>Total:</strong> ₹<%= order.finalAmount %></p>
+  </div>
+</div>

@@ -9,17 +9,51 @@ const path = require("path");
 
 // GET: List user orders
 const getOrders = async (req, res) => {
-  const userId = req.session.user._id;
-  const orders = await Order.find({ userId }).sort({ createdOn: -1 }).populate("orderedItems.product");
-  res.render("orders", { orders });
+  try {
+    const userId = req.session.user._id;
+    const orders = await Order.find({ user: userId })
+      .sort({ createdOn: -1 })
+      .populate("orderedItems.product");
+    console.log('pggggggggg', orders);
+    res.render("orders", { orders });
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    res.status(500).render("error", { message: "Error fetching orders" });
+  }
 };
+
+
+
+
+
 
 // GET: Specific order detail
 const getOrderDetail = async (req, res) => {
-  const { orderId } = req.params;
-  const order = await Order.findOne({ orderId }).populate("orderedItems.product");
-  res.render("order-detail", { order });
+  console.log('---------------------------------------');
+  try {
+    const { orderId } = req.params;
+    console.log('Order ID:', orderId)
+    const order = await Order.findOne({ orderId }).populate("orderedItems.product").populate("address");
+    console.log('Ordersssssssssss:', order);
+    if (!order) {
+      req.session.message = { type: "error", text: "Order not found" };
+      return res.redirect("/orders");
+    }
+    res.render("order-Detail", { order });
+  } catch (error) {
+    console.error("error in order listing", error);
+    req.session.message = { type: "error", text: "Error fetching order details. Please try again." };
+    res.redirect("/orders");
+  }
 };
+
+
+
+
+
+
+
+
 
 // POST: Cancel item or full order
 const cancelOrder = async (req, res) => {
@@ -70,7 +104,7 @@ const downloadInvoice = async (req, res) => {
 
 
 
-module.exports={
+module.exports = {
   downloadInvoice,
   returnOrder,
   cancelOrder,

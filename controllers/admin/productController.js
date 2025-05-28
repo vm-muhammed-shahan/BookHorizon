@@ -173,12 +173,14 @@ const blockProduct = async (req, res) => {
   try {
     let id = req.params.id;
     await Product.updateOne({ _id: id }, { $set: { isBlocked: true } });
+
     res.json({
       success: true,
       title: 'Product Blocked',
       text: 'The product has been successfully blocked.'
     });
   } catch (error) {
+    console.log(error)
     res.status(500).json({
       success: false,
       title: 'Error',
@@ -213,7 +215,7 @@ const getEditProduct = async (req, res) => {
     const id = req.query.id;
     const product = await Product.findOne({ _id: id });
     
-    // Check if product exists
+    
     if (!product) {
       console.error("Product not found with ID:", id);
       return res.redirect("/pageerror");
@@ -221,7 +223,7 @@ const getEditProduct = async (req, res) => {
     
     const category = await Category.find({});
     
-    // Make sure productImage is always an array
+    
     if (!product.productImage) {
       product.productImage = [];
     }
@@ -249,7 +251,7 @@ const editProduct = async (req, res) => {
     console.log("Received data:", data);
     console.log("Received files:", req.files);
     
-    // Check for duplicate product name
+    
     const existingProduct = await Product.findOne({
       productName: data.productName,
       _id: { $ne: id }
@@ -261,10 +263,10 @@ const editProduct = async (req, res) => {
       });
     }
     
-    // Process images - create an array to hold final images
+   
     let finalImages = [];
     
-    // First, add existing images that were not removed
+   
     if (data.existingImages) {
       for (const index in data.existingImages) {
         const imageName = data.existingImages[index];
@@ -274,14 +276,14 @@ const editProduct = async (req, res) => {
       }
     }
     
-    // Process uploaded files - with the new multer.fields approach
+    
     if (req.files) {
       for (let i = 0; i < 3; i++) {
         const fieldName = `images[${i}]`;
         if (req.files[fieldName] && req.files[fieldName].length > 0) {
           const file = req.files[fieldName][0];
           
-          // If replacing an existing image, delete the old one
+          
           if (finalImages[i]) {
             const oldImagePath = path.join(__dirname, '../../public/uploads/', finalImages[i]);
             if (fs.existsSync(oldImagePath)) {
@@ -294,29 +296,29 @@ const editProduct = async (req, res) => {
             }
           }
           
-          // Add the new image
+          
           finalImages[i] = file.filename;
         }
       }
     }
     
-    // Handle cropped images if they exist (base64)
+    
     if (data.croppedImages) {
       for (const index in data.croppedImages) {
         const imageData = data.croppedImages[index];
         if (imageData && imageData.trim() !== '' && imageData.startsWith('data:image')) {
-          // This is a base64 image that was cropped
+          
           const i = parseInt(index);
           
-          // Remove the image type prefix (data:image/jpeg;base64,)
+          
           const base64Data = imageData.replace(/^data:image\/\w+;base64,/, "");
           const buffer = Buffer.from(base64Data, 'base64');
           
-          // Generate filename
+        
           const filename = `${Date.now()}_${getRandomNumber(0, 10)}_cropped.jpeg`;
           const filePath = path.join(__dirname, '../../public/uploads/', filename);
           
-          // If replacing an existing image, delete the old one
+          
           if (finalImages[i]) {
             const oldImagePath = path.join(__dirname, '../../public/uploads/', finalImages[i]);
             if (fs.existsSync(oldImagePath)) {
@@ -329,21 +331,20 @@ const editProduct = async (req, res) => {
             }
           }
           
-          // Write the new image
+         
           fs.writeFileSync(filePath, buffer);
           finalImages[i] = filename;
         }
       }
     }
     
-    // Remove undefined elements and ensure we have exactly 3 images
-    finalImages = finalImages.filter(img => img !== undefined);
+      finalImages = finalImages.filter(img => img !== undefined);
     
     if (finalImages.length < 3) {
       return res.status(400).json({ error: "Product must have exactly 3 images" });
     }
     
-    // Update product fields
+   
     product.productName = data.productName;
     product.description = data.description;
     product.category = data.category;

@@ -1,19 +1,66 @@
- 
-
 <!DOCTYPE html>
 <html lang="en">
+<%- include("../../views/partials/user/header") %>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= product.productName %> - Product Details</title>
-  
+  <title>
+    <%= product.productName %> - Product Details
+  </title>
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick-theme.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.12/sweetalert2.min.css">
-  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+
+
   <style>
+    :root {
+      --primary-color: #1e918b;
+      --dark-color: #2d3748;
+      --light-bg: #f8f9fa;
+      --light: #fff;
+      --border-radius: 12px;
+      --transition: 0.3s ease;
+      --card-gap: 25px;
+      --card-max-width: 280px;
+      --image-height: 250px;
+    }
+
+    /* Add or ensure the add-to-cart-btn style matches home.ejs and shop.ejs */
+    .add-to-cart-btn {
+      margin: 12px 20px 20px;
+      padding: 10px 0;
+      background: var(--dark-color);
+      color: var(--light);
+      font-weight: 600;
+      text-transform: uppercase;
+      border: none;
+      border-radius: var(--border-radius);
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: background var(--transition), transform var(--transition);
+      align-self: center;
+      width: calc(100% - 40px);
+      text-align: center;
+      display: inline-block;
+      text-decoration: none;
+    }
+
+    .add-to-cart-btn:hover {
+      background: var(--primary-color);
+      transform: translateY(-2px);
+    }
+
+    .add-to-cart-btn:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+
     :root {
       --primary-color: #3a86ff;
       --secondary-color: #ff006e;
@@ -25,57 +72,57 @@
       --light-bg: #f8f9fa;
       --border-color: #dee2e6;
     }
-    
+
     body {
       font-family: 'Poppins', sans-serif;
       color: var(--text-color);
       background-color: #ffffff;
     }
-    
+
     .breadcrumb-wrap {
       background-color: var(--light-bg);
       padding: 15px 0;
       margin-bottom: 30px;
       border-bottom: 1px solid var(--border-color);
     }
-    
+
     .breadcrumb {
       margin-bottom: 0;
       font-size: 14px;
     }
-    
+
     .breadcrumb a {
       color: var(--primary-color);
       text-decoration: none;
       transition: all 0.3s ease;
     }
-    
+
     .breadcrumb a:hover {
       color: var(--accent-color);
     }
-    
+
     .breadcrumb span {
       padding: 0 10px;
       color: #999;
       position: relative;
     }
-    
+
     .breadcrumb span:after {
       content: '/';
       position: absolute;
     }
-    
+
     .detail-gallery {
       position: relative;
       margin-bottom: 30px;
     }
-    
+
     .product-image-slider .slick-slide {
       border-radius: 10px;
       overflow: hidden;
       position: relative;
     }
-    
+
     .product-image-slider img {
       width: 100%;
       height: 450px;
@@ -85,7 +132,7 @@
       cursor: zoom-in;
       transition: all 0.3s ease;
     }
-    
+
     .product-image-slider .magnify-icon {
       position: absolute;
       right: 15px;
@@ -103,16 +150,16 @@
       z-index: 10;
       transition: all 0.3s ease;
     }
-    
+
     .product-image-slider .magnify-icon:hover {
       background-color: rgba(255, 255, 255, 0.9);
       transform: scale(1.1);
     }
-    
+
     .slider-nav-thumbnails {
       margin-top: 20px;
     }
-    
+
     .slider-nav-thumbnails .slick-slide {
       margin: 0 8px;
       border: 2px solid transparent;
@@ -123,20 +170,20 @@
       opacity: 0.7;
       transform: scale(0.92);
     }
-    
+
     .slider-nav-thumbnails .slick-current {
       border-color: var(--primary-color);
       opacity: 1;
       transform: scale(1);
     }
-    
+
     .slider-nav-thumbnails img {
       width: 100px;
       height: 100px;
       object-fit: cover;
       border-radius: 8px;
     }
-    
+
     .slick-arrow {
       position: absolute;
       top: 50%;
@@ -152,41 +199,41 @@
       cursor: pointer;
       transition: all 0.3s ease;
       color: var(--primary-color);
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
-    
+
     .slick-arrow:hover {
       background-color: var(--primary-color);
       color: white;
     }
-    
+
     .slick-prev {
       left: 10px;
     }
-    
+
     .slick-next {
       right: 10px;
     }
-    
+
     .title-detail {
       font-weight: 700;
       font-size: 32px;
       color: #333;
       margin-bottom: 20px;
     }
-    
+
     .rating-stars {
       display: inline-flex;
       font-size: 18px;
       color: #ffc107;
     }
-    
+
     .rating-count {
       font-size: 14px;
       color: #777;
       margin-left: 10px;
     }
-    
+
     .product-price {
       display: flex;
       align-items: center;
@@ -194,26 +241,26 @@
       flex-wrap: wrap;
       margin: 20px 0;
     }
-    
+
     .current-price {
       font-size: 30px;
       font-weight: 700;
       color: var(--primary-color);
     }
-    
+
     .old-price {
       color: #999;
       font-size: 22px;
       text-decoration: line-through;
     }
-    
+
     .save-price .badge {
       font-size: 14px;
       padding: 5px 10px;
       background-color: var(--success-color);
       border-radius: 20px;
     }
-    
+
     .stock-status {
       display: inline-block;
       padding: 5px 12px;
@@ -222,44 +269,44 @@
       font-weight: 600;
       margin-bottom: 20px;
     }
-    
+
     .in-stock {
       background-color: rgba(56, 176, 0, 0.1);
       color: var(--success-color);
     }
-    
+
     .out-of-stock {
       background-color: rgba(230, 57, 70, 0.1);
       color: var(--danger-color);
     }
-    
+
     .low-stock {
       background-color: rgba(255, 209, 102, 0.1);
       color: #ff9500;
     }
-    
+
     .border-color-1 {
       border-top: 1px solid var(--border-color);
     }
-    
+
     .product-highlights {
       background-color: var(--light-bg);
       border-radius: 10px;
       padding: 20px;
       margin-bottom: 30px;
     }
-    
+
     .product-highlights h4 {
       font-size: 18px;
       margin-bottom: 15px;
       font-weight: 600;
     }
-    
+
     .product_sort_info ul {
       padding-left: 0;
       margin-bottom: 0;
     }
-    
+
     .product_sort_info li {
       position: relative;
       list-style-type: none;
@@ -267,14 +314,14 @@
       font-size: 14px;
       margin-bottom: 10px;
     }
-    
+
     .product_sort_info li i {
       position: absolute;
       left: 0;
       top: 2px;
       color: var(--primary-color);
     }
-    
+
     .detail-qty {
       display: inline-flex;
       align-items: center;
@@ -285,15 +332,16 @@
       margin-right: 15px;
       border: 1px solid var(--border-color);
     }
-    
+
     .qty-val {
       width: 40px;
       text-align: center;
       font-weight: 600;
       font-size: 18px;
     }
-    
-    .qty-up, .qty-down {
+
+    .qty-up,
+    .qty-down {
       cursor: pointer;
       width: 30px;
       height: 30px;
@@ -304,12 +352,13 @@
       transition: all 0.3s ease;
       border-radius: 50%;
     }
-    
-    .qty-up:hover, .qty-down:hover {
+
+    .qty-up:hover,
+    .qty-down:hover {
       background-color: #e9ecef;
       color: var(--primary-color);
     }
-    
+
     .button-add-to-cart {
       background-color: var(--primary-color);
       color: white;
@@ -325,30 +374,30 @@
       cursor: pointer;
       transition: all 0.3s ease;
     }
-    
+
     .button-add-to-cart:hover {
       background-color: #2563eb;
       transform: translateY(-2px);
     }
-    
+
     .button-add-to-cart:active {
       transform: translateY(0);
     }
-    
+
     .button-add-to-cart i {
       margin-right: 10px;
     }
-    
+
     .button-disabled {
       background-color: #ccc;
       cursor: not-allowed;
     }
-    
+
     .button-disabled:hover {
       background-color: #ccc;
       transform: none;
     }
-    
+
     .action-btn {
       background-color: #f5f5f5;
       width: 50px;
@@ -364,44 +413,44 @@
       text-decoration: none;
       border: 1px solid var(--border-color);
     }
-    
+
     .action-btn:hover {
       background-color: var(--secondary-color);
       color: white;
       transform: translateY(-2px);
     }
-    
+
     .action-btn:active {
       transform: translateY(0);
     }
-    
+
     .product-meta {
       list-style-type: none;
       padding-left: 0;
       margin-top: 30px;
     }
-    
+
     .product-meta li {
       font-size: 14px;
       margin-bottom: 10px;
       display: flex;
       align-items: center;
     }
-    
+
     .product-meta li strong {
       width: 120px;
       display: inline-block;
     }
-    
+
     .product-meta li span.meta-value {
       color: #777;
     }
-    
+
     .nav-tabs {
       border-bottom: 2px solid var(--border-color);
       margin-bottom: 30px;
     }
-    
+
     .nav-tabs .nav-link {
       border: none;
       font-weight: 600;
@@ -410,7 +459,7 @@
       transition: all 0.3s ease;
       position: relative;
     }
-    
+
     .nav-tabs .nav-link:after {
       content: '';
       position: absolute;
@@ -421,25 +470,25 @@
       background-color: var(--primary-color);
       transition: all 0.3s ease;
     }
-    
+
     .nav-tabs .nav-link.active {
       color: var(--primary-color);
     }
-    
+
     .nav-tabs .nav-link.active:after {
       width: 100%;
     }
-    
+
     .tab-pane {
       padding: 30px 0;
     }
-    
+
     .related-products {
       padding-top: 50px;
       margin-top: 50px;
       border-top: 1px solid var(--border-color);
     }
-    
+
     .title.style-1 {
       position: relative;
       font-size: 28px;
@@ -447,7 +496,7 @@
       margin-bottom: 30px;
       padding-bottom: 15px;
     }
-    
+
     .title.style-1:after {
       content: '';
       position: absolute;
@@ -457,12 +506,12 @@
       height: 2px;
       background-color: var(--primary-color);
     }
-    
+
     .product-extra-link2 {
       display: inline-flex;
       align-items: center;
     }
-    
+
     /* Enhanced Image Zoom Styles */
     .zoom-container {
       position: fixed;
@@ -476,14 +525,14 @@
       opacity: 0;
       transition: opacity 0.3s ease;
     }
-    
+
     .zoom-container.active {
       display: flex;
       justify-content: center;
       align-items: center;
       opacity: 1;
     }
-    
+
     .zoom-img-wrapper {
       position: relative;
       width: 90%;
@@ -492,7 +541,7 @@
       justify-content: center;
       align-items: center;
     }
-    
+
     .zoom-img {
       max-width: 100%;
       max-height: 100%;
@@ -501,12 +550,12 @@
       transition: transform 0.3s ease;
       cursor: zoom-in;
     }
-    
+
     .zoom-img.zoomed {
       transform: scale(1.5);
       cursor: zoom-out;
     }
-    
+
     .zoom-controls {
       position: absolute;
       top: 20px;
@@ -514,8 +563,10 @@
       display: flex;
       gap: 15px;
     }
-    
-    .zoom-close, .zoom-prev, .zoom-next {
+
+    .zoom-close,
+    .zoom-prev,
+    .zoom-next {
       width: 50px;
       height: 50px;
       background-color: rgba(255, 255, 255, 0.2);
@@ -528,12 +579,14 @@
       font-size: 20px;
       transition: all 0.3s ease;
     }
-    
-    .zoom-close:hover, .zoom-prev:hover, .zoom-next:hover {
+
+    .zoom-close:hover,
+    .zoom-prev:hover,
+    .zoom-next:hover {
       background-color: rgba(255, 255, 255, 0.4);
       transform: scale(1.1);
     }
-    
+
     .zoom-counter {
       position: absolute;
       bottom: 20px;
@@ -545,25 +598,25 @@
       color: white;
       font-size: 14px;
     }
-    
+
     /* Review styles */
     .review-item {
       border-bottom: 1px solid var(--border-color);
       padding-bottom: 20px;
       margin-bottom: 20px;
     }
-    
+
     .review-item:last-child {
       border-bottom: none;
       margin-bottom: 0;
     }
-    
+
     .review-meta {
       display: flex;
       align-items: center;
       margin-bottom: 15px;
     }
-    
+
     .review-avatar {
       width: 50px;
       height: 50px;
@@ -571,37 +624,37 @@
       overflow: hidden;
       margin-right: 15px;
     }
-    
+
     .review-avatar img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
-    
+
     .review-content p {
       margin-bottom: 10px;
     }
-    
+
     .review-rating {
       margin-bottom: 5px;
     }
-    
+
     .review-date {
       font-size: 12px;
       color: #777;
     }
-    
+
     .review-form .form-control {
       border-radius: 5px;
       padding: 12px 15px;
       margin-bottom: 20px;
     }
-    
+
     .review-form .btn {
       border-radius: 5px;
       padding: 12px 30px;
     }
-    
+
     /* Alert styles */
     .alert-product {
       background-color: #f8d7da;
@@ -613,12 +666,12 @@
       display: flex;
       align-items: center;
     }
-    
+
     .alert-product i {
       font-size: 24px;
       margin-right: 15px;
     }
-    
+
     /* Related products styles */
     .related-product-card {
       border: 1px solid var(--border-color);
@@ -627,22 +680,22 @@
       transition: all 0.3s ease;
       height: 100%;
     }
-    
+
     .related-product-card:hover {
       transform: translateY(-5px);
-      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
     }
-    
+
     .related-product-img {
       height: 200px;
       width: 100%;
       object-fit: contain;
     }
-    
+
     .related-product-info {
       padding: 15px;
     }
-    
+
     .related-product-title {
       font-size: 16px;
       font-weight: 600;
@@ -654,19 +707,19 @@
       text-overflow: ellipsis;
       height: 44px;
     }
-    
+
     .related-product-price {
       display: flex;
       align-items: center;
       gap: 10px;
     }
-    
+
     .highlight-feature {
       display: flex;
       align-items: center;
       margin-bottom: 10px;
     }
-    
+
     .highlight-feature i {
       width: 24px;
       height: 24px;
@@ -679,297 +732,298 @@
       font-size: 12px;
       margin-right: 10px;
     }
-    
+
     .specifications-table {
       border-collapse: separate;
       border-spacing: 0;
       width: 100%;
       border-radius: 10px;
       overflow: hidden;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
     }
-    
+
     .specifications-table th {
       background-color: #f8f9fa;
       font-weight: 600;
       padding: 15px;
       width: 30%;
     }
-    
+
     .specifications-table td {
       padding: 15px;
     }
-    
+
     .specifications-table tr:not(:last-child) {
       border-bottom: 1px solid var(--border-color);
     }
-    
+
     @media (max-width: 768px) {
       .product-image-slider img {
         height: 350px;
       }
-      
+
       .slider-nav-thumbnails img {
         width: 70px;
         height: 70px;
       }
-      
+
       .product-extra-link2 {
         margin-top: 15px;
       }
-      
+
       .detail-qty {
         margin-bottom: 15px;
         margin-right: 0;
       }
-      
+
       .button-add-to-cart {
         width: 100%;
       }
-      
+
       .action-btn {
         margin-top: 15px;
         margin-left: 0;
         margin-right: 10px;
       }
-      
+
       .title-detail {
         font-size: 24px;
       }
-      
+
       .current-price {
         font-size: 26px;
       }
     }
 
-
-
     .related-products-section {
-  background-color: #f8f9fa;
-  padding: 50px 0;
-  position: relative;
-  overflow: hidden;
-}
+      background-color: #f8f9fa;
+      padding: 50px 0;
+      position: relative;
+      overflow: hidden;
+    }
 
-.related-products-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 5px;
-  background: linear-gradient(90deg, #3a86ff, #5e60ce, #5390d9);
-}
+    .related-products-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #3a86ff, #5e60ce, #5390d9);
+    }
 
-.section-title {
-  font-size: 28px;
-  font-weight: 700;
-  margin-bottom: 30px;
-  position: relative;
-  color: #2b2d42;
-  display: inline-block;
-}
+    .section-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 30px;
+      position: relative;
+      color: #2b2d42;
+      display: inline-block;
+    }
 
-.section-title::after {
-  content: '';
-  display: block;
-  width: 70%;
-  height: 4px;
-  background: linear-gradient(90deg, #3a86ff, #5e60ce);
-  margin-top: 10px;
-  border-radius: 2px;
-}
+    .section-title::after {
+      content: '';
+      display: block;
+      width: 70%;
+      height: 4px;
+      background: linear-gradient(90deg, #3a86ff, #5e60ce);
+      margin-top: 10px;
+      border-radius: 2px;
+    }
 
-.products-slider {
-  padding: 10px 5px 30px;
-}
+    .products-slider {
+      padding: 10px 5px 30px;
+    }
 
-.product-card {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-  overflow: hidden;
-  position: relative;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid rgba(0,0,0,0.05);
-}
+    .product-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+      overflow: hidden;
+      position: relative;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
 
-.product-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 15px 30px rgba(58, 134, 255, 0.15);
-  border-color: rgba(58, 134, 255, 0.2);
-}
+    .product-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 30px rgba(58, 134, 255, 0.15);
+      border-color: rgba(58, 134, 255, 0.2);
+    }
 
-.product-image-container {
-  height: 220px;
-  overflow: hidden;
-  position: relative;
-}
+    .product-image-container {
+      height: 220px;
+      overflow: hidden;
+      position: relative;
+    }
 
-.product-image-container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(to bottom, rgba(0,0,0,0) 80%, rgba(0,0,0,0.03) 100%);
-}
+    .product-image-container::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 80%, rgba(0, 0, 0, 0.03) 100%);
+    }
 
-.product-image-container img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
-}
+    .product-image-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
 
-.product-card:hover .product-image-container img {
-  transform: scale(1.08);
-}
+    .product-card:hover .product-image-container img {
+      transform: scale(1.08);
+    }
 
-.product-info {
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex-grow: 1;
-}
+    .product-info {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-grow: 1;
+    }
 
-.product-name {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: #2b2d42;
-  line-height: 1.4;
-  height: 44px;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
+    .product-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #2b2d42;
+      line-height: 1.4;
+      height: 44px;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
 
-.price-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 5px;
-}
+    .price-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
 
-.product-price {
-  font-size: 20px;
-  font-weight: 700;
-  color: #3a86ff;
-}
+    .product-price {
+      font-size: 20px;
+      font-weight: 700;
+      color: #3a86ff;
+    }
 
-.original-price {
-  font-size: 14px;
-  color: #6c757d;
-  text-decoration: line-through;
-}
+    .original-price {
+      font-size: 14px;
+      color: #6c757d;
+      text-decoration: line-through;
+    }
 
-.discount-badge {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  background: linear-gradient(45deg, #ff3a51, #ff7676);
-  color: white;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 5px 10px;
-  border-radius: 20px;
-  z-index: 2;
-  box-shadow: 0 3px 10px rgba(255, 58, 81, 0.3);
-}
+    .discount-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: linear-gradient(45deg, #ff3a51, #ff7676);
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 20px;
+      z-index: 2;
+      box-shadow: 0 3px 10px rgba(255, 58, 81, 0.3);
+    }
 
-.sold-out-badge {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: rgba(108, 117, 125, 0.9);
-  color: white;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 5px 12px;
-  border-radius: 20px;
-  z-index: 2;
-  backdrop-filter: blur(3px);
-}
+    .sold-out-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(108, 117, 125, 0.9);
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 20px;
+      z-index: 2;
+      backdrop-filter: blur(3px);
+    }
 
-.add-to-cart-btn {
-  background: linear-gradient(45deg, #3a86ff, #5e60ce);
-  color: white;
-  border: none;
-  padding: 12px 15px;
-  font-size: 14px;
-  font-weight: 600;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-top: 10px;
-}
+    .add-to-cart-btn {
+      background: linear-gradient(45deg, #3a86ff, #5e60ce);
+      color: white;
+      border: none;
+      padding: 12px 15px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 10px;
+    }
 
-.add-to-cart-btn:hover {
-  background: linear-gradient(45deg, #2563eb, #4f46e5);
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(58, 134, 255, 0.3);
-}
+    .add-to-cart-btn:hover {
+      background: linear-gradient(45deg, #2563eb, #4f46e5);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(58, 134, 255, 0.3);
+    }
 
-.add-to-cart-btn:active {
-  transform: translateY(0);
-}
+    .add-to-cart-btn:active {
+      transform: translateY(0);
+    }
 
-.add-to-cart-btn:disabled {
-  background: linear-gradient(45deg, #adb5bd, #ced4da);
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
+    .add-to-cart-btn:disabled {
+      background: linear-gradient(45deg, #adb5bd, #ced4da);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
 
-.no-related-products {
-  background-color: #f8f9fa;
-  border-radius: 10px;
-  padding: 30px;
-  text-align: center;
-  color: #6c757d;
-  font-size: 16px;
-  border: 1px dashed #dee2e6;
-}
+    .no-related-products {
+      background-color: #f8f9fa;
+      border-radius: 10px;
+      padding: 30px;
+      text-align: center;
+      color: #6c757d;
+      font-size: 16px;
+      border: 1px dashed #dee2e6;
+    }
 
-/* Responsive adjustments */
-@media (max-width: 767px) {
-  .related-products-section {
-    padding: 30px 0;
-  }
-  
-  .section-title {
-    font-size: 22px;
-  }
-  
-  .product-image-container {
-    height: 180px;
-  }
-}    
+    /* Responsive adjustments */
+    @media (max-width: 767px) {
+      .related-products-section {
+        padding: 30px 0;
+      }
+
+      .section-title {
+        font-size: 22px;
+      }
+
+      .product-image-container {
+        height: 180px;
+      }
+    }
   </style>
 </head>
+
 <body>
   <main class="main">
     <div class="page-header breadcrumb-wrap">
       <div class="container">
         <div class="breadcrumb">
           <a href="/" rel="nofollow">Home</a>
-          <span></span> 
+          <span></span>
           <a href="/shop">Shop</a>
           <span></span>
           <% if (category) { %>
-            <a href="/filter?category=<%= category._id %>"><%= category.name %></a>
+            <a href="/filter?category=<%= category._id %>">
+              <%= category.name %>
+            </a>
             <span></span>
-          <% } %>
-          <%= product.productName %>
+            <% } %>
+              <%= product.productName %>
         </div>
       </div>
     </div>
@@ -978,406 +1032,445 @@
       <div class="container">
         <div class="row">
           <div class="col-lg-10 mx-auto">
-            <% if (product.status === 'blocked' || product.status === 'unavailable') { %>
+            <% if (product.status==='blocked' || product.status==='unavailable' ) { %>
               <div class="alert-product">
                 <i class="fas fa-exclamation-circle"></i>
                 <div>
                   <h5 class="mb-1">Product Unavailable</h5>
-                  <p class="mb-0">Sorry, this product is currently unavailable. You will be redirected to our shop page.</p>
+                  <p class="mb-0">Sorry, this product is currently unavailable. You will be redirected to our shop page.
+                  </p>
                 </div>
               </div>
               <script>
-                setTimeout(function() {
+                setTimeout(function () {
                   window.location.href = '/shop';
                 }, 3000);
               </script>
-            <% } else { %>
-              <div class="product-detail">
-                <div class="row mb-5">
-                  <div class="col-md-6 col-sm-12">
-                    
-
-
-
-
-
-
-                    <div class="detail-gallery">
-                      <div class="product-image-slider mb-4" id="productImageSlider">
-                        <% 
-                        let imageArray;
-                        if (Array.isArray(product.productImage)) {
-                          imageArray = [...new Set(product.productImage)];
-                        } else if(product.producytImage){
-                          
-                          imageArray = [product.productImage] 
-                        }
-                        %>
-                        <% imageArray.forEach(function(image, index) { %>
-                          <div>
-                            <img src="/uploads/<%= image %>" alt="<%= product.productName %> - Image <%= index + 1 %>" class="rounded product-img" data-index="<%= index %>">
-                            <div class="magnify-icon" onclick="openZoom(<%= index %>)">
-                              <i class="fas fa-search-plus"></i>
-                            </div>
-                          </div>
-                        <% }); %>
-                      </div>
-                      <div class="slider-nav-thumbnails" id="thumbnailSlider">
-                        <% imageArray.forEach(function(image, index) { %>
-                          <div>
-                            <img src="/uploads/<%= image %>" alt="<%= product.productName %> - Thumbnail <%= index + 1 %>">
-                          </div>
-                        <% }); %>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  
-                  <div class="col-md-6 col-sm-12">
-                    <div class="detail-info">
-                      <h1 class="title-detail"><%= product.productName %></h1>
-                      
-                      <div class="product-detail-rating mb-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                          <div class="pro-details-brand">
-                            <% if (category) { %>
-                              <span>Category: <a href="/filter?category=<%= category._id %>" class="text-decoration-none"><%= category.name %></a></span>
-                            <% } %>
-                          </div>
-                          <div class="product-rate-cover text-end">
-                            <div class="rating-stars">
-                              <% for (let i = 0; i < 5; i++) { %>
-                                <i class="<%= i < 4 ? 'fas' : 'far' %> fa-star"></i>
-                              <% } %>
-                            </div>
-                            <span class="rating-count">( reviews)</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <% if (quantity > 0) { %>
-                        <div class="stock-status in-stock mb-3">
-                          <i class="fas fa-check-circle me-1"></i>
-                          <%= quantity %> in stock
-                        </div>
-                      <% } else { %>
-                        <div class="stock-status out-of-stock mb-3">
-                          <i class="fas fa-times-circle me-1"></i>
-                          Out of stock
-                        </div>
-                      <% } %>
-                      
-                      <div class="product-price-wrap">
-                        <div class="product-price">
-                          <span class="current-price">₹<%= product.salePrice.toLocaleString('en-IN') %></span>
-                          <span class="old-price">₹<%= product.regularPrice.toLocaleString('en-IN') %></span>
-                          <% 
-                            const discount = Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100);
-                          %>
-                          <% if (discount > 0) { %>
-                            <span class="save-price">
-                              <span class="badge bg-success"><%= discount %>% Off</span>
-                            </span>
-                          <% } %>
-                        </div>
-                      </div>
-                      
-                      <div class="border-color-1 my-4"></div>
-                      
-                       
-
-                      <div class="product-highlights mb-4">
-                        <h4>Highlights</h4>
-                        <div class="row">
-                          <div class="col-md-6">
-                            <div class="highlight-feature">
-                              <i class="fas fa-check"></i>
-                              <span>Premium Quality</span>
-                            </div>
-                            <div class="highlight-feature">
-                              <i class="fas fa-check"></i>
-                              <span>Authentic Product</span>
-                            </div>
-                          </div>
-                          <div class="col-md-6">
-                            <div class="highlight-feature">
-                              <i class="fas fa-check"></i>
-                              <span>Fast Shipping</span>
-                            </div>
-                            <div class="highlight-feature">
-                              <i class="fas fa-check"></i>
-                              <span>Customer Support</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div class="product_sort_info mb-4">
-                        <ul class="ps-0">
-                          <li class="mb-2"><i class="fas fa-crown me-2"></i> 1 Year Brand Warranty</li>
-                          <li class="mb-2"><i class="fas fa-undo me-2"></i> 30 Day Return Policy</li>
-                          <li><i class="fas fa-money-bill me-2"></i> Cash on Delivery available</li>
-                        </ul>
-                      </div>
-                      
-                      <div class="border-color-1 my-4"></div>
-                      
-                      <div class="detail-extralink d-flex flex-wrap align-items-center">
-                        <div class="detail-qty me-3">
-                          <a href="javascript:void(0)" class="qty-down" onclick="decreaseQuantity()"><i class="fas fa-minus"></i></a>
-                          <span class="qty-val" id="quantity">1</span>
-                          <a href="javascript:void(0)" class="qty-up" onclick="increaseQuantity()"><i class="fas fa-plus"></i></a>
-                        </div>
-                        <div class="product-extra-link2">
-                          <% if (quantity > 0) { %>
-                            <button type="button" class="button-add-to-cart" onclick="addToCart('<%= product._id %>')">
-                              <i class="fas fa-shopping-cart"></i>Add to cart
-                            </button>
-                          <% } else { %>
-                            <button type="button" class="button-add-to-cart button-disabled" disabled>
-                              <i class="fas fa-shopping-cart"></i>Out of stock
-                            </button>
-                          <% } %>
-                          <a aria-label="Add To Wishlist" class="action-btn" href="javascript:void(0)" onclick="addToWishlist('<%= product._id %>')">
-                            <i class="fas fa-heart"></i>
-                          </a>
-                          <a aria-label="Share Product" class="action-btn" href="javascript:void(0)" onclick="shareProduct()">
-                            <i class="fas fa-share-alt"></i>
-                          </a>
-                        </div>
-                      </div>
-                      
-                      <ul class="product-meta mt-4 ps-0">
-                        <li class="mb-2">
-                          <strong>SKU:</strong>
-                          <span class="meta-value"><%= product._id.toString().slice(-8).toUpperCase() %></span>
-                        </li>
-                        <% if (category) { %>
-                          <li class="mb-2">
-                            <strong>Category:</strong>
-                            <span class="meta-value">
-                              <a href="/filter?category=<%= category._id %>" class="text-decoration-none"><%= category.name %></a>
-                            </span>
-                          </li>
-                        <% } %>
-                        <li>
-                          <strong>Availability:</strong>
-                          <% if (quantity > 0) { %>
-                            <span class="in-stock ms-1"><%= quantity %> Items in Stock</span>
-                          <% } else { %>
-                            <span class="out-of-stock ms-1">Out of Stock</span>
-                          <% } %>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="product-info mb-5">
-                  <ul class="nav nav-tabs" id="productTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                      <button class="nav-link active" id="Description-tab" data-bs-toggle="tab" data-bs-target="#Description" type="button" role="tab" aria-selected="true">Description</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                      <button class="nav-link" id="Specifications-tab" data-bs-toggle="tab" data-bs-target="#Specifications" type="button" role="tab" aria-selected="false">Specifications</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                      <button class="nav-link" id="Reviews-tab" data-bs-toggle="tab" data-bs-target="#Reviews" type="button" role="tab" aria-selected="false">Reviews (25)</button>
-                    </li>
-                  </ul>
-                  <div class="tab-content" id="productTabContent">
-                    <div class="tab-pane fade show active" id="Description" role="tabpanel" aria-labelledby="Description-tab">
-                      <div class="tab-content-item">
-                        <p><%= product.description %></p>
-                        <% if (product.longDescription) { %>
-                          <p><%= product.longDescription %></p>
-                        <% } %>
-                      </div>
-                    </div>
-                    <div class="tab-pane fade" id="Specifications" role="tabpanel" aria-labelledby="Specifications-tab">
-                      <div class="tab-content-item">
-                        <table class="table specifications-table">
-                          <tbody>
-                            <tr>
-                              <th>Product Name</th>
-                              <td><%= product.productName %></td>
-                            </tr>
-                            <tr>
-                              <th>Category</th>
-                              <td><%= category ? category.name : 'N/A' %></td>
-                            </tr>
-                            <tr>
-                              <th>Regular Price</th>
-                              <td>₹<%= product.regularPrice.toLocaleString('en-IN') %></td>
-                            </tr>
-                            <tr>
-                              <th>Sale Price</th>
-                              <td>₹<%= product.salePrice.toLocaleString('en-IN') %></td>
-                            </tr>
-                            <tr>
-                              <th>Discount</th>
-                              <td><%= Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100) %>%</td>
-                            </tr>
-                            <tr>
-                              <th>Stock</th>
-                              <td><%= quantity %></td>
-                            </tr>
-                            <tr>
-                              <th>SKU</th>
-                              <td><%= product._id.toString().slice(-8).toUpperCase() %></td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                    <div class="tab-pane fade" id="Reviews" role="tabpanel" aria-labelledby="Reviews-tab">
-                      <div class="tab-content-item">
-                        <div class="comments-area">
-                          <div class="row">
-                            <div class="col-lg-8">
-                              <h4 class="mb-4">Customer Reviews</h4>
-                              <div class="comment-list">
-                                <!-- Sample reviews for demonstration -->
-                                <div class="review-item">
-                                  <div class="review-meta">
-                                    <div class="review-avatar">
-                                      <img src="/api/placeholder/50/50" alt="User">
-                                    </div>
-                                    <div>
-                                      <h6 class="mb-1">John Doe</h6>
-                                      <div class="review-rating">
-                                        <i class="fas fa-star text-warning"></i>
-                                        <i class="fas fa-star text-warning"></i>
-                                        <i class="fas fa-star text-warning"></i>
-                                        <i class="fas fa-star text-warning"></i>
-                                        <i class="fas fa-star text-warning"></i>
-                                      </div>
-                                      <div class="review-date">Posted on March 15, 2025</div>
-                                    </div>
-                                  </div>
-                                  <div class="review-content">
-                                    <p>This product exceeded my expectations! The quality is excellent and it arrived earlier than expected. Would definitely recommend it to others.</p>
-                                  </div>
+              <% } else { %>
+                <div class="product-detail">
+                  <div class="row mb-5">
+                    <div class="col-md-6 col-sm-12">
+                      <div class="detail-gallery">
+                        <div class="product-image-slider mb-4" id="productImageSlider">
+                          <% let imageArray; if (Array.isArray(product.productImage)) { imageArray=[...new
+                            Set(product.productImage)]; } else if(product.productImage){
+                            imageArray=[product.productImage] } %>
+                            <% imageArray.forEach(function(image, index) { %>
+                              <div>
+                                <img src="/Uploads/<%= image %>"
+                                  alt="<%= product.productName %> - Image <%= index + 1 %>" class="rounded product-img"
+                                  data-index="<%= index %>">
+                                <div class="magnify-icon" onclick="openZoom(<%= index %>)">
+                                  <i class="fas fa-search-plus"></i>
                                 </div>
-                                
-                                <div class="review-item">
-                                  <div class="review-meta">
-                                    <div class="review-avatar">
-                                      <img src="/api/placeholder/50/50" alt="User">
-                                    </div>
-                                    <div>
-                                      <h6 class="mb-1">Jane Smith</h6>
-                                      <div class="review-rating">
-                                        <i class="fas fa-star text-warning"></i>
-                                        <i class="fas fa-star text-warning"></i>
-                                        <i class="fas fa-star text-warning"></i>
-                                        <i class="fas fa-star text-warning"></i>
-                                        <i class="far fa-star text-warning"></i>
-                                      </div>
-                                      <div class="review-date">Posted on March 10, 2025</div>
-                                    </div>
-                                  </div>
-                                  <div class="review-content">
-                                    <p>Great product for the price. Fast shipping and good customer service when I had questions about the delivery.</p>
-                                  </div>
-                                </div>
-                                
-                                <a href="#" class="btn btn-outline-primary mt-3">View All Reviews</a>
                               </div>
+                              <% }); %>
+                        </div>
+                        <div class="slider-nav-thumbnails" id="thumbnailSlider">
+                          <% imageArray.forEach(function(image, index) { %>
+                            <div>
+                              <img src="/Uploads/<%= image %>"
+                                alt="<%= product.productName %> - Thumbnail <%= index + 1 %>">
                             </div>
-                            
-                            <div class="col-lg-4">
-                              <div class="review-form-wrapper p-4 bg-light rounded">
-                                <h4 class="mb-3">Add a Review</h4>
-                                <form class="review-form">
-                                  <div class="mb-3">
-                                    <label class="form-label">Your Rating</label>
-                                    <div class="rating-select">
-                                      <i class="far fa-star fs-4 me-1 rating-star" data-value="1"></i>
-                                      <i class="far fa-star fs-4 me-1 rating-star" data-value="2"></i>
-                                      <i class="far fa-star fs-4 me-1 rating-star" data-value="3"></i>
-                                      <i class="far fa-star fs-4 me-1 rating-star" data-value="4"></i>
-                                      <i class="far fa-star fs-4 rating-star" data-value="5"></i>
-                                    </div>
-                                  </div>
-                                  <div class="mb-3">
-                                    <textarea class="form-control" rows="4" placeholder="Your review"></textarea>
-                                  </div>
-                                  <button type="submit" class="btn btn-primary">Submit Review</button>
-                                </form>
-                              </div>
-                            </div>
-                          </div>
+                            <% }); %>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-                
-                <section class="related-products-section">
-                  <div class="container my-5">
-                    <h2 class="section-title mb-4">Related Products</h2>
-                    
-                    <% if (relatedProducts && relatedProducts.length > 0) { %>
-                      <div class="row products-slider">
-                        <% relatedProducts.forEach(relatedProd => { %>
-                          <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                            <div class="product-card h-100">
-                              <% const discount = Math.round((relatedProd.regularPrice - relatedProd.salePrice)/relatedProd.regularPrice*100);
-                                 if (discount > 0) { %>
-                                <div class="discount-badge"><i class="fas fa-tag me-1"></i><%= discount %>% OFF</div>
-                              <% } %>
-                              
-                              <% if (relatedProd.status === 'Out of Stock') { %>
-                                <div class="sold-out-badge"><i class="fas fa-exclamation-circle me-1"></i> Sold Out</div>
-                              <% } %>
-                              
-                              <a href="/productDetails?id=<%= relatedProd._id %>" class="text-decoration-none">
-                                <div class="product-image-container">
-                                  <img src="/uploads/<%= relatedProd.productImage[0] %>" alt="<%= relatedProd.productName %>" class="img-fluid" />
-                                </div>
-                                <div class="product-info">
-                                  <h5 class="product-name"><%= relatedProd.productName %></h5>
-                                  <div class="price-container">
-                                    <span class="product-price">₹<%= relatedProd.salePrice.toLocaleString('en-IN') %></span>
-                                    <% if (discount > 0) { %>
-                                      <span class="original-price">₹<%= relatedProd.regularPrice.toLocaleString('en-IN') %></span>
-                                    <% } %>
-                                  </div>
-                                </div>
-                              </a>
-                              
-                              <div class="px-3 pb-3 mt-auto">
-                                <% if (relatedProd.status === 'Out of Stock') { %>
-                                  <button class="add-to-cart-btn w-100" disabled>
-                                    <i class="fas fa-ban me-2"></i> Out of Stock
-                                  </button>
-                                <% } else { %>
-                                  <button class="add-to-cart-btn w-100" onclick="event.preventDefault(); addToCartQuick('<%= relatedProd._id %>')">
-                                    <i class="fas fa-shopping-cart me-2"></i> Add to Cart
-                                  </button>
+
+                    <div class="col-md-6 col-sm-12">
+                      <div class="detail-info">
+                        <h1 class="title-detail">
+                          <%= product.productName %>
+                        </h1>
+
+                        <div class="product-detail-rating mb-3">
+                          <div class="d-flex justify-content-between align-items-center">
+                            <div class="pro-details-brand">
+                              <% if (category) { %>
+                                <span>Category: <a href="/filter?category=<%= category._id %>"
+                                    class="text-decoration-none">
+                                    <%= category.name %>
+                                  </a></span>
                                 <% } %>
+                            </div>
+                            <div class="product-rate-cover text-end">
+                              <div class="rating-stars">
+                                <% for (let i=0; i < 5; i++) { %>
+                                  <i class="<%= i < 4 ? 'fas' : 'far' %> fa-star"></i>
+                                  <% } %>
+                              </div>
+                              <span class="rating-count">( reviews)</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <% if (quantity> 0) { %>
+                          <div class="stock-status in-stock mb-3">
+                            <i class="fas fa-check-circle me-1"></i>
+                            <%= quantity %> in stock
+                          </div>
+                          <% } else { %>
+                            <div class="stock-status out-of-stock mb-3">
+                              <i class="fas fa-times-circle me-1"></i>
+                              Out of stock
+                            </div>
+                            <% } %>
+
+                              <div class="product-price-wrap">
+                                <div class="product-price">
+                                  <span class="current-price">₹<%= product.salePrice.toLocaleString('en-IN') %></span>
+                                  <span class="old-price">₹<%= product.regularPrice.toLocaleString('en-IN') %></span>
+                                  <% const discount=Math.round(((product.regularPrice - product.salePrice) /
+                                    product.regularPrice) * 100); %>
+                                    <% if (discount> 0) { %>
+                                      <span class="save-price">
+                                        <span class="badge bg-success">
+                                          <%= discount %>% Off
+                                        </span>
+                                      </span>
+                                      <% } %>
+                                </div>
+                              </div>
+
+                              <div class="border-color-1 my-4"></div>
+
+                              <div class="product-highlights mb-4">
+                                <h4>Highlights</h4>
+                                <div class="row">
+                                  <div class="col-md-6">
+                                    <div class="highlight-feature">
+                                      <i class="fas fa-check"></i>
+                                      <span>Premium Quality</span>
+                                    </div>
+                                    <div class="highlight-feature">
+                                      <i class="fas fa-check"></i>
+                                      <span>Authentic Product</span>
+                                    </div>
+                                  </div>
+                                  <div class="col-md-6">
+                                    <div class="highlight-feature">
+                                      <i class="fas fa-check"></i>
+                                      <span>Fast Shipping</span>
+                                    </div>
+                                    <div class="highlight-feature">
+                                      <i class="fas fa-check"></i>
+                                      <span>Customer Support</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div class="product_sort_info mb-4">
+                                <ul class="ps-0">
+                                  <li class="mb-2"><i class="fas fa-crown me-2"></i> 1 Year Brand Warranty</li>
+                                  <li class="mb-2"><i class="fas fa-undo me-2"></i> 30 Day Return Policy</li>
+                                  <li><i class="fas fa-money-bill me-2"></i> Cash on Delivery available</li>
+                                </ul>
+                              </div>
+
+                              <div class="border-color-1 my-4"></div>
+
+                              <div class="detail-extralink d-flex flex-wrap align-items-center">
+                                  <!-- <div class="detail-qty me-3">
+                                  <a href="javascript:void(0)" class="qty-down" onclick="decreaseQuantity()"><i
+                                      class="fas fa-minus"></i></a>
+                                  <span class="qty-val" id="quantity" >1</span>
+                                  <a href="javascript:void(0)" class="qty-up" onclick="increaseQuantity()"><i
+                                      class="fas fa-plus"></i></a>
+                                </div>   -->
+                                <div class="product-extra-link2">
+                                  <% if (quantity> 0) { %>
+                                    <button class="add-to-cart-btn" onclick="addToCart('<%= product._id %>', '<%= product.productName %>',1)">Add to Cart</button>
+                                    <% } else { %>
+                                      <button type="button" class="button-add-to-cart button-disabled" disabled>
+                                        <i class="fas fa-shopping-cart"></i>Out of stock
+                                      </button>
+                                      <% } %>
+                                        <a aria-label="Add To Wishlist" class="action-btn" href="javascript:void(0)"
+                                          onclick="addToWishlist('<%= product._id %>')">
+                                          <i class="fas fa-heart"></i>
+                                        </a>
+                                        <a aria-label="Share Product" class="action-btn" href="javascript:void(0)"
+                                          onclick="shareProduct()">
+                                          <i class="fas fa-share-alt"></i>
+                                        </a>
+                                </div>
+                              </div>
+
+                              <ul class="product-meta mt-4 ps-0">
+                                <li class="mb-2">
+                                  <strong>SKU:</strong>
+                                  <span class="meta-value">
+                                    <%= product._id.toString().slice(-8).toUpperCase() %>
+                                  </span>
+                                </li>
+                                <% if (category) { %>
+                                  <li class="mb-2">
+                                    <strong>Category:</strong>
+                                    <span class="meta-value">
+                                      <a href="/filter?category=<%= category._id %>" class="text-decoration-none">
+                                        <%= category.name %>
+                                      </a>
+                                    </span>
+                                  </li>
+                                  <% } %>
+                                    <li>
+                                      <strong>Availability:</strong>
+                                      <% if (quantity> 0) { %>
+                                        <span class="in-stock ms-1">
+                                          <%= quantity %> Items in Stock
+                                        </span>
+                                        <% } else { %>
+                                          <span class="out-of-stock ms-1">Out of Stock</span>
+                                          <% } %>
+                                    </li>
+                              </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="product-info mb-5">
+                    <ul class="nav nav-tabs" id="productTabs" role="tablist">
+                      <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="Description-tab" data-bs-toggle="tab"
+                          data-bs-target="#Description" type="button" role="tab"
+                          aria-selected="true">Description</button>
+                      </li>
+                      <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="Specifications-tab" data-bs-toggle="tab"
+                          data-bs-target="#Specifications" type="button" role="tab"
+                          aria-selected="false">Specifications</button>
+                      </li>
+                      <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="Reviews-tab" data-bs-toggle="tab" data-bs-target="#Reviews"
+                          type="button" role="tab" aria-selected="false">Reviews (25)</button>
+                      </li>
+                    </ul>
+                    <div class="tab-content" id="productTabContent">
+                      <div class="tab-pane fade show active" id="Description" role="tabpanel"
+                        aria-labelledby="Description-tab">
+                        <div class="tab-content-item">
+                          <p>
+                            <%= product.description %>
+                          </p>
+                          <% if (product.longDescription) { %>
+                            <p>
+                              <%= product.longDescription %>
+                            </p>
+                            <% } %>
+                        </div>
+                      </div>
+                      <div class="tab-pane fade" id="Specifications" role="tabpanel"
+                        aria-labelledby="Specifications-tab">
+                        <div class="tab-content-item">
+                          <table class="table specifications-table">
+                            <tbody>
+                              <tr>
+                                <th>Product Name</th>
+                                <td>
+                                  <%= product.productName %>
+                                </td>
+                              </tr>
+                              <tr>
+                                <th>Category</th>
+                                <td>
+                                  <%= category ? category.name : 'N/A' %>
+                                </td>
+                              </tr>
+                              <tr>
+                                <th>Regular Price</th>
+                                <td>₹<%= product.regularPrice.toLocaleString('en-IN') %>
+                                </td>
+                              </tr>
+                              <tr>
+                                <th>Sale Price</th>
+                                <td>₹<%= product.salePrice.toLocaleString('en-IN') %>
+                                </td>
+                              </tr>
+                              <tr>
+                                <th>Discount</th>
+                                <td>
+                                  <%= Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) *
+                                    100) %>%
+                                </td>
+                              </tr>
+                              <tr>
+                                <th>Stock</th>
+                                <td>
+                                  <%= quantity %>
+                                </td>
+                              </tr>
+                              <tr>
+                                <th>SKU</th>
+                                <td>
+                                  <%= product._id.toString().slice(-8).toUpperCase() %>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                      <div class="tab-pane fade" id="Reviews" role="tabpanel" aria-labelledby="Reviews-tab">
+                        <div class="tab-content-item">
+                          <div class="comments-area">
+                            <div class="row">
+                              <div class="col-lg-8">
+                                <h4 class="mb-4">Customer Reviews</h4>
+                                <div class="comment-list">
+                                  <!-- Sample reviews for demonstration -->
+                                  <div class="review-item">
+                                    <div class="review-meta">
+                                      <div class="review-avatar">
+                                        <img src="/api/placeholder/50/50" alt="User">
+                                      </div>
+                                      <div>
+                                        <h6 class="mb-1">John Doe</h6>
+                                        <div class="review-rating">
+                                          <i class="fas fa-star text-warning"></i>
+                                          <i class="fas fa-star text-warning"></i>
+                                          <i class="fas fa-star text-warning"></i>
+                                          <i class="fas fa-star text-warning"></i>
+                                          <i class="fas fa-star text-warning"></i>
+                                        </div>
+                                        <div class="review-date">Posted on March 15, 2025</div>
+                                      </div>
+                                    </div>
+                                    <div class="review-content">
+                                      <p>This product exceeded my expectations! The quality is excellent and it arrived
+                                        earlier than expected. Would definitely recommend it to others.</p>
+                                    </div>
+                                  </div>
+
+                                  <div class="review-item">
+                                    <div class="review-meta">
+                                      <div class="review-avatar">
+                                        <img src="/api/placeholder/50/50" alt="User">
+                                      </div>
+                                      <div>
+                                        <h6 class="mb-1">Jane Smith</h6>
+                                        <div class="review-rating">
+                                          <i class="fas fa-star text-warning"></i>
+                                          <i class="fas fa-star text-warning"></i>
+                                          <i class="fas fa-star text-warning"></i>
+                                          <i class="fas fa-star text-warning"></i>
+                                          <i class="far fa-star text-warning"></i>
+                                        </div>
+                                        <div class="review-date">Posted on March 10, 2025</div>
+                                      </div>
+                                    </div>
+                                    <div class="review-content">
+                                      <p>Great product for the price. Fast shipping and good customer service when I had
+                                        questions about the delivery.</p>
+                                    </div>
+                                  </div>
+
+                                  <a href="#" class="btn btn-outline-primary mt-3">View All Reviews</a>
+                                </div>
+                              </div>
+
+                              <div class="col-lg-4">
+                                <div class="review-form-wrapper p-4 bg-light rounded">
+                                  <h4 class="mb-3">Add a Review</h4>
+                                  <form class="review-form">
+                                    <div class="mb-3">
+                                      <label class="form-label">Your Rating</label>
+                                      <div class="rating-select">
+                                        <i class="far fa-star fs-4 me-1 rating-star" data-value="1"></i>
+                                        <i class="far fa-star fs-4 me-1 rating-star" data-value="2"></i>
+                                        <i class="far fa-star fs-4 me-1 rating-star" data-value="3"></i>
+                                        <i class="far fa-star fs-4 me-1 rating-star" data-value="4"></i>
+                                        <i class="far fa-star fs-4 rating-star" data-value="5"></i>
+                                      </div>
+                                    </div>
+                                    <div class="mb-3">
+                                      <textarea class="form-control" rows="4" placeholder="Your review"></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Submit Review</button>
+                                  </form>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        <% }) %>
+                        </div>
                       </div>
-                    <% } else { %>
-                      <div class="no-related-products">
-                        <i class="fas fa-search fa-3x mb-3 text-muted"></i>
-                        <p class="mb-0">No related products found at the moment.</p>
-                      </div>
-                    <% } %>
+                    </div>
                   </div>
-                </section>
-              </div>
-            <% } %>
+
+                  <section class="related-products-section">
+                    <div class="container my-5">
+                      <h2 class="section-title mb-4">Related Products</h2>
+
+                      <% if (relatedProducts && relatedProducts.length> 0) { %>
+                        <div class="row products-slider">
+                          <% relatedProducts.forEach(relatedProd=> { %>
+                            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                              <div class="product-card h-100">
+                                <% const discount=Math.round((relatedProd.regularPrice -
+                                  relatedProd.salePrice)/relatedProd.regularPrice*100); if (discount> 0) { %>
+                                  <div class="discount-badge"><i class="fas fa-tag me-1"></i>
+                                    <%= discount %>% OFF
+                                  </div>
+                                  <% } %>
+
+                                    <% if (relatedProd.status==='Out of Stock' ) { %>
+                                      <div class="sold-out-badge"><i class="fas fa-exclamation-circle me-1"></i> Sold
+                                        Out</div>
+                                      <% } %>
+
+                                        <a href="/productDetails?id=<%= relatedProd._id %>"
+                                          class="text-decoration-none">
+                                          <div class="product-image-container">
+                                            <img src="/Uploads/<%= relatedProd.productImage[0] %>"
+                                              alt="<%= relatedProd.productName %>" class="img-fluid" />
+                                          </div>
+                                          <div class="product-info">
+                                            <h5 class="product-name">
+                                              <%= relatedProd.productName %>
+                                            </h5>
+                                            <div class="price-container">
+                                              <span class="product-price">₹<%=
+                                                  relatedProd.salePrice.toLocaleString('en-IN') %></span>
+                                              <% if (discount> 0) { %>
+                                                <span class="original-price">₹<%=
+                                                    relatedProd.regularPrice.toLocaleString('en-IN') %></span>
+                                                <% } %>
+                                            </div>
+                                          </div>
+                                        </a>
+
+                                        <div class="px-3 pb-3 mt-auto">
+                                          <% if (relatedProd.status==='Out of Stock' ) { %>
+                                            <button class="add-to-cart-btn w-100" disabled>
+                                              <i class="fas fa-ban me-2"></i> Out of Stock
+                                            </button>
+                                            <% } else { %>
+                                              <form action="/cart/add" method="POST">
+                                                <input type="hidden" name="productId" value="<%= product._id %>">
+                                                <input type="hidden" name="quantity" value="1">
+                                                <button type="submit" class="add-to-cart-btn">Add to Cart</button>
+                                              </form>
+                                              <% } %>
+                                        </div>
+                              </div>
+                            </div>
+                            <% }) %>
+                        </div>
+                        <% } else { %>
+                          <div class="no-related-products">
+                            <i class="fas fa-search fa-3x mb-3 text-muted"></i>
+                            <p class="mb-0">No related products found at the moment.</p>
+                          </div>
+                          <% } %>
+                    </div>
+                  </section>
+                </div>
+                <% } %>
           </div>
         </div>
       </div>
     </section>
   </main>
-  
+
   <!-- Enhanced Image Zoom Modal -->
   <div class="zoom-container" id="zoomContainer">
     <div class="zoom-img-wrapper">
@@ -1390,86 +1483,95 @@
       <div class="zoom-close" id="zoomClose"><i class="fas fa-times"></i></div>
     </div>
   </div>
-  
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.12/sweetalert2.min.js"></script>
-  
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+    onerror="console.error('Failed to load Bootstrap script')"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
+    onerror="console.error('Failed to load jQuery script')"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js"
+    onerror="console.error('Failed to load Slick Carousel script')"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.12/sweetalert2.min.js"
+    onerror="console.error('Failed to load SweetAlert2 script')"></script>
+
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       // Initialize the product sliders
       initializeProductSliders();
-      
+
       // Setup the enhanced image zoom functionality
       setupImageZoom();
-      
+
       // Initialize the review star rating
       initReviewRating();
-      
+
       // Check product status
       checkProductStatus();
+
+      // Setup form submission for add to cart
+      setupAddToCartForm();
     });
-    
+
     // Function to initialize product image sliders
     function initializeProductSliders() {
-      if (typeof $ !== 'undefined' && typeof $.fn.slick !== 'undefined') {
-        // Destroy any existing slick instances first
-        if ($('#productImageSlider').hasClass('slick-initialized')) {
-          $('#productImageSlider').slick('unslick');
-        }
-        if ($('#thumbnailSlider').hasClass('slick-initialized')) {
-          $('#thumbnailSlider').slick('unslick');
-        }
-        
-        // Initialize the main image slider
-        $('#productImageSlider').slick({
-          slidesToShow: 1,
-          slidesToScroll: 1,
-          arrows: false,
-          fade: true,
-          asNavFor: '#thumbnailSlider',
-          adaptiveHeight: true,
-          infinite: true,
-          prevArrow: '<button type="button" class="slick-prev"><i class="fas fa-chevron-left"></i></button>',
-          nextArrow: '<button type="button" class="slick-next"><i class="fas fa-chevron-right"></i></button>',
-          responsive: [
-            {
-              breakpoint: 768,
-              settings: {
-                dots: true
-              }
-            }
-          ]
-        });
-        
-        // Initialize the thumbnail slider
-        $('#thumbnailSlider').slick({
-          slidesToShow: 4,
-          slidesToScroll: 1,
-          asNavFor: '#productImageSlider',
-          dots: false,
-          focusOnSelect: true,
-          // prevArrow: '<button type="button" class="slick-prev"><i class="fas fa-chevron-left"></i></button>',
-          // nextArrow: '<button type="button" class="slick-next"><i class="fas fa-chevron-right"></i></button>',
-          responsive: [
-            {
-              breakpoint: 768,
-              settings: {
-                slidesToShow: 3
-              }
-            },
-            {
-              breakpoint: 576,
-              settings: {
-                slidesToShow: 2
-              }
-            }
-          ]
-        });
+      if (typeof $ === 'undefined' || typeof $.fn.slick === 'undefined') {
+        console.error('jQuery or Slick Carousel not loaded');
+        showAlert('Failed to load image sliders. Please try refreshing the page.', 'error');
+        return;
       }
+
+      // Destroy any existing slick instances first
+      if ($('#productImageSlider').hasClass('slick-initialized')) {
+        $('#productImageSlider').slick('unslick');
+      }
+      if ($('#thumbnailSlider').hasClass('slick-initialized')) {
+        $('#thumbnailSlider').slick('unslick');
+      }
+
+      // Initialize the main image slider
+      $('#productImageSlider').slick({
+        slidesToShow: 1,
+        slidesToScroll: 1,
+        arrows: false,
+        fade: true,
+        asNavFor: '#thumbnailSlider',
+        adaptiveHeight: true,
+        infinite: true,
+        prevArrow: '<button type="button" class="slick-prev"><i class="fas fa-chevron-left"></i></button>',
+        nextArrow: '<button type="button" class="slick-next"><i class="fas fa-chevron-right"></i></button>',
+        responsive: [
+          {
+            breakpoint: 768,
+            settings: {
+              dots: true
+            }
+          }
+        ]
+      });
+
+      // Initialize the thumbnail slider
+      $('#thumbnailSlider').slick({
+        slidesToShow: 4,
+        slidesToScroll: 1,
+        asNavFor: '#productImageSlider',
+        dots: false,
+        focusOnSelect: true,
+        responsive: [
+          {
+            breakpoint: 768,
+            settings: {
+              slidesToShow: 3
+            }
+          },
+          {
+            breakpoint: 576,
+            settings: {
+              slidesToShow: 2
+            }
+          }
+        ]
+      });
     }
-    
+
     // Setup enhanced image zoom functionality
     function setupImageZoom() {
       const zoomContainer = document.getElementById('zoomContainer');
@@ -1478,20 +1580,20 @@
       const zoomPrev = document.getElementById('zoomPrev');
       const zoomNext = document.getElementById('zoomNext');
       const zoomCounter = document.getElementById('zoomCounter');
-      
+
       // Get all product images
       const productImages = document.querySelectorAll('.product-img');
       let currentImageIndex = 0;
       const totalImages = productImages.length;
-      
+
       // Open zoom view
-      window.openZoom = function(index) {
+      window.openZoom = function (index) {
         currentImageIndex = index;
         updateZoomImage();
         zoomContainer.classList.add('active');
         document.body.style.overflow = 'hidden'; // Prevent body scrolling
       };
-      
+
       // Update the zoom image
       function updateZoomImage() {
         const imgSrc = productImages[currentImageIndex].src;
@@ -1499,34 +1601,34 @@
         zoomImage.classList.remove('zoomed');
         zoomCounter.textContent = `${currentImageIndex + 1} / ${totalImages}`;
       }
-      
+
       // Close zoom view
-      zoomClose.addEventListener('click', function() {
+      zoomClose.addEventListener('click', function () {
         zoomContainer.classList.remove('active');
         document.body.style.overflow = ''; // Restore body scrolling
       });
-      
+
       // Navigate to previous image
-      zoomPrev.addEventListener('click', function() {
+      zoomPrev.addEventListener('click', function () {
         currentImageIndex = (currentImageIndex - 1 + totalImages) % totalImages;
         updateZoomImage();
       });
-      
+
       // Navigate to next image
-      zoomNext.addEventListener('click', function() {
+      zoomNext.addEventListener('click', function () {
         currentImageIndex = (currentImageIndex + 1) % totalImages;
         updateZoomImage();
       });
-      
+
       // Toggle zoom level
-      zoomImage.addEventListener('click', function() {
+      zoomImage.addEventListener('click', function () {
         zoomImage.classList.toggle('zoomed');
       });
-      
+
       // Handle keyboard navigation
-      document.addEventListener('keydown', function(e) {
+      document.addEventListener('keydown', function (e) {
         if (!zoomContainer.classList.contains('active')) return;
-        
+
         if (e.key === 'Escape') {
           zoomContainer.classList.remove('active');
           document.body.style.overflow = ''; // Restore body scrolling
@@ -1539,17 +1641,17 @@
         }
       });
     }
-    
+
     // Initialize review star rating functionality
     function initReviewRating() {
       const ratingStars = document.querySelectorAll('.rating-star');
       let selectedRating = 0;
-      
+
       ratingStars.forEach(star => {
-        star.addEventListener('click', function() {
+        star.addEventListener('click', function () {
           const value = parseInt(this.dataset.value);
           selectedRating = value;
-          
+
           // Update the stars UI
           ratingStars.forEach(s => {
             const starValue = parseInt(s.dataset.value);
@@ -1557,19 +1659,19 @@
             s.classList.add(starValue <= selectedRating ? 'fas' : 'far');
           });
         });
-        
+
         // Hover effects
-        star.addEventListener('mouseenter', function() {
+        star.addEventListener('mouseenter', function () {
           const value = parseInt(this.dataset.value);
-          
+
           ratingStars.forEach(s => {
             const starValue = parseInt(s.dataset.value);
             s.classList.remove('fas', 'far');
             s.classList.add(starValue <= value ? 'fas' : 'far');
           });
         });
-        
-        star.addEventListener('mouseleave', function() {
+
+        star.addEventListener('mouseleave', function () {
           ratingStars.forEach(s => {
             const starValue = parseInt(s.dataset.value);
             s.classList.remove('fas', 'far');
@@ -1578,116 +1680,188 @@
         });
       });
     }
-    
+
     // Check product status (blocked/unavailable)
     function checkProductStatus() {
-      <% if (product.status === 'blocked' || product.status === 'unavailable') { %>
+       if (product.status === 'blocked' || product.status === 'unavailable') { 
         console.log('Product is blocked or unavailable');
-      <% } %>
+       } 
     }
-    
+
     // Quantity control functions
-    function increaseQuantity() {
-      const quantityElement = document.getElementById('quantity');
-      let currentVal = parseInt(quantityElement.textContent);
-      
-      if (!isNaN(currentVal)) {
-        const maxQuantity = <%= quantity %>;
-        const newVal = Math.min(currentVal + 1, maxQuantity);
-        quantityElement.textContent = newVal;
-      }
-    }
-    
-    function decreaseQuantity() {
-      const quantityElement = document.getElementById('quantity');
-      let currentVal = parseInt(quantityElement.textContent);
-      
-      if (!isNaN(currentVal) && currentVal > 1) {
-        quantityElement.textContent = currentVal - 1;
-      }
-    }
-    
-    // Add to cart function
-    function addToCart(productId) {
-      const quantity = parseInt(document.getElementById('quantity').textContent);
-      if (isNaN(quantity) || quantity < 1) {
-        showAlert('Please select a valid quantity', 'error');
-        return;
-      }
-      
-      <% if (!user) { %>
-        window.location.href = '/login?redirect=productDetails?id=<%= product._id %>';
-        return;
-      <% } %>
-      
-      fetch('/cart/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          productId: productId,
-          quantity: quantity
-        })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          showAlert('Product added to cart!', 'success');
-        } else {
-          if (data.message === 'Product is unavailable' || data.message === 'Product is blocked') {
-            showAlert('This product is currently unavailable', 'error');
-            setTimeout(() => {
-              window.location.href = '/shop';
-            }, 2000);
-          } else {
-            showAlert(data.message || 'Failed to add product to cart', 'error');
-          }
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        showAlert('Something went wrong. Please try again.', 'error');
-      });
-    }
-    
+//     function increaseQuantity() {
+//       const quantityElement = document.getElementById('quantity');
+//       let currentVal = parseInt(quantityElement.textContent);
+
+//       if (!isNaN(currentVal)) {
+//     if (currentVal >= 5) {
+//       Swal.fire({
+//         icon: 'warning',
+//         title: 'Limit Reached',
+//         text: 'You can only add up to 5 quantities of this item.',
+//         confirmButtonColor: '#3a86ff'
+//       });
+//       return;
+//     }
+
+//     const maxQuantity = parseInt('<%= quantity %>') || 5;
+//     const newVal = Math.min(currentVal + 1, maxQuantity);
+//     quantityElement.textContent = newVal;
+
+//     const formQuantityInput = document.getElementById('formQuantity');
+//     if (formQuantityInput) {
+//       formQuantityInput.value = newVal;
+//     }
+//   }
+// }
+
+
+     
+
+      // function getSelectedQuantity() {
+      // const quantityElement = document.getElementById('quantity');
+      // return parseInt(quantityElement.textContent) || 1;
+      // }
+
+
+
+
+
+    // function decreaseQuantity() {
+    //   const quantityElement = document.getElementById('quantity');
+    //   let currentVal = parseInt(quantityElement.textContent);
+
+    //   if (!isNaN(currentVal) && currentVal > 1) {
+    //     quantityElement.textContent = currentVal - 1;
+    //     document.getElementById('formQuantity').value = currentVal - 1;
+    //   }
+    // }
+
+    // Setup add to cart form submission
+    // function setupAddToCartForm() {
+    //   const form = document.getElementById('addToCartForm');
+    //   const button = document.getElementById('addToCartBtn');
+
+    //   if (form && button) {
+    //     form.addEventListener('submit', function (e) {
+    //       e.preventDefault();
+          
+    //       <% if (!user) { %>
+    //         window.location.href = '/login?redirect=productDetails?id=<%= product._id %>';
+    //         return;
+    //       <% } %>
+          
+    //       const quantity = parseInt(document.getElementById('formQuantity').value);
+    //       if (isNaN(quantity) || quantity < 1) {
+    //         showAlert('Please select a valid quantity', 'error');
+    //         return;
+    //       }
+
+    //       // Add visual feedback
+    //       const originalText = button.innerHTML;
+    //       button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Adding...';
+    //       button.disabled = true;
+
+    //       const formData = new FormData(form);
+    //       fetch('/cart/add', {
+    //         method: 'POST',
+    //         body: formData
+    //       })
+    //         .then(response => {
+    //           if (!response.ok) {
+    //             throw new Error(`HTTP error! status: ${response.status}`);
+    //           }
+    //           return response.text(); // Get raw text to handle potential non-JSON responses
+    //         })
+    //         .then(text => {
+    //           let data;
+    //           try {
+    //             data = JSON.parse(text); // Attempt to parse JSON
+    //           } catch (e) {
+    //             console.error('Invalid JSON response:', text);
+    //             throw new Error('Server returned an invalid response');
+    //           }
+
+    //           if (data.success) {
+    //             button.innerHTML = '<i class="fas fa-check me-1"></i> Added';
+    //             setTimeout(() => {
+    //               button.innerHTML = originalText;
+    //               button.disabled = false;
+    //             }, 1500);
+    //             showAlert('Product added to cart!', 'success');
+    //           } else {
+    //             button.innerHTML = originalText;
+    //             button.disabled = false;
+    //             if (data.message === 'Product is unavailable' || data.message === 'Product is blocked') {
+    //               showAlert('This product is currently unavailable', 'error');
+    //               setTimeout(() => {
+    //                 window.location.href = '/shop';
+    //               }, 2000);
+    //             } else {
+    //               showAlert(data.message || 'Failed to add product to cart', 'error');
+    //             }
+    //           }
+    //         })
+    //         .catch(error => {
+    //           console.error('Error:', error);
+    //           button.innerHTML = originalText;
+    //           button.disabled = false;
+    //           showAlert('Something went wrong. Please try again.', 'error');
+    //         });
+    //     });
+    //   }
+    // }
+
     // Add to wishlist function
     function addToWishlist(productId) {
-      <% if (!user) { %>
+       if (!user) { 
         window.location.href = '/login?redirect=productDetails?id=<%= product._id %>';
         return;
-      <% } %>
-      
-      fetch('/wishlist/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          productId: productId
+       } 
+
+        fetch('/wishlist/add', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            productId: productId
+          })
         })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          showAlert('Product added to wishlist!', 'success');
-        } else {
-          if (data.message === 'Product is unavailable' || data.message === 'Product is blocked') {
-            showAlert('This product is currently unavailable', 'error');
-            setTimeout(() => {
-              window.location.href = '/shop';
-            }, 2000);
-          } else {
-            showAlert(data.message || 'Failed to add product to wishlist', 'error');
-          }
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        showAlert('Something went wrong. Please try again.', 'error');
-      });
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.text();
+          })
+          .then(text => {
+            let data;
+            try {
+              data = JSON.parse(text);
+            } catch (e) {
+              console.error('Invalid JSON response:', text);
+              throw new Error('Server returned an invalid response');
+            }
+
+            if (data.success) {
+              showAlert('Product added to wishlist!', 'success');
+            } else {
+              if (data.message === 'Product is unavailable' || data.message === 'Product is blocked') {
+                showAlert('This product is currently unavailable', 'error');
+                setTimeout(() => {
+                  window.location.href = '/shop';
+                }, 2000);
+              } else {
+                showAlert(data.message || 'Failed to add product to wishlist', 'error');
+              }
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showAlert('Something went wrong. Please try again.', 'error');
+          });
     }
-    
+
     // Share product function
     function shareProduct() {
       if (navigator.share) {
@@ -1696,8 +1870,8 @@
           text: 'Check out this amazing product: <%= product.productName %>',
           url: window.location.href
         })
-        .then(() => console.log('Shared successfully'))
-        .catch((error) => console.log('Error sharing:', error));
+          .then(() => console.log('Shared successfully'))
+          .catch((error) => console.log('Error sharing:', error));
       } else {
         // Fallback for browsers that don't support the Web Share API
         const tempInput = document.createElement('input');
@@ -1706,11 +1880,11 @@
         tempInput.select();
         document.execCommand('copy');
         document.body.removeChild(tempInput);
-        
+
         showAlert('Link copied to clipboard!', 'success');
       }
     }
-    
+
     // Show alert function using SweetAlert if available
     function showAlert(message, type) {
       if (typeof Swal !== 'undefined') {
@@ -1727,60 +1901,109 @@
       }
     }
 
+    // Add to cart quick function for related products
+    function addToCartQuick(productId) {
+      <% if (!user) { %>
+        window.location.href = '/login?redirect=productDetails?id=<%= product._id %>';
+        return;
+      <% } %>
 
+      // Add visual feedback before the fetch
+      const button = event.currentTarget;
+      const originalText = button.innerHTML;
+      button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Adding...';
+      button.disabled = true;
 
+      fetch('/cart/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productId: productId,
+          quantity: 1  // Default to 1 for quick add
+        })
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.text();
+        })
+        .then(text => {
+          let data;
+          try {
+            data = JSON.parse(text);
+          } catch (e) {
+            console.error('Invalid JSON response:', text);
+            throw new Error('Server returned an invalid response');
+          }
 
-
-    
-  
-
-
-
-
-  function addToCartQuick(productId) {
-  <% if (!user) { %>
-    window.location.href = '/login?redirect=productDetails?id=<%= product._id %>';
-    return;
-  <% } %>
-  
-  // Add visual feedback before the fetch
-  const button = event.currentTarget;
-  const originalText = button.innerHTML;
-  button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Adding...';
-  button.disabled = true;
-  
-  fetch('/cart/add', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      productId: productId,
-      quantity: 1  // Default to 1 for quick add
-    })
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      button.innerHTML = '<i class="fas fa-check me-1"></i> Added';
-      setTimeout(() => {
-        button.innerHTML = originalText;
-        button.disabled = false;
-      }, 1500);
-      showAlert('Product added to cart!', 'success');
-    } else {
-      button.innerHTML = originalText;
-      button.disabled = false;
-      showAlert(data.message || 'Failed to add product to cart', 'error');
+          if (data.success) {
+            button.innerHTML = '<i class="fas fa-check me-1"></i> Added';
+            setTimeout(() => {
+              button.innerHTML = originalText;
+              button.disabled = false;
+            }, 1500);
+            showAlert('Product added to cart!', 'success');
+          } else {
+            button.innerHTML = originalText;
+            button.disabled = false;
+            showAlert(data.message || 'Failed to add product to cart', 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          button.innerHTML = originalText;
+          button.disabled = false;
+          showAlert('Something went wrong. Please try again.', error);
+        });
     }
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    button.innerHTML = originalText;
-    button.disabled = false;
-    showAlert('Something went wrong. Please try again.', 'error');
-  });
-}
   </script>
 </body>
+
 </html>
+
+<script>
+ 
+
+  window.addToCart = (productId, productName, quantity) => {
+    fetch('/cart/add', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ productId , quantity})
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        Swal.fire({
+          title: 'Added to Cart!',
+          text: `${data.productName || productName} has been added to your cart.`,
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      } else {
+        Swal.fire({
+          title: 'Error!',
+          text: data.message || 'Something went wrong.',
+          icon: 'error',
+          showConfirmButton: true
+        });
+      }
+    })
+    .catch(error => {
+      console.error('Error adding to cart:', error);
+      Swal.fire({
+        title: 'Error!',
+        text: 'Failed to add item to cart.',
+        icon: 'error',
+        showConfirmButton: true
+      });
+    });
+  };
+
+
+</script>

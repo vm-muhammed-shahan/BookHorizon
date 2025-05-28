@@ -52,7 +52,7 @@
           <span class="checkmark"></span>
           Make Default
         </label>
-        <button type="submit" class="add-btn">Add Address</button>
+        <button type="submit" class="add-btn">Save Address</button>
       </div>
     </form>
   </div>
@@ -66,25 +66,24 @@
     <% addresses.forEach(addr => { %>
       <div class="address-card">
         <div class="address-header">
-          <div class="address-name"><%= addr.name %> | <%= addr.phone %></div>
+          <div class="address-name"><%= addr.name %> | <%=addr.phone %></div>
           <% if (addr.isDefault) { %>
-            <span class="default-badge">Default</span>
+            <!-- <span class="default-badge">1</span> -->
           <% } %>
         </div>
         
         <div class="address-details">
-          <p><%= addr.city %>, <%= addr.state %> - <%= addr.pincode %></p>
+          <p> <%= addr.landMark%>,<%= addr.city %>,<%= addr.state %> - <%= addr.pincode %></p>
         </div>
         
         <div class="address-actions">
           <% if (!addr.isDefault) { %>
             <a href="/profile/addresses/set-default/<%= addr._id %>" class="action-link">Set Default</a>
           <% } %>
-          <form method="POST" action="/profile/addresses/edit/<%= addr._id %>">
-            <!-- Add input fields similar to add form, pre-filled with addr values -->
-            <button type="submit" class="edit-btn">Edit</button>
+          <a href="/profile/addresses/edit?addrId=<%= addr._id %>" class="action-link">Edit Page</a>
+
           </form>
-          <a href="/profile/addresses/delete/<%= addr._id %>" class="delete-link">Delete</a>
+          <a  class="delete-link"  onclick="confirmDelete('<%= addr._id %>')">Delete</a>
         </div>
       </div>
     <% }) %>
@@ -362,3 +361,44 @@
     }
   }
 </style>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  
+  // Delete Confirmation
+  function confirmDelete(addrId) {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: 'You won\'t be able to undo this!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#aaa',
+      confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = `/profile/addresses/delete/${addrId}`;
+      }
+    });
+  }
+
+
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('success') === '1') {
+    Swal.fire({ title: 'Success!', text: 'Address added successfully.', icon: 'success' });
+  } else if (urlParams.get('success') === 'edit') {
+    Swal.fire({ title: 'Updated!', text: 'Address updated successfully.', icon: 'success' });
+  } else if (urlParams.get('success') === 'delete') {
+    Swal.fire({ title: 'Deleted!', text: 'Address deleted successfully.', icon: 'success' }).then(() => {
+      window.location.href = '/profile/addresses'
+    });
+  }
+
+  if (urlParams.get('error')) {
+    Swal.fire({
+      title: 'Error!',
+      text: decodeURIComponent(urlParams.get('error')),
+      icon: 'error'
+    });
+  }
+</script>

@@ -9,6 +9,7 @@ const pageerror = (req, res) => {
 
 
 const loadLogin = (req, res) => {
+  console.log(req.session.admin)
   if (req.session.admin) {
     return res.redirect("/");
   }
@@ -18,14 +19,14 @@ const loadLogin = (req, res) => {
 
 const login = async (req, res) => {
   try {
+   
     const { email, password } = req.body;
     const admin = await User.findOne({ email, isAdmin: true });
     if (admin) { 
       const passwordMatch = await bcrypt.compare(password, admin.password);
 
       if (passwordMatch) {
-       req.session.admin = true;
-        req.session.user = admin;
+        req.session.admin = admin;
         return res.redirect("/admin");
       } else {
         return res.render("admin-login", { message: "Invalid email or password" });

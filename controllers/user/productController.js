@@ -10,7 +10,6 @@ const productDetails = async (req, res) => {
     const user = req.session.user;
     const userData = user ? await User.findById(user._id) : null;
     const productId = req.query.id;
-    // console.log("Fetching product details for:", productId);
     if (!productId) {
       console.log("No product ID provided");
       return res.redirect("/shop");
@@ -28,9 +27,6 @@ const productDetails = async (req, res) => {
       console.log("Product is blocked or out of stock");
       return res.redirect("/shop");
     }
-    // if (Array.isArray(product.productImage)) {
-    //   product.productImage = [...new Set(product.productImage)];
-    // }8
     const category = await Category.findById(product.category);
     const relatedProducts = await Product.find({
       category: product.category,

@@ -1,23 +1,112 @@
+<!-- views/editAddress.ejs -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Edit Address</title>
-  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      padding: 30px;
+      color: #333;
+    }
+    form {
+      background: #fff;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 12px;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 4px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      margin-top: 20px;
+      background: #007bff;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: #007bff;
+      text-decoration: none;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
   <h1>Edit Address</h1>
-  <form action="/address/edit/<%= address._id %>" method="POST">
-    <label>Address Type: <input type="text" name="addressType" value="<%= address.addressType %>" required></label><br>
-    <label>Name: <input type="text" name="name" value="<%= address.name %>" required></label><br>
-    <label>City: <input type="text" name="city" value="<%= address.city %>" required></label><br>
-    <label>Landmark: <input type="text" name="landMark" value="<%= address.landMark %>" required></label><br>
-    <label>State: <input type="text" name="state" value="<%= address.state %>" required></label><br>
-    <label>Pincode: <input type="number" name="pincode" value="<%= address.pincode %>" required></label><br>
-    <label>Phone: <input type="text" name="phone" value="<%= address.phone %>" required></label><br>
-    <label>Alt Phone: <input type="text" name="altPhone" value="<%= address.altPhone %>" required></label><br>
-    <label><input type="checkbox" name="isDefault" <%= address.isDefault ? 'checked' : '' %>> Set as Default</label><br>
+  <form action="/profile/addresses/edit/<%= address._id %>" method="POST">
+    <!-- <form action="/profile/addresses/edit/<%= address._id %>" method="POST">  -->
+
+    <label>Address Type:
+      <select name="addressType" required>
+        <option value="Home" <%= address.addressType === 'Home' ? 'selected' : '' %>>Home</option>
+        <option value="Work" <%= address.addressType === 'Work' ? 'selected' : '' %>>Work</option>
+      </select>
+    </label>
+
+    <label>Name:
+      <input type="text" name="name" value="<%= address.name %>" required>
+    </label>
+
+    <label>City:
+      <input type="text" name="city" value="<%= address.city %>" required>
+    </label>
+
+    <label>Landmark:
+      <input type="text" name="landMark" value="<%= address.landMark %>" required>
+    </label>
+
+    <label>State:
+      <input type="text" name="state" value="<%= address.state %>" required>
+    </label>
+
+    <label>Pincode:
+      <input type="number" name="pincode" value="<%= address.pincode %>" required>
+    </label>
+
+    <label>Phone:
+      <input type="text" name="phone" value="<%= address.phone %>" required>
+    </label>
+
+    <label>Alt Phone:
+      <input type="text" name="altPhone" value="<%= address.altPhone %>" required>
+    </label>
+
+    <!-- <label>
+      <input type="checkbox" name="isDefault" <%= address.isDefault ? 'checked' : '' %>> Set as Default
+    </label> -->
+
     <button type="submit">Save Changes</button>
   </form>
-  <a href="/profile">Back to Profile</a>
+
+  <a href="/profile/addresses" class="back-link">Back to Addresses</a>
 </body>
 </html>

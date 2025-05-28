@@ -1,3 +1,4 @@
+<%- include("../../views/partials/user/header") %>
 <div class="cart-container">
   <h2 class="cart-title">Your Cart</h2>
   <% if (items.length === 0) { %>
@@ -11,7 +12,16 @@
         <div class="cart-item">
           <!-- 1. Product Image -->
           <div class="item-image">
-            <img src="/uploads/<%= item.productId.productImage[0] %>" alt="<%= item.productId.productName || 'Product' %>">
+           <% if (item.productId && item.productId.productImage && item.productId.productImage.length > 0) { %>
+  <a href="/productDetails?id=<%=item.productId._id%>">
+    <img src="/uploads/<%= item.productId.productImage[0] %>" alt="<%= item.productId.productName || 'Product' %>">
+  </a>
+<% } else { %>
+  <a href="#">
+    <img src="/images/placeholder.png" alt="No Image Available">
+  </a>
+<% } %>
+
           </div>
           <div class="item-details">
             <!-- 2. Product Name -->
@@ -453,3 +463,4 @@
     }
   }
 </style>
+<%- include("../../views/partials/user/footer") %> 
