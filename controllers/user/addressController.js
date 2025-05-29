@@ -1,42 +1,75 @@
 const Address = require("../../models/addressSchema");
+const validator = require("validator");
 
 // 1. GET all addresses
 const getAddresses = async (req, res) => {
-  const userId = req.session.user._id;
-  const doc = await Address.findOne({ userId });
-  res.render("addresses", { addresses: doc?.address || [] });
+  try {
+    const userId = req.session.user._id;
+    const doc = await Address.findOne({ userId });
+    res.render("addresses", { addresses: doc?.address || [] });
+  } catch (error) {
+    console.error("Error fetching addresses:", error);
+    res.status(500).send("An error occurred while fetching addresses.");
+  }
 };
 
 
 
 const addAddress = async (req, res) => {
-  try{
-      const userId = req.session.user._id;
-  const newAddr = req.body;
-  const requiredFields = ['name', 'phone', 'city', 'state', 'landMark', 'pincode', 'altPhone', 'addressType'];
-  for (let field of requiredFields) {
-    if (!newAddr[field] || newAddr[field].trim() === '') {
-      return res.redirect('/profile/addresses?error=Missing+required+fields');
+  try {
+    console.log("addAddress called with body:", req.body); // Debug log
+    const userId = req.session.user._id;
+    const {
+      name, phone, city, state,
+      landMark, pincode, altPhone, addressType
+    } = req.body;
+
+    // Validation checks
+    const phoneRegex = /^[6-9]\d{9}$/;
+    const pincodeRegex = /^\d{6}$/;
+
+    if (!name || !phone || !city || !state || !landMark || !pincode || !altPhone || !addressType) {
+      return res.redirect('/profile/addresses?error=All+fields+are+required');
     }
-  }
-  let doc = await Address.findOne({ userId });
-  newAddr.isDefault = !doc || doc.address.length === 0;
-  if (!doc) {
-    doc = new Address({ userId, address: [newAddr] });
-  } else {
-    if (newAddr.isDefault) {
-      doc.address.forEach(addr => (addr.isDefault = false));
+
+    if (!phoneRegex.test(phone) || !phoneRegex.test(altPhone)) {
+      return res.redirect('/profile/addresses?error=Phone+numbers+must+be+10+digit+valid+numbers');
     }
-    doc.address.push(newAddr);
+
+    if (phone === altPhone) {
+      return res.redirect('/profile/addresses?error=Phone+and+Alternative+Phone+must+be+different');
+    }
+
+    if (!pincodeRegex.test(pincode)) {
+      return res.redirect('/profile/addresses?error=Pincode+must+be+6+digits');
+    }
+
+    // Proceed if valid
+    let doc = await Address.findOne({ userId });
+    const newAddr = {
+      name, phone, city, state, landMark, pincode,
+      altPhone, addressType,
+      isDefault: !doc || doc.address.length === 0
+    };
+
+    if (!doc) {
+      doc = new Address({ userId, address: [newAddr] });
+    } else {
+      if (newAddr.isDefault) {
+        doc.address.forEach(addr => (addr.isDefault = false));
+      }
+      doc.address.push(newAddr);
+    }
+
+    await doc.save();
+    console.log("Address saved successfully");
+    return res.status(200).json({success:true, message: 'address saved successfully'});
+  } catch (err) {
+    console.error("Address Error:", err);
+    return res.status(500).json({ error: 'Server error while adding address' });
   }
-  await doc.save();
-  //  Redirect with a success query param
-  res.redirect('/profile/addresses?success=1');
-} catch (err) {
-  console.error(err);
-  res.redirect('/profile/addresses?error=Something+went+wrong');
-}
 };
+
 
 
 
@@ -62,32 +95,62 @@ const getEdit = async (req, res) => {
 
 
 const editAddress = async (req, res) => {
-  try{
-  const userId = req.session.user._id;
-  const { addrId } = req.params;
-  const updated = req.body;
+  try {
+    const userId = req.session.user._id;
+    const { addrId } = req.params;
+    const {
+      name, phone, city, state,
+      landMark, pincode, altPhone, addressType, isDefault
+    } = req.body;
 
-    // Validation
-    const requiredFields = ['name', 'phone', 'city', 'state', 'landMark', 'pincode', 'altPhone', 'addressType'];
-    for (let field of requiredFields) {
-      if (!updated[field] || updated[field].trim() === '') {
-        return res.redirect('/profile/addresses?error=Missing+required+fields+for+edit');
-      }
+    const phoneRegex = /^[6-9]\d{9}$/;
+    const pincodeRegex = /^\d{6}$/;
+
+    if (!name || !phone || !city || !state || !landMark || !pincode || !altPhone || !addressType) {
+      return res.status(400).json({ error: 'All fields are required' });
     }
-  const doc = await Address.findOne({ userId });
-  const addr = doc.address.id(addrId);
-  if (!addr) return res.redirect('/profile/addresses?error=Address+not+found');
 
-  updated.isDefault = req.body.isDefault === "on";
-  if (updated.isDefault) {
-    doc.address.forEach(a => (a.isDefault = false));
-  }
-  Object.assign(addr, updated);
-  await doc.save();
-  res.redirect('/profile/addresses?success=edit');
-} catch (err) {
-    console.error(err);
-    res.redirect('/profile/addresses?error=Failed+to+edit+address');
+    if (!phoneRegex.test(phone) || !phoneRegex.test(altPhone)) {
+      return res.status(400).json({ error: 'Phone numbers must be 10-digit valid numbers' });
+    }
+
+    if (phone === altPhone) {
+      return res.status(400).json({ error: 'Phone and Alternative Phone must be different' });
+    }
+
+    if (!pincodeRegex.test(pincode)) {
+      return res.status(400).json({ error: 'Pincode must be 6 digits' });
+    }
+
+    const doc = await Address.findOne({ userId });
+    if (!doc) {
+      return res.status(404).json({ error: 'User address record not found' });
+    }
+
+    const index = doc.address.findIndex(a => a._id.toString() === addrId);
+    if (index === -1) {
+      return res.status(404).json({ error: 'Address not found' });
+    }
+
+    // Update the address
+    doc.address[index] = {
+      name, phone, city, state, landMark, pincode,
+      altPhone, addressType,
+      isDefault: isDefault === 'true' || isDefault === true
+    };
+
+    // If this address is set as default, unset others
+    if (doc.address[index].isDefault) {
+      doc.address.forEach((addr, i) => {
+        if (i !== index) addr.isDefault = false;
+      });
+    }
+
+    await doc.save();
+    return res.status(200).json({ success: true, message: 'Address updated successfully' });
+  } catch (err) {
+    console.error("Error updating address:", err);
+    return res.status(500).json({ error: 'Server error while updating address' });
   }
 };
 
@@ -100,13 +163,14 @@ const deleteAddress = async (req, res) => {
 
     const doc = await Address.findOne({ userId });
     if (!doc) {
-       return res.redirect('/profile/addresses?error=User+address+record+not+found');
+      return res.status(404).json({ error: 'User address record not found' });
     }
 
     const index = doc.address.findIndex(a => a._id.toString() === addrId);
     if (index === -1) {
-     return res.redirect('/profile/addresses?error=Address+not+found');
+      return res.status(404).json({ error: 'Address not found' });
     }
+
     const wasDefault = doc.address[index].isDefault;
     // Remove the address
     doc.address.splice(index, 1);
@@ -116,10 +180,10 @@ const deleteAddress = async (req, res) => {
     }
 
     await doc.save();
-    res.redirect('/profile/addresses?success=delete');
+    return res.status(200).json({ success: true, message: 'Address deleted successfully' });
   } catch (err) {
     console.error("Error deleting address:", err);
-    res.status(500)
+    return res.status(500).json({ error: 'Server error while deleting address' });
   }
 };
 
@@ -128,17 +192,31 @@ const deleteAddress = async (req, res) => {
 
 
 const setDefaultAddress = async (req, res) => {
-  const userId = req.session.user._id;
-  const { addrId } = req.params;
+  try {
+    const userId = req.session.user._id;
+    const { addrId } = req.params;
 
-  const doc = await Address.findOne({ userId });
+    const doc = await Address.findOne({ userId });
+    if (!doc) {
+      return res.status(404).json({ error: 'User address record not found' });
+    }
 
-  doc.address.forEach(addr => {
-    addr.isDefault = addr._id.toString() === addrId;
-  });
+    const index = doc.address.findIndex(a => a._id.toString() === addrId);
+    if (index === -1) {
+      return res.status(404).json({ error: 'Address not found' });
+    }
 
-  await doc.save();
-  res.redirect("/profile/addresses");
+    // Set the selected address as default, unset others
+    doc.address.forEach((addr, i) => {
+      addr.isDefault = i === index;
+    });
+
+    await doc.save();
+    return res.status(200).json({ success: true, message: 'Default address updated successfully' });
+  } catch (err) {
+    console.error("Error setting default address:", err);
+    return res.status(500).json({ error: 'Server error while setting default address' });
+  }
 };
 
 

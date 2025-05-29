@@ -3,8 +3,6 @@ const { Schema } = mongoose;
 const { v4: uuidv4 } = require("uuid");
 
 
-
-
 const orderSchema = new Schema({
   orderId: {
     type: String,
@@ -24,6 +22,22 @@ const orderSchema = new Schema({
     price: {
       type: Number,
       default: 0
+    },
+    cancelled: {
+      type: Boolean,
+      default: false
+    },
+    cancelReason: {
+      type: String,
+      default: ''
+    },
+    returned: {
+      type: Boolean,
+      default: false
+    },
+    returnReason: {
+      type: String,
+      default: ''
     }
   }],
   user: {
@@ -42,7 +56,7 @@ const orderSchema = new Schema({
     type: Number,
     required: true
   },
-  address: { // Embedded address object
+  address: {
     type: {
       addressType: { type: String, required: true },
       name: { type: String, required: true },
@@ -62,7 +76,7 @@ const orderSchema = new Schema({
   status: {
     type: String,
     required: true,
-    enum: ["Pending", "processing", "Shipped", "Delivered", "Cancelled", "Return Request", "Returned"]
+    enum: ["Pending", "Processing", "Shipped", "Delivered", "Cancelled", "Return Request", "Returned"]
   },
   createdOn: {
     type: Date,
@@ -79,15 +93,21 @@ const orderSchema = new Schema({
     enum: ["cod", "razorpay"],
     default: "cod"
   },
+  paymentStatus: {
+    type: String,
+    enum: ["Pending", "Completed", "Failed"],
+    default: "Pending"
+  },
   shippingCharge: {
     type: Number,
     required: true,
     default: 50
+  },
+  cancelReason: {
+    type: String,
+    default: ''
   }
 });
-
 const Order = mongoose.model("order", orderSchema);
 module.exports = Order;
 
-const order = mongoose.model("order", orderSchema);
-module.exports = order;

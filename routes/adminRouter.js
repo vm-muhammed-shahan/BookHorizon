@@ -67,7 +67,39 @@ router.post("/deleteImage", adminAuth, productController.deleteSingleImage);
 
 
 
+
+
+
+
+
+
+
+
 // order Management
+
+
+
+router.get('/orders', orderController.listOrders);
+router.get('/orders/details/:orderId', orderController.viewOrderDetails);
+router.post('/orders/update-status/:orderId',orderController.updateOrderStatus);
+router.post('/orders/cancel/:orderId', orderController.processCancelRequest);
+router.post('/orders/:orderId/return', orderController.processReturnRequest);
+router.get('/orders/invoice/:orderId', orderController.downloadInvoice);
+router.get('/orders/timeline/:orderId', orderController.getOrderStatusTimeline);
+router.post('/orders/cancel-item/:orderId',orderController.processCancelItemRequest);
+router.post('/orders/return-item/:orderId',orderController.processReturnItemRequest);
+
+// Order request routes
+router.get('/pending-requests', orderController.getPendingRequests);
+router.get('/orders/request-counts', orderController.getRequestCounts);
+router.get('/orders/cancel-requests', orderController.getCancelRequests);
+router.get('/orders/return-requests', orderController.getReturnRequests);
+router.post('/orders/cancel-request/:orderId',orderController.handleCancelRequest);
+router.post('/orders/return-request/:orderId',orderController.handleReturnRequest);
+
+
+
+
 
 
 

@@ -149,7 +149,7 @@ const signup = async (req, res) => {
       return res.render("signup", { message: "User with this email already exist" });
     }
     if (!/^\d{10}$/.test(req.body.phone)) {
-      return res.render("signup",{ message: 'Invalid phone number' });
+      return res.render("signup", { message: 'Invalid phone number' });
     }
     const otp = generateOtp();
     const emailSent = await sendVerificationEmail(email, otp);
@@ -452,7 +452,6 @@ const getProfile = async (req, res) => {
     const userId = req.session.user._id;
     const user = await User.findById(userId);
     const addressDoc = await Address.findOne({ userId });
-
     res.render("profile", {
       user,
       addresses: addressDoc?.address || []
@@ -469,7 +468,7 @@ const getProfile = async (req, res) => {
 const editProfilePage = async (req, res) => {
   try {
     const user = await User.findById(req.session.user._id);
-    res.render("editProfile", { user });
+    res.render("editProfile", { user, errors: {} });
   } catch (err) {
     console.error("Error loading edit profile", err);
     res.status(500).send("Server Error");
@@ -477,32 +476,88 @@ const editProfilePage = async (req, res) => {
 };
 
 
+
+
+
+
+
+
 const updateProfile = async (req, res) => {
   try {
-    const { name, phone, email } = req.body;
+    const { name, phone } = req.body;
+    const trimmedName = name?.trim();
+    const trimmedPhone = phone?.trim();
+
+    console.log('Received Data:', { name, phone, trimmedName, trimmedPhone });
+
+    const repeatedPhones = new Set([
+      '0000000000', '1111111111', '2222222222', '3333333333',
+      '4444444444', '5555555555', '6666666666', '7777777777',
+      '8888888888', '9999999999'
+    ]);
+
+    const isValidName = /^[A-Za-z\s'-]{3,50}$/.test(trimmedName) && /[A-Za-z]/.test(trimmedName);
+    const isValidPhone = /^[7-9][0-9]{9}$/.test(trimmedPhone) && !repeatedPhones.has(trimmedPhone);
+
+    const errors = {};
+
+    if (!trimmedName || !isValidName) {
+      errors.name = "Name must be 3-50 characters, letters only (spaces, hyphens, apostrophes allowed).";
+    }
+
+    if (!trimmedPhone || !isValidPhone) {
+      errors.phone = "Phone must be 10 digits, start with 7-9, and not be repeated numbers.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      console.log('Validation Errors:', errors);
+      return res.status(400).json({ errors });
+    }
+
     const user = await User.findById(req.session.user._id);
-    user.name = name;
-    user.phone = phone;
+    user.name = trimmedName;
+    user.phone = trimmedPhone;
     await user.save();
 
-    res.redirect("/profile");
+    // Update the session data to reflect the changes
+    req.session.user.name = trimmedName;
+    req.session.user.phone = trimmedPhone;
+
+    // Save the session to ensure updates are persisted
+    await new Promise((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) {
+          console.error('Error saving session:', err);
+          return reject(err);
+        }
+        resolve();
+      });
+    });
+
+    // Set a success message in the session (or use query params)
+    req.session.successMessage = 'Profile Updated Successfully';
+
+    // Redirect to /profile
+    res.redirect('/profile');
   } catch (err) {
     console.error("Error updating profile", err);
-    res.status(500).send("Server Error");
+    res.status(500).json({ error: "Server Error" });
   }
 };
 
 
 
 
-const changePassword = async (req,res)=>{
+
+
+const changePassword = async (req, res) => {
   try {
-    
+
     res.render("change-password")
 
   } catch (error) {
-    
-     res.redirect("/pageNotPage")
+
+    res.redirect("/pageNotPage")
 
   }
 }
@@ -511,35 +566,35 @@ const changePassword = async (req,res)=>{
 
 
 
-const changePasswordValid = async(req,res)=>{
+const changePasswordValid = async (req, res) => {
   try {
-     const {email} = req.body;
-     const userExists = await User.findOne({email});
-     if(userExists){
+    const { email } = req.body;
+    const userExists = await User.findOne({ email });
+    if (userExists) {
       const otp = generateOtp();
-      const emailSent = await sendVerificationEmail(email,otp)
-      if(emailSent){
+      const emailSent = await sendVerificationEmail(email, otp)
+      if (emailSent) {
         req.session.userOtp = otp;
         req.session.userData = req.body;
         req.session.email = email;
-        res.render("change-password-otp",{
-           user: req.session.user || null
+        res.render("change-password-otp", {
+          user: req.session.user || null
         });
         console.log("OTP:", otp);
-        
-      }else{
+
+      } else {
         res.json({
-          success:false,
+          success: false,
           message: "Failed to send otp. please try again"
         })
       }
-     }else {
-      res.render("change-password",{
+    } else {
+      res.render("change-password", {
         message: "User with this emal does not  exist",
-         user: req.session.user || null
-      
+        user: req.session.user || null
+
       })
-     }
+    }
   } catch (error) {
     console.log("Error in change password validation", Error);
     res.redirect("/pageNotFound");
@@ -551,27 +606,27 @@ const changePasswordValid = async(req,res)=>{
 
 
 
-const verifyChangePassOtp = async (req,res) => {
+const verifyChangePassOtp = async (req, res) => {
   try {
-    
+
     const enteredOtp = req.body.otp;
-    if(enteredOtp=== req.session.userOtp){
+    if (enteredOtp === req.session.userOtp) {
 
-     res.json({success:true, redirectUrl:"/reset-password"})
+      res.json({ success: true, redirectUrl: "/reset-password" })
 
-    }else {
-      res.json({success: false, message: "OTP not matching"})
+    } else {
+      res.json({ success: false, message: "OTP not matching" })
     }
 
   } catch (error) {
-    res.status(500).json({success:false, message: "An error occured.please try again later"})
+    res.status(500).json({ success: false, message: "An error occured.please try again later" })
   }
 }
 
 
 
 
- 
+
 
 
 
@@ -593,12 +648,12 @@ module.exports = {
 
 
 
-postNewPassword,
-getProfile,
-editProfilePage,
-updateProfile,
-changePassword,
-changePasswordValid,
-verifyChangePassOtp,
+  postNewPassword,
+  getProfile,
+  editProfilePage,
+  updateProfile,
+  changePassword,
+  changePasswordValid,
+  verifyChangePassOtp,
 
 };
