@@ -79,27 +79,20 @@ router.post("/deleteImage", adminAuth, productController.deleteSingleImage);
 
 
 
-router.get('/orders', orderController.listOrders);
-router.get('/orders/details/:orderId', orderController.viewOrderDetails);
-router.post('/orders/update-status/:orderId',orderController.updateOrderStatus);
-router.post('/orders/cancel/:orderId', orderController.processCancelRequest);
-router.post('/orders/:orderId/return', orderController.processReturnRequest);
-router.get('/orders/invoice/:orderId', orderController.downloadInvoice);
-router.get('/orders/timeline/:orderId', orderController.getOrderStatusTimeline);
-router.post('/orders/cancel-item/:orderId',orderController.processCancelItemRequest);
-router.post('/orders/return-item/:orderId',orderController.processReturnItemRequest);
+// List orders - Static route first
+router.get("/orders", adminAuth, orderController.getOrders);
 
-// Order request routes
-router.get('/pending-requests', orderController.getPendingRequests);
-router.get('/orders/request-counts', orderController.getRequestCounts);
-router.get('/orders/cancel-requests', orderController.getCancelRequests);
-router.get('/orders/return-requests', orderController.getReturnRequests);
-router.post('/orders/cancel-request/:orderId',orderController.handleCancelRequest);
-router.post('/orders/return-request/:orderId',orderController.handleReturnRequest);
+// Clear filters
+router.get("/orders/clear", adminAuth, orderController.clearFilters);
 
+// View order details - Dynamic route after static routes
+router.get("/orders/:orderId", adminAuth, orderController.getOrderDetails);
 
+// Update order status
+router.post("/orders/:orderId/status", adminAuth, orderController.updateOrderStatus);
 
-
+// Verify return request
+router.post("/orders/:orderId/return", adminAuth, orderController.verifyReturnRequest);
 
 
 

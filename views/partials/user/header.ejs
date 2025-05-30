@@ -138,7 +138,7 @@
                             <i class="fas fa-shopping-cart"></i>
                         </a>
                               
-                      <%if(user){%>
+                      <%if(typeof user !== 'undefined' && user){%>
                         <div class="dropdown">
                           <a href="#" class="sign-in-link" style ="color: black;"><%=user.name%></a>
                           <div class="dropdown-content">

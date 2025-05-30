@@ -38,6 +38,11 @@ const orderSchema = new Schema({
     returnReason: {
       type: String,
       default: ''
+    },
+    returnStatus: { 
+      type: String,
+      enum: ["pending", "approved", "rejected", null],
+      default: null
     }
   }],
   user: {

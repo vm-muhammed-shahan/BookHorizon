@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link href="/css/tailwind.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+  <%- include("../partials/admin/header") %>
+  <div class="container mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-4"><%= title %></h1>
+    <div class="bg-white p-6 shadow-md rounded">
+      <!-- Order Summary -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div>
+          <h2 class="text-lg font-semibold mb-2">Order Summary</h2>
+          <p><strong>Order ID:</strong> <%= order.orderId %></p>
+          <p><strong>Date:</strong> <%= order.createdOn ? new Date(order.createdOn).toLocaleString() : 'N/A' %></p>
+          <p><strong>Status:</strong> <%= order.status %></p>
+          <p><strong>Payment Status:</strong> <%= order.paymentStatus %></p>
+          <p><strong>Payment Method:</strong> <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment' %></p>
+          <p><strong>Total Price:</strong> $<%= order.totalPrice ? order.totalPrice.toFixed(2) : '0.00' %></p>
+          <p><strong>Discount:</strong> $<%= order.discount ? order.discount.toFixed(2) : '0.00' %></p>
+          <p><strong>Shipping Charge:</strong> $<%= order.shippingCharge ? order.shippingCharge.toFixed(2) : '0.00' %></p>
+          <p><strong>Final Amount:</strong> $<%= order.finalAmount ? order.finalAmount.toFixed(2) : '0.00' %></p>
+          <% if (order.couponApplied) { %>
+            <p><strong>Coupon Applied:</strong> Yes</p>
+          <% } %>
+        </div>
+        <div>
+          <h2 class="text-lg font-semibold mb-2">Customer Details</h2>
+          <p><strong>Name:</strong> <%= order.user && order.user.name ? order.user.name : 'N/A' %></p>
+          <p><strong>Email:</strong> <%= order.user && order.user.email ? order.user.email : 'N/A' %></p>
+          <h2 class="text-lg font-semibold mt-4 mb-2">Shipping Address</h2>
+          <p><strong>Name:</strong> <%= order.address.name %></p>
+          <p><strong>Address:</strong> <%= order.address.landMark %>, <%= order.address.city %>, <%= order.address.state %>, <%= order.address.pincode %></p>
+          <p><strong>Phone:</strong> <%= order.address.phone %></p>
+          <% if (order.address.altPhone) { %>
+            <p><strong>Alt Phone:</strong> <%= order.address.altPhone %></p>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Update Order Status -->
+      <div class="mb-6">
+        <h2 class="text-lg font-semibold mb-2">Update Order Status</h2>
+        <form action="/admin/orders/<%= order.orderId %>/status" method="POST" class="flex gap-4">
+          <select name="status" class="p-2 border rounded">
+            <option value="Pending" <%= order.status === 'Pending' ? 'selected' : '' %>>Pending</option>
+            <option value="Shipped" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+            <option value="Out for Delivery" <%= order.status === 'Out for Delivery' ? 'selected' : '' %>>Out for Delivery</option>
+            <option value="Delivered" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+            <option value="Cancelled" <%= order.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+          </select>
+          <button type="submit" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Update Status</button>
+        </form>
+      </div>
+
+      <!-- Items Table -->
+      <div class="mb-6">
+        <h2 class="text-lg font-semibold mb-2">Items</h2>
+        <table class="w-full border-collapse bg-white shadow-md">
+          <thead>
+            <tr class="bg-gray-200">
+              <th class="p-2 text-left">Product</th>
+              <th class="p-2 text-left">Quantity</th>
+              <th class="p-2 text-left">Price</th>
+              <th class="p-2 text-left">Total</th>
+              <th class="p-2 text-left">Status</th>
+              <th class="p-2 text-left">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% order.orderedItems.forEach((item, index) => { %>
+              <tr>
+                <td class="p-2 border"><%= item.product && item.product.name ? item.product.name : 'N/A' %></td>
+                <td class="p-2 border"><%= item.quantity %></td>
+                <td class="p-2 border">$<%= item.price ? item.price.toFixed(2) : '0.00' %></td>
+                <td class="p-2 border">$<%= (item.price * item.quantity).toFixed(2) %></td>
+                <td class="p-2 border">
+                  <% if (item.cancelled) { %>
+                    Cancelled: <%= item.cancelReason || 'No reason provided' %>
+                  <% } else if (item.returned && item.returnStatus === 'pending') { %>
+                    Return Requested: <%= item.returnReason || 'No reason provided' %>
+                  <% } else if (item.returned && item.returnStatus === 'approved') { %>
+                    Returned: <%= item.returnReason || 'No reason provided' %>
+                  <% } else if (item.returned && item.returnStatus === 'rejected') { %>
+                    Return Rejected: <%= item.returnReason || 'No reason provided' %>
+                  <% } else { %>
+                    Active
+                  <% } %>
+                </td>
+                <td class="p-2 border">
+                  <% if (item.returned && !item.cancelled && item.returnStatus === 'pending') { %>
+                    <form action="/admin/orders/<%= order.orderId %>/return" method="POST" class="flex gap-2">
+                      <input type="hidden" name="orderId" value="<%= order.orderId %>">
+                      <input type="hidden" name="itemIndex" value="<%= index %>">
+                      <button type="submit" name="action" value="accept" class="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">Accept Return</button>
+                      <button type="submit" name="action" value="reject" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Reject Return</button>
+                    </form>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Back to Orders -->
+      <a href="/admin/orders" class="inline-block text-blue-500 hover:underline">Back to Orders</a>
+    </div>
+  </div>
+  <%- include("../partials/admin/footer") %>
+</body>
+</html>

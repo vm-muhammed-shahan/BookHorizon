@@ -1,343 +1,466 @@
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    color: #000;
-    background-color: #fff;
-    line-height: 1.6;
-    margin: 0;
-    padding: 0;
-  }
-  h2 {
-    border-bottom: 2px solid #000;
-    padding-bottom: 8px;
-    margin-bottom: 20px;
-    text-align: center; 
-  }
-  h3 {
-    text-align: center; 
-  }
-  ul {
-    list-style-type: none;
-    padding: 0;
-    max-width: 600px; 
-    margin: 0 auto; 
-  }
-  li {
-    border: 1px solid #ddd;
-    padding: 15px;
-    margin-bottom: 10px;
-    background-color: #f9f9f9;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    justify-content: center; 
-    flex-wrap: wrap; 
-  }
-  button {
-    background-color: #333;
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  button:hover {
-    background-color: #000;
-  }
-  input[type="text"] {
-    padding: 6px;
-    border: 1px solid #ccc;
-    margin-right: 10px;
-    width: 200px;
-  }
-  form {
-    margin-top: 10px;
-    display: inline-block;
-  }
-  p.total {
-    font-weight: bold;
-    font-size: 1.2em;
-    border-top: 1px solid #ddd;
-    padding-top: 10px;
-  }
-  .status,
-  .payment-status {
-    display: inline-block;
-    padding: 3px 8px;
-    background-color: #eee;
-    border-radius: 3px;
-  }
-  .payment-status.completed {
-    background-color: #d4edda;
-    color: #155724;
-  }
-  .payment-status.pending {
-    background-color: #fff3cd;
-    color: #856404;
-  }
-  .payment-status.failed {
-    background-color: #f8d7da;
-    color: #721c24;
-  }
-  .order-container {
-    max-width: 800px; 
-    margin: 0 auto; 
-    padding: 20px;
-    text-align: center; 
-  }
-  .order-meta {
-    margin-bottom: 20px;
-    max-width: 600px; 
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .order-meta p {
-    margin: 5px 0;
-    text-align: left; 
-    display: flex;
-    justify-content: center; 
-    gap: 10px; 
-  }
-  .order-meta p strong {
-    flex: 0 0 150px; 
-    text-align: right; 
-  }
-  .order-summary {
-    margin-top: 20px;
-    max-width: 300px; 
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .order-summary p {
-    display: flex;
-    justify-content: space-between;
-    margin: 5px 0;
-  }
-  .back-to-orders {
-    display: inline-block;
-    background-color: #333;
-    color: white;
-    padding: 6px 12px;
-    text-decoration: none;
-    border-radius: 4px;
-    margin-bottom: 20px;
-    transition: background-color 0.3s;
-  }
-  .back-to-orders:hover {
-    background-color: #000;
-  }
-  .buttons {
-    display: flex;
-    justify-content: center; 
-    gap: 10px; 
-    margin-top: 20px;
-  }
-</style>
-
-<div class="order-container">
-  <a href="/orders" class="back-to-orders">Back to Orders</a>
-
-  <h2>Order Detail: <%= order.orderId %></h2>
-  <div class="order-meta">
-    <p><strong>Status:</strong> <span class="status"><%= order.status %></span></p>
-    <p>
-      <strong>Order Date:</strong>
-      <%= order.createdOn.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %>
-    </p>
-    <p><strong>Payment Method:</strong> <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment' %></p>
-    <p>
-      <strong>Payment Status:</strong>
-      <span class="payment-status <%= order.paymentStatus.toLowerCase() %>"><%= order.paymentStatus %></span>
-    </p>
-    <p>
-      <strong>Delivery Address:</strong>
-      <span>
-        <% if (order.address) { %>
-          <%= order.address.name || 'N/A' %>, 
-          <%= order.address.landMark || 'N/A' %>, 
-          <%= order.address.city || 'N/A' %>, 
-          <%= order.address.state || 'N/A' %> - 
-          <%= order.address.pincode || 'N/A' %><br>
-          Phone: <%= order.address.phone || 'N/A' %>
-          <% if (order.address.altPhone) { %> | Alt: <%= order.address.altPhone %> <% } %>
-        <% } else { %>
-          Address not available
-        <% } %>
-      </span>
-    </p>
-  </div>
-
-  <h3>Items</h3>
-  <ul>
-    <% if (!order.orderedItems || order.orderedItems.length === 0) { %>
-      <li>No items in this order.</li>
-    <% } else { %>
-      <% order.orderedItems.forEach(item => { %>
-        <li>
-          <% if (item.product && item.product.productImage && item.product.productImage.length > 0) { %>
-            
-            <img src="/Uploads/<%= item.product.productImage[0] %>" alt="<%= item.product.productName || 'Product' %>" style="width: 50px; height: 50px; margin-right: 10px;">
-          <% } else { %>
-            <img src="/images/placeholder.png" alt="No Image Available" style="width: 50px; height: 50px; margin-right: 10px;">
-          <% } %>
-          <div>
-            <strong><%= item.product.productName || 'Unknown Product' %></strong><br>
-            Quantity: <%= item.quantity %><br>
-            Price: ₹<%= item.price.toFixed(2) %><br>
-            Total: ₹<%= (item.price * item.quantity).toFixed(2) %>
-          </div>
-          <% if (order.status === 'Pending' || order.status === 'Processing') { %>
-            <button onclick="cancelItem('<%= order.orderId %>', '<%= item.product._id %>')">Cancel Item</button>
-          <% } %>
-          <% if (order.status === 'Delivered') { %>
-            <button onclick="returnItem('<%= order.orderId %>', '<%= item.product._id %>')">Return Item</button>
-          <% } %>
-        </li>
-      <% }) %>
-    <% } %>
-  </ul>
-
-  <div class="order-summary">
-    <p><strong>Subtotal:</strong> <span>₹<%= order.totalPrice.toFixed(2) %></span></p>
-    <p><strong>Shipping Fee:</strong> <span>₹<%= order.shippingCharge.toFixed(2) %></span></p>
-    <% if (order.discount > 0) { %>
-      <p><strong>Discount:</strong> <span>-₹<%= order.discount.toFixed(2) %></span></p>
-    <% } %>
-    <p class="total"><strong>Total:</strong> <span>₹<%= order.finalAmount.toFixed(2) %></span></p>
-  </div>
-
-  <div class="buttons">
-    <a href="/orders/invoice/<%= order.orderId %>" target="_blank">
-      <button>Download Invoice</button>
-    </a>
-    <% if (order.status === 'Pending' || order.status === 'Processing') { %>
-      <button onclick="cancelOrder('<%= order.orderId %>')">Cancel Order</button>
-    <% } %>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-
-const Toast = Swal.mixin({
-  toast: true,
-  position: 'top-end',
-  showConfirmButton: false,
-  timer: 3000,
-  timerProgressBar: true,
-  didOpen: (toast) => {
-    toast.addEventListener('mouseenter', Swal.stopTimer);
-    toast.addEventListener('mouseleave', Swal.resumeTimer);
-  }
-});
-
-
-function cancelOrder(orderId) {
-  Swal.fire({
-    title: 'Cancel Order',
-    text: 'Are you sure you want to cancel this order?',
-    input: 'text',
-    inputPlaceholder: 'Reason for cancellation (optional)',
-    showCancelButton: true,
-    confirmButtonText: 'Yes, Cancel Order',
-    cancelButtonText: 'No'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      const reason = result.value || '';
-      fetch('/orders/cancel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ orderId, reason })
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            Toast.fire({ icon: 'success', title: 'Order Cancelled' });
-            setTimeout(() => { window.location.href = '/orders'; }, 3000);
-          } else {
-            Swal.fire({ title: 'Error', text: data.error || 'Failed to cancel order', icon: 'error' });
-          }
-        })
-        .catch(error => {
-          console.error('Fetch error:', error);
-          Swal.fire({ title: 'Error', text: 'An unexpected error occurred', icon: 'error' });
-        });
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order #<%= order.orderId %></title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f3f4f6;
+      margin: 0;
+      padding: 0;
     }
-  });
-}
 
-// Cancel Individual Item
-function cancelItem(orderId, productId) {
-  Swal.fire({
-    title: 'Cancel Item',
-    text: 'Are you sure you want to cancel this item?',
-    input: 'text',
-    inputPlaceholder: 'Reason for cancellation (optional)',
-    showCancelButton: true,
-    confirmButtonText: 'Yes, Cancel Item',
-    cancelButtonText: 'No'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      const reason = result.value || '';
-      fetch('/orders/cancel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ orderId, productId, reason })
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            Toast.fire({ icon: 'success', title: 'Item Cancelled' });
-            setTimeout(() => { window.location.reload(); }, 3000);
-          } else {
-            Swal.fire({ title: 'Error', text: data.error || 'Failed to cancel item', icon: 'error' });
-          }
-        })
-        .catch(error => {
-          console.error('Fetch error:', error);
-          Swal.fire({ title: 'Error', text: 'An unexpected error occurred', icon: 'error' });
-        });
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px;
     }
-  });
-}
 
-// Return Individual Item
-function returnItem(orderId, productId) {
-  Swal.fire({
-    title: 'Return Item',
-    text: 'Please provide a reason for returning this item',
-    input: 'text',
-    inputPlaceholder: 'Reason for return (required)',
-    showCancelButton: true,
-    confirmButtonText: 'Submit Return Request',
-    cancelButtonText: 'Cancel',
-    inputValidator: (value) => {
-      if (!value) {
-        return 'You must provide a reason for the return';
+    h1 {
+      font-size: 24px;
+      font-weight: bold;
+      color: #1f2937;
+      margin-bottom: 16px;
+    }
+
+    .card {
+      background-color: #ffffff;
+      padding: 24px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    @media (min-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
       }
     }
-  }).then((result) => {
-    if (result.isConfirmed) {
-      const reason = result.value;
-      fetch('/orders/return', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ orderId, productId, reason })
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            Toast.fire({ icon: 'success', title: 'Return Request Submitted' });
-            setTimeout(() => { window.location.reload(); }, 3000);
-          } else {
-            Swal.fire({ title: 'Error', text: data.error || 'Failed to submit return request', icon: 'error' });
-          }
-        })
-        .catch(error => {
-          console.error('Fetch error:', error);
-          Swal.fire({ title: 'Error', text: 'An unexpected error occurred', icon: 'error' });
-        });
+
+    .section {
+      background-color: #f9fafb;
+      padding: 24px;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
-  });
-}
-</script>
+
+    h2 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+
+    p,
+    dl dt,
+    dl dd {
+      font-size: 16px;
+      color: #4b5563;
+      margin-bottom: 8px;
+    }
+
+    dl dt {
+      font-weight: 600;
+      display: inline-block;
+      width: 150px;
+    }
+
+    dl dd {
+      display: inline-block;
+    }
+
+    dl .highlight {
+      font-weight: bold;
+      color: #1f2937;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #ffffff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      margin-bottom: 24px;
+    }
+
+    th,
+    td {
+      padding: 8px;
+      text-align: left;
+      border: 1px solid #e5e7eb;
+    }
+
+    th {
+      background-color: #e5e7eb;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    tr:hover {
+      background-color: #f9fafb;
+    }
+
+    button,
+    a.button {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.2s;
+    }
+
+    .btn-cancel {
+      background-color: #ef4444;
+      color: #ffffff;
+    }
+
+    .btn-cancel:hover {
+      background-color: #dc2626;
+    }
+
+    .btn-return {
+      background-color: #eab308;
+      color: #ffffff;
+    }
+
+    .btn-return:hover {
+      background-color: #ca8a04;
+    }
+
+    .btn-invoice {
+      background-color: #22c55e;
+      color: #ffffff;
+    }
+
+    .btn-invoice:hover {
+      background-color: #16a34a;
+    }
+
+    .link-back {
+      color: #3b82f6;
+      text-decoration: none;
+    }
+
+    .link-back:hover {
+      text-decoration: underline;
+      color: #1d4ed8;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      margin-bottom: 24px;
+    }
+
+    .mb-6 {
+      margin-bottom: 24px;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background-color: #ffffff;
+      padding: 24px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    .modal-content h3 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 16px;
+    }
+
+    .modal-content textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      font-size: 14px;
+      margin-bottom: 16px;
+      resize: vertical;
+    }
+
+    .modal-content textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    .modal-content .btn-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: #4b5563;
+      cursor: pointer;
+    }
+
+    .modal-content .btn-submit {
+      background-color: #3b82f6;
+      color: #ffffff;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .modal-content .btn-submit:hover {
+      background-color: #1d4ed8;
+    }
+
+    .notification {
+      margin-bottom: 24px;
+      padding: 16px;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+
+    .notification-info {
+      background-color: #dbeafe;
+      color: #1e40af;
+    }
+  </style>
+  <script>
+    let currentOrderId = null;
+    let currentProductId = null;
+    let currentAction = null;
+
+    function openModal(action, orderId, productId = null) {
+      currentAction = action;
+      currentOrderId = orderId;
+      currentProductId = productId;
+      document.getElementById('modalTitle').textContent = 
+        action === 'cancel' ? 
+        (productId ? 'Cancel Item' : 'Cancel Entire Order') : 
+        'Return Item';
+      document.getElementById('reasonInput').value = '';
+      document.getElementById('reasonModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('reasonModal').style.display = 'none';
+      currentOrderId = null;
+      currentProductId = null;
+      currentAction = null;
+    }
+
+    async function submitReason() {
+      const reason = document.getElementById('reasonInput').value.trim();
+      
+      if (currentAction === 'return' && !reason) {
+        alert('Return reason is mandatory.');
+        return;
+      }
+
+      try {
+        const url = currentAction === 'cancel' ? '/orders/cancel' : '/orders/return';
+        const body = currentAction === 'cancel' 
+          ? { orderId: currentOrderId, productId: currentProductId, reason }
+          : { orderId: currentOrderId, productId: currentProductId, reason };
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          alert(result.message);
+          location.reload();
+        } else {
+          alert(result.error);
+        }
+      } catch (error) {
+        alert('An error occurred. Please try again.');
+      }
+
+      closeModal();
+    }
+  </script>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Order #<%= order.orderId %></h1>
+    <% if (req.session.notification) { %>
+      <div class="notification notification-info">
+        <%= req.session.notification.text %>
+      </div>
+      <% req.session.notification = null; %>
+    <% } %>
+    <div class="card">
+      <!-- Order Summary -->
+      <div class="grid">
+        <div class="section">
+          <h2>Order Summary</h2>
+          <dl>
+            <div>
+              <dt>Order ID:</dt>
+              <dd><%= order.orderId %></dd>
+            </div>
+            <div>
+              <dt>Date:</dt>
+              <dd><%= order.createdOn ? new Date(order.createdOn).toLocaleString() : 'N/A' %></dd>
+            </div>
+            <div>
+              <dt>Status:</dt>
+              <dd><%= order.status %></dd>
+            </div>
+            <div>
+              <dt>Payment Status:</dt>
+              <dd><%= order.paymentStatus %></dd>
+            </div>
+            <div>
+              <dt>Payment Method:</dt>
+              <dd><%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment' %></dd>
+            </div>
+            <div>
+              <dt>Total Price:</dt>
+              <dd>₹<%= order.totalPrice ? order.totalPrice.toFixed(2) : '0.00' %></dd>
+            </div>
+            <div>
+              <dt>Discount:</dt>
+              <dd>₹<%= order.discount ? order.discount.toFixed(2) : '0.00' %></dd>
+            </div>
+            <div>
+              <dt>Shipping Charge:</dt>
+              <dd>₹<%= order.shippingCharge ? order.shippingCharge.toFixed(2) : '0.00' %></dd>
+            </div>
+            <div>
+              <dt>Final Amount:</dt>
+              <dd class="highlight">₹<%= order.finalAmount ? order.finalAmount.toFixed(2) : '0.00' %></dd>
+            </div>
+            <% if (order.couponApplied) { %>
+              <div>
+                <dt>Coupon Applied:</dt>
+                <dd>Yes</dd>
+              </div>
+            <% } %>
+          </dl>
+        </div>
+        <div class="section">
+          <h2>Shipping Address</h2>
+          <dl>
+            <div>
+              <dt>Name:</dt>
+              <dd><%= order.address.name %></dd>
+            </div>
+            <div>
+              <dt>Address:</dt>
+              <dd><%= order.address.landMark %>, <%= order.address.city %>, <%= order.address.state %>, <%= order.address.pincode %></dd>
+            </div>
+            <div>
+              <dt>Phone:</dt>
+              <dd><%= order.address.phone %></dd>
+            </div>
+            <% if (order.address.altPhone) { %>
+              <div>
+                <dt>Alt Phone:</dt>
+                <dd><%= order.address.altPhone %></dd>
+              </div>
+            <% } %>
+          </dl>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <div class="table-container">
+        <h2>Items</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Quantity</th>
+              <th>Price</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% order.orderedItems.forEach(item => { %>
+              <tr>
+                <td><%= item.product && item.product.productName ? item.product.productName : 'N/A' %></td>
+                <td><%= item.quantity %></td>
+                <td>₹<%= item.price ? item.price.toFixed(2) : '0.00' %></td>
+                <td>₹<%= (item.price * item.quantity).toFixed(2) %></td>
+                <td>
+                  <% if (item.cancelled) { %>
+                    Cancelled: <%= item.cancelReason || 'No reason provided' %>
+                  <% } else if (item.returned && item.returnStatus === 'pending') { %>
+                    Return Requested: <%= item.returnReason || 'No reason provided' %>
+                  <% } else if (item.returned && item.returnStatus === 'approved') { %>
+                    Returned: <%= item.returnReason || 'No reason provided' %>
+                  <% } else if (item.returned && item.returnStatus === 'rejected') { %>
+                    Return Rejected: <%= item.returnReason || 'No reason provided' %>
+                  <% } else { %>
+                    Active
+                  <% } %>
+                </td>
+                <td>
+                  <% if (!item.cancelled && !item.returned && (order.status === 'Pending' || order.status === 'Processing')) { %>
+                    <button onclick="openModal('cancel', '<%= order.orderId %>', '<%= item.product._id %>')" class="btn-cancel">Cancel Item</button>
+                  <% } %>
+                  <% if (!item.cancelled && !item.returned && order.status === 'Delivered') { %>
+                    <button onclick="openModal('return', '<%= order.orderId %>', '<%= item.product._id %>')" class="btn-return">Return Item</button>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Cancel Entire Order -->
+      <% if (order.status === 'Pending' || order.status === 'Processing') { %>
+        <div class="mb-6">
+          <button onclick="openModal('cancel', '<%= order.orderId %>')" class="btn-cancel">Cancel Entire Order</button>
+        </div>
+      <% } %>
+
+      <!-- Download Invoice -->
+      <div class="mb-6">
+        <a href="/orders/invoice/<%= order.orderId %>" class="button btn-invoice">Download Invoice</a>
+      </div>
+
+      <!-- Back to Orders -->
+      <a href="/orders" class="link-back">Back to Orders</a>
+    </div>
+  </div>
+
+  <!-- Reason Modal -->
+  <div id="reasonModal" class="modal">
+    <div class="modal-content">
+      <button class="btn-close" onclick="closeModal()">×</button>
+      <h3 id="modalTitle">Reason</h3>
+      <textarea id="reasonInput" rows="4" placeholder="Enter your reason here..."></textarea>
+      <button class="btn-submit" onclick="submitReason()">Submit</button>
+    </div>
+  </div>
+</body>
