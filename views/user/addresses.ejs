@@ -5,56 +5,8 @@
   </div>
 
   <div class="address-form-container">
-    <h3>Add New Address</h3>
-    <form method="POST" action="/profile/addresses/add" class="address-form">
-      <div class="form-row">
-        <div class="form-group">
-          <input type="text" name="name" placeholder="Full Name" required />
-        </div>
-        <div class="form-group">
-          <input type="text" name="phone" placeholder="Phone Number" required />
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <input type="text" name="city" placeholder="City" required />
-        </div>
-        <div class="form-group">
-          <input type="text" name="state" placeholder="State" required />
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <input type="text" name="landMark" placeholder="Landmark" required />
-        </div>
-        <div class="form-group">
-          <input type="number" name="pincode" placeholder="Pincode" required />
-        </div>
-      </div>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <input type="text" name="altPhone" placeholder="Alternative Phone" required />
-        </div>
-        <div class="form-group">
-          <select name="addressType">
-            <option value="Home">Home</option>
-            <option value="Work">Work</option>
-          </select>
-        </div>
-      </div>
-      
-      <div class="form-actions">
-        <label class="checkbox-container">
-          <input type="checkbox" name="isDefault" />
-          <span class="checkmark"></span>
-          Make Default
-        </label>
-        <button type="submit" class="add-btn">Save Address</button>
-      </div>
-    </form>
+    <h3>Manage Addresses</h3>
+    <button type="button" class="add-btn" id="openAddAddressModalBtn">Add New Address</button>
   </div>
 
   <div class="saved-addresses">
@@ -88,7 +40,71 @@
   </div>
 </div>
 
-<!-- Add an Edit Form Modal (Hidden by Default) -->
+<!-- Add Address Modal -->
+<div id="add-address-modal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <h3>Add New Address</h3>
+    <form id="add-address-form" class="address-form">
+      <div class="form-row">
+        <div class="form-group">
+          <input type="text" id="add-name" name="name" placeholder="Full Name" required />
+          <div id="add-name-error" class="error-message"></div>
+        </div>
+        <div class="form-group">
+          <input type="text" id="add-phone" name="phone" placeholder="Phone Number" required />
+          <div id="add-phone-error" class="error-message"></div>
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <input type="text" id="add-city" name="city" placeholder="City" required />
+          <div id="add-city-error" class="error-message"></div>
+        </div>
+        <div class="form-group">
+          <input type="text" id="add-state" name="state" placeholder="State" required />
+          <div id="add-state-error" class="error-message"></div>
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <input type="text" id="add-landMark" name="landMark" placeholder="Landmark" required />
+          <div id="add-landMark-error" class="error-message"></div>
+        </div>
+        <div class="form-group">
+          <input type="number" id="add-pincode" name="pincode" placeholder="Pincode" required />
+          <div id="add-pincode-error" class="error-message"></div>
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <input type="text" id="add-altPhone" name="altPhone" placeholder="Alternative Phone" required />
+          <div id="add-altPhone-error" class="error-message"></div>
+        </div>
+        <div class="form-group">
+          <select id="add-addressType" name="addressType">
+            <option value="Home">Home</option>
+            <option value="Work">Work</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="form-actions">
+        <label class="checkbox-container">
+          <input type="checkbox" id="add-isDefault" name="isDefault" />
+          <span class="checkmark"></span>
+          Make Default
+        </label>
+        <button type="submit" class="add-btn">Save Address</button>
+        <button type="button" class="add-btn cancel-btn" onclick="closeAddForm()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Address Modal (Hidden by Default) -->
 <div id="edit-address-modal" class="modal" style="display: none;">
   <div class="modal-content">
     <h3>Edit Address</h3>
@@ -217,6 +233,7 @@
 
   .form-group {
     flex: 1;
+    position: relative;
   }
 
   input[type="text"],
@@ -420,7 +437,7 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
+    display: none;
     justify-content: center;
     align-items: center;
     z-index: 1000;
@@ -443,241 +460,339 @@
   .cancel-btn:hover {
     background-color: #b71c1c;
   }
-</style>
 
+  .form-input.error {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+  }
+
+  .form-input.success {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+  }
+
+  .error-message {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    display: none;
+  }
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-// Toast configuration using SweetAlert2
-const Toast = Swal.mixin({
-  toast: true,
-  position: 'top-end',
-  showConfirmButton: false,
-  timer: 3000,
-  timerProgressBar: true,
-  didOpen: (toast) => {
-    toast.addEventListener('mouseenter', Swal.stopTimer);
-    toast.addEventListener('mouseleave', Swal.resumeTimer);
-  }
-});
+  // Toast configuration using SweetAlert2
+  const Toast = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+      toast.addEventListener('mouseenter', Swal.stopTimer);
+      toast.addEventListener('mouseleave', Swal.resumeTimer);
+    }
+  });
 
-// Handle Add Address Form Submission
-document.querySelector(".address-form").addEventListener("submit", function (e) {
-  e.preventDefault();
+  // Open Add Address Modal
+  document.getElementById('openAddAddressModalBtn').addEventListener('click', () => {
+    document.getElementById('add-address-modal').style.display = 'flex';
+    document.getElementById('add-address-form').reset();
+    document.querySelectorAll('.form-input').forEach(input => {
+      input.classList.remove('error', 'success');
+    });
+    document.querySelectorAll('.error-message').forEach(error => {
+      error.style.display = 'none';
+    });
+  });
 
-  const name = this.name.value.trim();
-  const phone = this.phone.value.trim();
-  const altPhone = this.altPhone.value.trim();
-  const city = this.city.value.trim();
-  const state = this.state.value.trim();
-  const landmark = this.landMark.value.trim();
-  const pincode = this.pincode.value.trim();
-  const addressType = this.addressType.value;
-  const isDefault = this.isDefault.checked;
-
-  const phoneRegex = /^[6-9]\d{9}$/;
-  const pincodeRegex = /^\d{6}$/;
-
-  if (!phoneRegex.test(phone)) {
-    Swal.fire({ title: 'Invalid Phone', text: 'Phone must be a valid 10-digit number starting with 6-9.', icon: 'warning' });
-    return;
+  // Close Add Address Modal
+  function closeAddForm() {
+    document.getElementById('add-address-modal').style.display = 'none';
   }
 
-  if (!phoneRegex.test(altPhone)) {
-    Swal.fire({ title: 'Invalid Alt Phone', text: 'Alt Phone must be a valid 10-digit number starting with 6-9.', icon: 'warning' });
-    return;
+  // Validation Functions
+  function validateField(inputId, value, rules) {
+    const input = document.getElementById(inputId);
+    const errorElement = document.getElementById(`${inputId}-error`);
+    let isValid = true;
+
+    input.classList.remove('error', 'success');
+    errorElement.style.display = 'none';
+
+    if (rules.required && !value.trim()) {
+      showError(inputId, `${inputId.replace('add-', '').charAt(0).toUpperCase() + inputId.replace('add-', '').slice(1)} is required`);
+      return false;
+    }
+
+    switch (inputId) {
+      case 'add-name':
+        if (value.trim().length < 2 || value.trim().length > 50) {
+          showError(inputId, 'Name must be 2-50 characters long');
+          isValid = false;
+        }
+        break;
+      case 'add-phone':
+      case 'add-altPhone':
+        const phoneRegex = /^[6-9]\d{9}$/;
+        if (!phoneRegex.test(value.trim())) {
+          showError(inputId, 'Phone must be a 10-digit number starting with 6-9');
+          isValid = false;
+        }
+        break;
+      case 'add-city':
+      case 'add-state':
+      case 'add-landMark':
+        if (value.trim().length < 2 || value.trim().length > 50) {
+          showError(inputId, `${inputId.replace('add-', '').charAt(0).toUpperCase() + inputId.replace('add-', '').slice(1)} must be 2-50 characters long`);
+          isValid = false;
+        }
+        break;
+      case 'add-pincode':
+        const pincodeRegex = /^\d{6}$/;
+        if (!pincodeRegex.test(value.trim())) {
+          showError(inputId, 'Pincode must be a 6-digit number');
+          isValid = false;
+        }
+        break;
+    }
+
+    if (inputId === 'add-phone' || inputId === 'add-altPhone') {
+      const otherPhone = inputId === 'add-phone' ? document.getElementById('add-altPhone').value.trim() : document.getElementById('add-phone').value.trim();
+      if (value.trim() === otherPhone && value.trim() && otherPhone) {
+        showError(inputId, 'Phone and Alternative Phone must be different');
+        isValid = false;
+      }
+    }
+
+    if (isValid) {
+      input.classList.add('success');
+    }
+    return isValid;
   }
 
-  if (phone === altPhone) {
-    Swal.fire({ title: 'Validation Error', text: 'Phone and Alternative Phone must be different.', icon: 'error' });
-    return;
+  function showError(inputId, message) {
+    const input = document.getElementById(inputId);
+    const errorElement = document.getElementById(`${inputId}-error`);
+    input.classList.add('error');
+    input.classList.remove('success');
+    errorElement.textContent = message;
+    errorElement.style.display = 'block';
   }
 
-  if (!pincodeRegex.test(pincode)) {
-    Swal.fire({ title: 'Invalid Pincode', text: 'Pincode must be a valid 6-digit number.', icon: 'warning' });
-    return;
-  }
+  // Handle Add Address Form Submission
+  document.getElementById('add-address-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    let isValid = true;
 
-  if (!name || !city || !state || !landmark) {
-    Swal.fire({ title: 'Missing Fields', text: 'All fields are required.', icon: 'warning' });
-    return;
-  }
+    // Clear previous validation states
+    document.querySelectorAll('.form-input').forEach(input => {
+      input.classList.remove('error', 'success');
+    });
+    document.querySelectorAll('.error-message').forEach(error => {
+      error.style.display = 'none';
+    });
 
-  const formData = new URLSearchParams();
-  formData.append('name', name);
-  formData.append('phone', phone);
-  formData.append('altPhone', altPhone);
-  formData.append('city', city);
-  formData.append('state', state);
-  formData.append('landMark', landmark);
-  formData.append('pincode', pincode);
-  formData.append('addressType', addressType);
-  formData.append('isDefault', isDefault);
+    // Validate all fields
+    isValid &= validateField('add-name', document.getElementById('add-name').value, { required: true });
+    isValid &= validateField('add-phone', document.getElementById('add-phone').value, { required: true });
+    isValid &= validateField('add-altPhone', document.getElementById('add-altPhone').value, { required: true });
+    isValid &= validateField('add-city', document.getElementById('add-city').value, { required: true });
+    isValid &= validateField('add-state', document.getElementById('add-state').value, { required: true });
+    isValid &= validateField('add-landMark', document.getElementById('add-landMark').value, { required: true });
+    isValid &= validateField('add-pincode', document.getElementById('add-pincode').value, { required: true });
 
-  fetch('/profile/addresses/add', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: formData
-  })
-    .then(response => response.json())
-    .then(data => {
+    if (!isValid) {
+      return;
+    }
+
+    const formData = new URLSearchParams();
+    formData.append('name', document.getElementById('add-name').value.trim());
+    formData.append('phone', document.getElementById('add-phone').value.trim());
+    formData.append('altPhone', document.getElementById('add-altPhone').value.trim());
+    formData.append('city', document.getElementById('add-city').value.trim());
+    formData.append('state', document.getElementById('add-state').value.trim());
+    formData.append('landMark', document.getElementById('add-landMark').value.trim());
+    formData.append('pincode', document.getElementById('add-pincode').value.trim());
+    formData.append('addressType', document.getElementById('add-addressType').value);
+    formData.append('isDefault', document.getElementById('add-isDefault').checked);
+
+    try {
+      const response = await fetch('/profile/addresses/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData
+      });
+      const data = await response.json();
+
       if (data.success) {
         Toast.fire({ icon: 'success', title: 'Address Saved' });
         setTimeout(() => { window.location.href = '/profile/addresses'; }, 3000);
       } else {
         Swal.fire({ title: 'Error', text: data.error || 'Failed to save address', icon: 'error' });
       }
-    })
-    .catch(error => {
+    } catch (error) {
       console.error('Fetch error:', error);
       Swal.fire({ title: 'Error', text: 'An unexpected error occurred: ' + error.message, icon: 'error' });
-    });
-});
-
-// Open Edit Form Modal
-function openEditForm(addrId, name, phone, city, state, landMark, pincode, altPhone, addressType, isDefault) {
-  document.getElementById('edit-addrId').value = addrId;
-  document.getElementById('edit-name').value = name;
-  document.getElementById('edit-phone').value = phone;
-  document.getElementById('edit-city').value = city;
-  document.getElementById('edit-state').value = state;
-  document.getElementById('edit-landMark').value = landMark;
-  document.getElementById('edit-pincode').value = pincode;
-  document.getElementById('edit-altPhone').value = altPhone;
-  document.getElementById('edit-addressType').value = addressType;
-  document.getElementById('edit-isDefault').checked = isDefault;
-  document.getElementById('edit-address-modal').style.display = 'flex';
-}
-
-// Close Edit Form Modal
-function closeEditForm() {
-  document.getElementById('edit-address-modal').style.display = 'none';
-  document.getElementById('edit-address-form').reset();
-}
-
-// Handle Edit Address Form Submission
-document.getElementById('edit-address-form').addEventListener('submit', function (e) {
-  e.preventDefault();
-
-  const addrId = document.getElementById('edit-addrId').value;
-  const name = document.getElementById('edit-name').value.trim();
-  const phone = document.getElementById('edit-phone').value.trim();
-  const altPhone = document.getElementById('edit-altPhone').value.trim();
-  const city = document.getElementById('edit-city').value.trim();
-  const state = document.getElementById('edit-state').value.trim();
-  const landmark = document.getElementById('edit-landMark').value.trim();
-  const pincode = document.getElementById('edit-pincode').value.trim();
-  const addressType = document.getElementById('edit-addressType').value;
-  const isDefault = document.getElementById('edit-isDefault').checked;
-
-  const phoneRegex = /^[6-9]\d{9}$/;
-  const pincodeRegex = /^\d{6}$/;
-
-  if (!phoneRegex.test(phone)) {
-    Swal.fire({ title: 'Invalid Phone', text: 'Phone must be a valid 10-digit number starting with 6-9.', icon: 'warning' });
-    return;
-  }
-
-  if (!phoneRegex.test(altPhone)) {
-    Swal.fire({ title: 'Invalid Alt Phone', text: 'Alt Phone must be a valid 10-digit number starting with 6-9.', icon: 'warning' });
-    return;
-  }
-
-  if (phone === altPhone) {
-    Swal.fire({ title: 'Validation Error', text: 'Phone and Alternative Phone must be different.', icon: 'error' });
-    return;
-  }
-
-  if (!pincodeRegex.test(pincode)) {
-    Swal.fire({ title: 'Invalid Pincode', text: 'Pincode must be a valid 6-digit number.', icon: 'warning' });
-    return;
-  }
-
-  if (!name || !city || !state || !landmark) {
-    Swal.fire({ title: 'Missing Fields', text: 'All fields are required.', icon: 'warning' });
-    return;
-  }
-
-  const formData = new URLSearchParams();
-  formData.append('addrId', addrId);
-  formData.append('name', name);
-  formData.append('phone', phone);
-  formData.append('altPhone', altPhone);
-  formData.append('city', city);
-  formData.append('state', state);
-  formData.append('landMark', landmark);
-  formData.append('pincode', pincode);
-  formData.append('addressType', addressType);
-  formData.append('isDefault', isDefault);
-
-  fetch(`/profile/addresses/edit/${addrId}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: formData
-  })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        Toast.fire({ icon: 'success', title: 'Address Updated' });
-        setTimeout(() => { window.location.href = '/profile/addresses'; }, 3000);
-      } else {
-        Swal.fire({ title: 'Error', text: data.error || 'Failed to update address', icon: 'error' });
-      }
-    })
-    .catch(error => {
-      console.error('Fetch error:', error);
-      Swal.fire({ title: 'Error', text: 'An unexpected error occurred: ' + error.message, icon: 'error' });
-    });
-});
-
-// Handle Delete Address
-function confirmDelete(addrId) {
-  Swal.fire({
-    title: 'Are you sure?',
-    text: 'Do you really want to delete this address?',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonText: 'Yes, delete it!',
-    cancelButtonText: 'No, cancel'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      fetch(`/profile/addresses/delete/${addrId}`, {
-        method: 'GET'
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            Toast.fire({ icon: 'success', title: 'Address Deleted' });
-            setTimeout(() => { window.location.href = '/profile/addresses'; }, 3000);
-          } else {
-            Swal.fire({ title: 'Error', text: data.error || 'Failed to delete address', icon: 'error' });
-          }
-        })
-        .catch(error => {
-          console.error('Fetch error:', error);
-          Swal.fire({ title: 'Error', text: 'An unexpected error occurred: ' + error.message, icon: 'error' });
-        });
     }
   });
-}
 
-// Handle Set Default Address
-function setDefaultAddress(addrId) {
-  fetch(`/profile/addresses/set-default/${addrId}`, {
-    method: 'GET'
-  })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        Toast.fire({ icon: 'success', title: 'Default Address Updated' });
-        setTimeout(() => { window.location.href = '/profile/addresses'; }, 3000);
-      } else {
-        Swal.fire({ title: 'Error', text: data.error || 'Failed to set default address', icon: 'error' });
-      }
+  // Open Edit Form Modal
+  function openEditForm(addrId, name, phone, city, state, landMark, pincode, altPhone, addressType, isDefault) {
+    document.getElementById('edit-addrId').value = addrId;
+    document.getElementById('edit-name').value = name;
+    document.getElementById('edit-phone').value = phone;
+    document.getElementById('edit-city').value = city;
+    document.getElementById('edit-state').value = state;
+    document.getElementById('edit-landMark').value = landMark;
+    document.getElementById('edit-pincode').value = pincode;
+    document.getElementById('edit-altPhone').value = altPhone;
+    document.getElementById('edit-addressType').value = addressType;
+    document.getElementById('edit-isDefault').checked = isDefault;
+    document.getElementById('edit-address-modal').style.display = 'flex';
+  }
+
+  // Close Edit Form Modal
+  function closeEditForm() {
+    document.getElementById('edit-address-modal').style.display = 'none';
+    document.getElementById('edit-address-form').reset();
+  }
+
+  // Handle Edit Address Form Submission
+  document.getElementById('edit-address-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const addrId = document.getElementById('edit-addrId').value;
+    const name = document.getElementById('edit-name').value.trim();
+    const phone = document.getElementById('edit-phone').value.trim();
+    const altPhone = document.getElementById('edit-altPhone').value.trim();
+    const city = document.getElementById('edit-city').value.trim();
+    const state = document.getElementById('edit-state').value.trim();
+    const landmark = document.getElementById('edit-landMark').value.trim();
+    const pincode = document.getElementById('edit-pincode').value.trim();
+    const addressType = document.getElementById('edit-addressType').value;
+    const isDefault = document.getElementById('edit-isDefault').checked;
+
+    const phoneRegex = /^[6-9]\d{9}$/;
+    const pincodeRegex = /^\d{6}$/;
+
+    if (!phoneRegex.test(phone)) {
+      Swal.fire({ title: 'Invalid Phone', text: 'Phone must be a valid 10-digit number starting with 6-9.', icon: 'warning' });
+      return;
+    }
+
+    if (!phoneRegex.test(altPhone)) {
+      Swal.fire({ title: 'Invalid Alt Phone', text: 'Alt Phone must be a valid 10-digit number starting with 6-9.', icon: 'warning' });
+      return;
+    }
+
+    if (phone === altPhone) {
+      Swal.fire({ title: 'Validation Error', text: 'Phone and Alternative Phone must be different.', icon: 'error' });
+      return;
+    }
+
+    if (!pincodeRegex.test(pincode)) {
+      Swal.fire({ title: 'Invalid Pincode', text: 'Pincode must be a valid 6-digit number.', icon: 'warning' });
+      return;
+    }
+
+    if (!name || !city || !state || !landmark) {
+      Swal.fire({ title: 'Missing Fields', text: 'All fields are required.', icon: 'warning' });
+      return;
+    }
+
+    const formData = new URLSearchParams();
+    formData.append('addrId', addrId);
+    formData.append('name', name);
+    formData.append('phone', phone);
+    formData.append('altPhone', altPhone);
+    formData.append('city', city);
+    formData.append('state', state);
+    formData.append('landMark', landmark);
+    formData.append('pincode', pincode);
+    formData.append('addressType', addressType);
+    formData.append('isDefault', isDefault);
+
+    fetch(`/profile/addresses/edit/${addrId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData
     })
-    .catch(error => {
-      console.error('Fetch error:', error);
-      Swal.fire({ title: 'Error', text: 'An unexpected error occurred: ' + error.message, icon: 'error' });
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          Toast.fire({ icon: 'success', title: 'Address Updated' });
+          setTimeout(() => { window.location.href = '/profile/addresses'; }, 3000);
+        } else {
+          Swal.fire({ title: 'Error', text: data.error || 'Failed to update address', icon: 'error' });
+        }
+      })
+      .catch(error => {
+        console.error('Fetch error:', error);
+        Swal.fire({ title: 'Error', text: 'An unexpected error occurred: ' + error.message, icon: 'error' });
+      });
+  });
+
+  // Handle Delete Address
+  function confirmDelete(addrId) {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: 'Do you really want to delete this address?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'No, cancel'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        fetch(`/profile/addresses/delete/${addrId}`, {
+          method: 'GET'
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              Toast.fire({ icon: 'success', title: 'Address Deleted' });
+              setTimeout(() => { window.location.href = '/profile/addresses'; }, 3000);
+            } else {
+              Swal.fire({ title: 'Error', text: data.error || 'Failed to delete address', icon: 'error' });
+            }
+          })
+          .catch(error => {
+            console.error('Fetch error:', error);
+            Swal.fire({ title: 'Error', text: 'An unexpected error occurred: ' + error.message, icon: 'error' });
+          });
+      }
     });
-}
+  }
+
+  // Handle Set Default Address
+  function setDefaultAddress(addrId) {
+    fetch(`/profile/addresses/set-default/${addrId}`, {
+      method: 'GET'
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          Toast.fire({ icon: 'success', title: 'Default Address Updated' });
+          setTimeout(() => { window.location.href = '/profile/addresses'; }, 3000);
+        } else {
+          Swal.fire({ title: 'Error', text: data.error || 'Failed to set default address', icon: 'error' });
+        }
+      })
+      .catch(error => {
+        console.error('Fetch error:', error);
+        Swal.fire({ title: 'Error', text: 'An unexpected error occurred: ' + error.message, icon: 'error' });
+      });
+  }
+
+  // Real-time Validation
+  ['add-name', 'add-phone', 'add-altPhone', 'add-city', 'add-state', 'add-landMark', 'add-pincode'].forEach(field => {
+    document.getElementById(field).addEventListener('input', () => {
+      const value = document.getElementById(field).value;
+      validateField(field, value, { required: true });
+    });
+    document.getElementById(field).addEventListener('blur', () => {
+      const value = document.getElementById(field).value;
+      validateField(field, value, { required: true });
+    });
+  });
 </script>

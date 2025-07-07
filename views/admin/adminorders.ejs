@@ -37,8 +37,8 @@
         <option value="finalAmount" <%= sort === 'finalAmount' ? 'selected' : '' %>>Price: Low to High</option>
         <option value="-finalAmount" <%= sort === '-finalAmount' ? 'selected' : '' %>>Price: High to Low</option>
       </select>
-      <button type="submit" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Apply</button>
-      <a href="/admin/orders/clear" class="bg-gray-500 text-white p-2 rounded hover:bg-gray-600">Clear Filters</a>
+      <button type="submit" class="bg-blue-500 text-black p-2 rounded hover:bg-blue-600">Apply</button>
+      <a href="/admin/orders/clear" class="bg-gray-500 text-black p-2 rounded hover:bg-gray-600">Clear Filters</a>
     </form>
 
     <!-- Orders Table -->
@@ -67,7 +67,7 @@
               <td class="p-2 border"><%= order.createdOn ? new Date(order.createdOn).toLocaleDateString() : 'N/A' %></td>
               <td class="p-2 border"><%= order.status || 'N/A' %></td>
               <td class="p-2 border"><%= order.paymentStatus || 'N/A' %></td>
-              <td class="p-2 border">$<%= order.finalAmount ? order.finalAmount.toFixed(2) : '0.00' %></td>
+              <td class="p-2 border">₹<%= order.finalAmount ? order.finalAmount.toFixed(2) : '0.00' %></td>
               <td class="p-2 border">
                 <a href="/admin/orders/<%= order.orderId %>" class="text-blue-500 hover:underline">View</a>
               </td>

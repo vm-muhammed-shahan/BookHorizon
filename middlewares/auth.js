@@ -1,6 +1,8 @@
 const User = require("../models/userSchema");
 
 const userAuth = (req, res, next) => {  
+  console.log('middleware',req.session);
+  
   if (req.session.user && req.session.user._id) {
     User.findById(req.session.user._id)
       .then(user => {

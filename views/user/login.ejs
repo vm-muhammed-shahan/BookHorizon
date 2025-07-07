@@ -1,239 +1,313 @@
 <!DOCTYPE html>
-<html lang="zxx">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="description" content="Male_Fashion Template" />
-    <meta name="keywords" content="Male_Fashion, unica, creative, html" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>BookHorizon</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css" />
-    <link rel="stylesheet" href="css/font-awesome.min.css" type="text/css" />
-    <link rel="stylesheet" href="css/elegant-icons.css" type="text/css" />
-    <link rel="stylesheet" href="css/magnific-popup.css" type="text/css" />
-    <link rel="stylesheet" href="css/nice-select.css" type="text/css" />
-    <link rel="stylesheet" href="css/owl.carousel.min.css" type="text/css" />
-    <link rel="stylesheet" href="css/slicknav.min.css" type="text/css" />
-    <link rel="stylesheet" href="css/style.css" type="text/css" />
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
-      rel="stylesheet"
-    />
-    <style>
-      body,
-      html {
-        height: 100%;
-        margin: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background-color: #f8f9fa;
-      }
-      .container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-      }
-      .card {
-        width: 100%;
-        max-width: 800px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      }
-      .login-section {
-        display: flex;
-        justify-content: space-between;
-        flex-wrap: wrap;
-      }
-      .login-form,
-      .login-image {
-        flex: 1;
-        padding: 10px;
-      }
-      .login-form {
-        max-width: 50%;
-      }
-      .login-image {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        max-width: 40%;
-      }
-      .login-image img {
-        max-width: 100%;
-        height: auto;
-      }
-      .social-btns {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin-top: 10px;
-      }
-      .social-btns button {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-      }
-      .form-group label {
-        font-size: 0.875rem;
-      }
-      .form-control {
-        font-size: 0.875rem; 
-        padding: 0.5rem;
-      }
-      .btn-primary {
-        padding: 0.5rem 1rem; 
-        font-size: 0.875rem; 
-      }
-      .card-title {
-        font-size: 1.25rem; 
-      }
-      .login-image .sign-up-link {
-        color: #333;
-        text-decoration: none;
-      }
-      .login-image .sign-up-link:hover {
-        color: #ff7f50;
-      }
-      .error-message {
-        color: red;
-        font-size: 0.75rem;
-        display: none;
-      }
-      .forgot-password-link{
-        font-size: 0.875rem;
-        color: #007bff;
-        text-decoration: none;
-      }
-      .forgot-password-link:hover{
-        color: #0056b3;
-        text-decoration: underline;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="card">
-        <div class="card-body login-section">
-          <div class="login-form mt-5">
-            <h3 class="card-title text-center">Log In</h3>
-            <form id="loginform" method="post" action="/login">
-              <div class="form-group mt-3px">
-                <label for="email">Email address</label>
-                <input
-                  type="email"
-                  class="form-control"
-                  name="email"
-                  id="email"
-                  placeholder="Enter email"
-                />
-                <div id="error1" class="error-message"></div>
-              </div>
-
-              <div class="form-group">
-                <label for="password">Password</label>
-                <input
-                  type="password"
-                  class="form-control"
-                  name="password"
-                  id="password"
-                  placeholder="Password"
-                />
-                <div id="error2" class="error-message"></div>
-              </div>
-              <div class="form-group d-flex justify-content-end">
-              <a href="/forgot-password" class="forgot-password-link ms-auto">Forgot Password</a>
-            
-              </div>
-              <%if(locals.message && message.length>0){%>
-              <div class="alert alert-danger text-center">
-                <%=message%>
-              </div>
-              <%}%>
-              <div class="d-flex justify-content-between align-items-center">
-                <button type="submit" class="btn btn-primary">Log In</button>
-                <div class="mt-2px">
-                  <p>or log in with</p>
-                </div>
-                <div class="social-btns">
-                  <a href="/auth/google" class="btn btn-outline-danger">
-                    <img
-                      src="img/googlesignup.png"
-                      alt="Google Logo"
-                      style="width: 24px; height: 24px"
-                    />
-                  </a>
-                </div>
-              </div>
-            </form>
-          </div>
-          <div class="login-image">
-            <a href="/">
-              <img src="img/signup.svg" alt="Shopping Site" />
-            </a>
-            <div class="text-center mt-2">
-              <a href="/signup" class="sign-up-link">Not registered? Sign up</a>
-            </div>
-          </div>
-        </div>
-      </div>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BookHorizon - Login</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css" />
+  <link rel="stylesheet" href="css/font-awesome.min.css" type="text/css" />
+  <link rel="stylesheet" href="css/elegant-icons.css" type="text/css" />
+  <link rel="stylesheet" href="css/magnific-popup.css" type="text/css" />
+  <link rel="stylesheet" href="css/nice-select.css" type="text/css" />
+  <link rel="stylesheet" href="css/owl.carousel.min.css" type="text/css" />
+  <link rel="stylesheet" href="css/slicknav.min.css" type="text/css" />
+  <link rel="stylesheet" href="css/style.css" type="text/css" />
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    rel="stylesheet"
+  />
+  <style>
+    body,
+    html {
+      height: 100%;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #f5f5f5;
+      font-family: 'Nunito Sans', sans-serif;
+    }
+    
+    .login-container {
+      width: 100%;
+      max-width: 450px;
+      padding: 40px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+      background-color: white;
+      border-radius: 8px;
+      text-align: center;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    
+    .form-control {
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 100%;
+      background-color: #f9f9f9;
+      transition: border-color 0.3s;
+      font-size: 0.875rem;
+    }
+    
+    .form-control:focus {
+      border-color: #000;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+    }
+    
+    label {
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: block;
+      color: #333;
+      font-size: 0.875rem;
+    }
+    
+    .btn-primary {
+      background-color: #000;
+      border: none;
+      padding: 12px 24px;
+      font-weight: 600;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      font-size: 0.875rem;
+    }
+    
+    .btn-primary:hover {
+      background-color: #333;
+    }
+    
+    .error-message {
+      color: #dc3545;
+      font-size: 0.75rem;
+      margin-top: 5px;
+      text-align: left;
+      display: none;
+    }
+    
+    h3 {
+      color: #000;
+      margin-bottom: 30px;
+      font-weight: 700;
+      font-size: 1.5rem;
+    }
+    
+    .custom-alert {
+      background-color: #dc3545 !important;
+      color: white !important;
+      border: none;
+      font-weight: 600;
+      padding: 12px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+    
+    .forgot-password-link {
+      font-size: 0.875rem;
+      color: #000;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .forgot-password-link:hover {
+      color: #333;
+      text-decoration: underline;
+    }
+    
+    .divider {
+      margin: 25px 0;
+      position: relative;
+      text-align: center;
+    }
+    
+    .divider::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background-color: #ddd;
+    }
+    
+    .divider span {
+      background-color: white;
+      padding: 0 15px;
+      color: #666;
+      font-size: 0.875rem;
+    }
+    
+    .google-btn {
+      background-color: white;
+      border: 1px solid #ddd;
+      padding: 12px;
+      width: 100%;
+      border-radius: 4px;
+      color: #333;
+      cursor: pointer;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-decoration: none;
+      margin-bottom: 20px;
+    }
+    
+    .google-btn:hover {
+      border-color: #000;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      color: #333;
+      text-decoration: none;
+    }
+    
+    .signup-link {
+      color: #000;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.875rem;
+    }
+    
+    .signup-link:hover {
+      color: #333;
+      text-decoration: underline;
+    }
+    
+    .text-center {
+      text-align: center;
+    }
+    
+    .d-flex {
+      display: flex;
+    }
+    
+    .justify-content-end {
+      justify-content: flex-end;
+    }
+    
+    .mt-3 {
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h3>Log In</h3>
+    
+    <%if(locals.message && message.length>0){%>
+    <div class="alert text-center custom-alert">
+      <%=message%>
     </div>
+    <%}%>
+    
+    <form id="loginform" method="post" action="/login">
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input
+          type="email"
+          class="form-control"
+          name="email"
+          id="email"
+          placeholder="Enter email"
+        />
+        <div id="error1" class="error-message"></div>
+      </div>
 
-    <script>
-      const emailid = document.getElementById("email");
-      const passid = document.getElementById("password");
-      const error1 = document.getElementById("error1");
-      const error2 = document.getElementById("error2");
-      const loginform = document.getElementById("loginform");
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          class="form-control"
+          name="password"
+          id="password"
+          placeholder="Password"
+        />
+        <div id="error2" class="error-message"></div>
+      </div>
+      
+      <div class="form-group d-flex justify-content-end">
+        <a href="/forgot-password" class="forgot-password-link">Forgot Password?</a>
+      </div>
+      
+      <button type="submit" class="btn btn-primary">Log In</button>
+    </form>
+    
+    <div class="divider">
+      <span>or</span>
+    </div>
+    
+    <a href="/auth/google" class="google-btn">
+      <img
+        src="img/googlesignup.png"
+        alt="Google Logo"
+        style="width: 20px; height: 20px"
+      />
+      Continue with Google
+    </a>
+    
+    <div class="text-center mt-3">
+      <a href="/signup" class="signup-link">Not registered? Sign up</a>
+    </div>
+  </div>
 
-      function emailValidateChecking(e) {
-        const emailval = emailid.value;
-        const emailpattern =
-          /^[a-zA-Z0-9._-]+@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,4})$/;
+  <script>
+    const emailid = document.getElementById("email");
+    const passid = document.getElementById("password");
+    const error1 = document.getElementById("error1");
+    const error2 = document.getElementById("error2");
+    const loginform = document.getElementById("loginform");
 
-        if (!emailpattern.test(emailval)) {
-          error1.style.display = "block";
-          error1.innerHTML = "Invalid Format";
-        } else {
-          error1.style.display = "none";
-          error1.innerHTML = "";
-        }
+    function emailValidateChecking(e) {
+      const emailval = emailid.value;
+      const emailpattern =
+        /^[a-zA-Z0-9._-]+@([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,4})$/;
+
+      if (!emailpattern.test(emailval)) {
+        error1.style.display = "block";
+        error1.innerHTML = "Invalid Format";
+      } else {
+        error1.style.display = "none";
+        error1.innerHTML = "";
       }
+    }
 
-      function passValidateChecking(e) {
-        const passval = passid.value;
-        if (passval.length < 8) {
-          error2.style.display = "block";
-          error2.innerHTML = "Should contain at least 8 characters";
-        } else {
-          error2.style.display = "none";
-          error2.innerHTML = "";
-        }
+    function passValidateChecking(e) {
+      const passval = passid.value;
+      if (passval.length < 8) {
+        error2.style.display = "block";
+        error2.innerHTML = "Should contain at least 8 characters";
+      } else {
+        error2.style.display = "none";
+        error2.innerHTML = "";
       }
+    }
 
-      document.addEventListener("DOMContentLoaded", function () {
-        loginform.addEventListener("submit", function (e) {
-          emailValidateChecking();
-          passValidateChecking();
+    document.addEventListener("DOMContentLoaded", function () {
+      loginform.addEventListener("submit", function (e) {
+        emailValidateChecking();
+        passValidateChecking();
 
-          if (!emailid || !passid || !error1 || !error2 || !loginform) {
-            console.error("One or more elements not found");
-          }
+        if (!emailid || !passid || !error1 || !error2 || !loginform) {
+          console.error("One or more elements not found");
+        }
 
-          if (error1.innerHTML || error2.innerHTML) {
-            e.preventDefault();
-          }
-        });
+        if (error1.innerHTML || error2.innerHTML) {
+          e.preventDefault();
+        }
       });
-    </script>
-  </body>
+    });
+  </script>
+</body>
 </html>

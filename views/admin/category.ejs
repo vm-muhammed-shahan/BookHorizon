@@ -82,25 +82,32 @@
                   <th class="px-3 py-3 text-center">#</th>
                   <th class="px-3 py-3">Name</th>
                   <th class="px-3 py-3">Description</th>
-                  <th class="px-3 py-3">Offer Price</th>
+                  <th class="px-3 py-3">Offer (%)</th>
+                  <th class="px-3 py-3">Offer Period</th>
                   <th class="px-3 py-3">Status</th>
                   <th class="px-3 py-3">List/Unlist</th>
                   <th class="px-3 py-3">Edit</th>
+                  <th class="px-3 py-3">Offer</th>
                 </tr>
               </thead>
               <tbody>
                 <% cat.forEach((category, index) => { %>
                 <tr class="<%= index % 2 === 0 ? 'bg-white' : 'bg-light' %>">
                   <td class="px-3 py-3 text-center"><%= (currentPage - 1) * limit + index + 1 %></td>
-
                   <td class="px-3 py-3"><%= category.name %></td>
                   <td class="px-3 py-3"><%= category.description %></td>
                   <td class="px-3 py-3">
-                    <% if(category.categoryOffer) { %>
-                      <%= category.categoryOffer %>%
-                    <% } else { %>
-                      0%
-                    <% } %>
+                    <% 
+                      const categoryOffer = offers.find(offer => 
+                        offer.offerType === 'category' && 
+                        offer.applicableId.toString() === category._id.toString() && 
+                        offer.isActive
+                      ); 
+                    %>
+                    <%= categoryOffer ? categoryOffer.discountPercentage + '%' : '0%' %>
+                  </td>
+                  <td class="px-3 py-3">
+                    <%= categoryOffer ? `${new Date(categoryOffer.startDate).toLocaleDateString()} - ${new Date(categoryOffer.endDate).toLocaleDateString()}` : '-' %>
                   </td>
                   <td class="px-3 py-3">
                     <span 
@@ -126,6 +133,21 @@
                       Edit
                     </a>
                   </td>
+                  <td class="px-3 py-3">
+                    <% if (categoryOffer) { %>
+                      <button 
+                        class="btn btn-sm btn-danger" 
+                        onclick="removeOffer('<%= category._id %>')">
+                        Remove Offer
+                      </button>
+                    <% } else { %>
+                      <button 
+                        class="btn btn-sm btn-success" 
+                        onclick="addOffer('<%= category._id %>')">
+                        Add Offer
+                      </button>
+                    <% } %>
+                  </td>
                 </tr>
                 <% }) %>
               </tbody>
@@ -137,7 +159,7 @@
   </div>
 
   <!-- Pagination -->
-   <div class="mt-4 d-flex justify-content-center">
+  <div class="mt-4 d-flex justify-content-center">
     <nav aria-label="Page navigation">
       <ul class="pagination">
         <% if (currentPage > 1) { %>
@@ -300,15 +322,58 @@
   }
 
   async function addOffer(categoryId) {
-    const { value: amount } = await Swal.fire({
-      title: "Offer in percentage",
-      input: "number",
-      inputLabel: "Percentage",
-      inputPlaceholder: "%",
-      confirmButtonColor: '#212529'
+    const { value: formValues } = await Swal.fire({
+      title: "Add Category Offer",
+      html:
+        '<p style="margin-bottom: 15px;">Set a discount for all products in this category. The offer will be active until the end date.</p>' +
+        '<input id="swal-input2" type="number" class="swal2-input" placeholder="Discount Percentage (%)" min="1" max="100">' +
+        '<input id="swal-input4" type="date" class="swal2-input" placeholder="End Date">',
+      focusConfirm: false,
+      preConfirm: () => {
+        return {
+          percentage: document.getElementById('swal-input2').value,
+          endDate: document.getElementById('swal-input4').value,
+        };
+      },
+      confirmButtonColor: '#212529',
     });
 
-    if (amount) {
+    if (formValues) {
+      const { percentage, endDate } = formValues;
+      if (!percentage || !endDate) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid Input',
+          text: 'Both Discount Percentage and End Date are required!',
+          confirmButtonColor: '#212529',
+        });
+        return;
+      }
+
+      // Validate percentage
+      const percentageNum = parseInt(percentage);
+      if (percentageNum < 1 || percentageNum > 100) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid Input',
+          text: 'Discount Percentage must be between 1 and 100!',
+          confirmButtonColor: '#212529',
+        });
+        return;
+      }
+
+      // Validate end date (must be in the future)
+      const today = new Date().toISOString().split('T')[0];
+      if (endDate <= today) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid Input',
+          text: 'End Date must be a future date!',
+          confirmButtonColor: '#212529',
+        });
+        return;
+      }
+
       try {
         const response = await fetch("/admin/addCategoryOffer", {
           method: "POST",
@@ -316,27 +381,28 @@
             'Content-Type': "application/json",
           },
           body: JSON.stringify({
-            percentage: amount,
-            categoryId: categoryId,
+            percentage,
+            endDate,
+            categoryId,
           }),
         });
 
         const data = await response.json();
         if (response.ok && data.status === true) {
           Swal.fire({
-            title: "Offer added",
-            text: "The offer has been added successfully",
+            title: "Offer Added",
+            text: "The category offer has been added successfully",
             icon: "success",
-            confirmButtonColor: '#212529'
+            confirmButtonColor: '#212529',
           }).then(() => {
             location.reload();
           });
         } else {
           Swal.fire({
-            title: "Failed", 
-            text: data.message || "Adding offer failed", 
+            title: "Failed",
+            text: data.message || "Adding offer failed",
             icon: "error",
-            confirmButtonColor: '#212529'
+            confirmButtonColor: '#212529',
           });
         }
       } catch (error) {
@@ -344,12 +410,13 @@
           title: "Error",
           text: "An error occurred while adding the offer",
           icon: "error",
-          confirmButtonColor: '#212529'
+          confirmButtonColor: '#212529',
         });
         console.log("Error adding offer", error);
       }
     }
   }
+
 
   async function removeOffer(categoryId) {
     try {
@@ -366,19 +433,19 @@
       const data = await response.json();
       if (response.ok && data.status === true) {
         Swal.fire({
-          title: "Offer removed",
-          text: "The offer has been removed successfully",
+          title: "Offer Removed",
+          text: "The category offer has been removed successfully",
           icon: "success",
-          confirmButtonColor: '#212529'
+          confirmButtonColor: '#212529',
         }).then(() => {
           location.reload();
         });
       } else {
         Swal.fire({
-          title: "Failed", 
-          text: data.message || "Removing offer failed", 
+          title: "Failed",
+          text: data.message || "Removing offer failed",
           icon: "error",
-          confirmButtonColor: '#212529'
+          confirmButtonColor: '#212529',
         });
       }
     } catch (error) {
@@ -386,11 +453,12 @@
         title: "Error",
         text: "An error occurred while removing the offer",
         icon: "error",
-        confirmButtonColor: '#212529'
+        confirmButtonColor: '#212529',
       });
       console.error("Error removing offer", error);
     }
   }
+
 
   async function handleToggle(button) {
     const categoryId = button.dataset.id;
@@ -425,19 +493,14 @@
       const data = await response.json();
 
       if (data.success) {
-        
         const newStatus = currentStatus === 'Listed' ? 'Unlisted' : 'Listed';
-        
-        
         const badge = document.getElementById(`status-${categoryId}`);
         badge.textContent = newStatus;
         badge.className = `badge ${newStatus === 'Listed' ? 'bg-dark' : 'bg-secondary'}`;
         
-        
         button.textContent = newStatus === 'Listed' ? 'Unlist' : 'List';
         button.className = `btn btn-sm ${newStatus === 'Listed' ? 'btn-outline-dark' : 'btn-dark'}`;
         button.dataset.status = newStatus;
-        
         
         Swal.fire({
           icon: 'success',

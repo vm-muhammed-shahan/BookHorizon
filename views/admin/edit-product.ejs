@@ -5,13 +5,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Edit Product</title>
-  
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-  
   <style>
     :root {
       --primary-color: #4e73df;
@@ -23,98 +21,80 @@
       --light-color: #f8f9fc;
       --dark-color: #5a5c69;
     }
-    
     body {
       background-color: #f8f9fc;
       font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     }
-    
     .page-wrapper {
       min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
-    
     .content-header {
       padding: 1.5rem 0;
       border-bottom: 1px solid #e3e6f0;
       margin-bottom: 1.5rem;
     }
-    
     .content-title {
       color: #5a5c69;
       font-weight: 700;
       margin-bottom: 0;
     }
-    
     .card {
       border: none;
       border-radius: 0.35rem;
       box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
       margin-bottom: 1.5rem;
     }
-    
     .card-header {
       background-color: #f8f9fc;
       border-bottom: 1px solid #e3e6f0;
     }
-    
     .form-label {
       font-weight: 600;
       color: #5a5c69;
     }
-    
     .btn-primary {
       background-color: var(--primary-color);
       border-color: var(--primary-color);
     }
-    
     .btn-secondary {
       background-color: var(--secondary-color);
       border-color: var(--secondary-color);
     }
-    
     .btn-danger {
       background-color: var(--danger-color);
       border-color: var(--danger-color);
     }
-    
     .image-upload-box {
       transition: all 0.3s ease;
       border: 1px solid #e3e6f0;
     }
-    
     .image-upload-box:hover {
       box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     }
-    
     .img-placeholder {
       background-color: #f8f9fc;
       border: 2px dashed #d1d3e2;
     }
-    
     .remove-image-btn {
       z-index: 10;
       margin: 5px;
       opacity: 0.8;
     }
-    
     .remove-image-btn:hover {
       opacity: 1;
     }
-    
     footer {
       background-color: #fff;
       border-top: 1px solid #e3e6f0;
       padding: 1rem;
       margin-top: auto;
     }
-    
     .price-info {
-      font-size: 0.8rem;
+ ludzk:      font-size: 0.8rem;
       margin-top: 0.25rem;
     }
-    
     .price-error {
       color: var(--danger-color);
       display: none;
@@ -132,23 +112,19 @@
           </a>
         </div>
       </div>
-
       <div class="row">
         <div class="col-12">
           <div class="card">
-            <div class="card-body p-4">
-              
+            <div class="card-body p-4">  
               <form id="edit-product-form" enctype="multipart/form-data">
-                <input type="hidden" name="productId" value="<%= product._id %>">
-                
+                <input type="hidden" name="productId" value="<%= product._id %>">       
                 <div class="row mb-4">
                   <div class="col-lg-6">
                     <div class="mb-3">
                       <label class="form-label">Product Name</label>
                       <input type="text" class="form-control" name="productName" value="<%= product.productName %>" required>
                     </div>
-                  </div>
-                  
+                  </div>                 
                   <div class="col-lg-6">
                     <div class="mb-3">
                       <label class="form-label">Category</label>
@@ -179,13 +155,24 @@
                   
                   <div class="col-lg-4">
                     <div class="mb-3">
-                      <label class="form-label">Sale Price <span class="text-danger">*</span></label>
+                      <label class="form-label">Sale Price (Calculated)</label>
                       <div class="input-group">
                         <span class="input-group-text">₹</span>
-                        <input type="number" class="form-control" name="salePrice" value="<%= product.salePrice %>" min="0" step="0.01" required>
+                        <input type="text" class="form-control" value="<%= product.salePrice %>" readonly>
                       </div>
-                      <small class="price-info text-muted">Must be less than regular price</small>
-                      <small class="price-error sale-price-error">Sale price must be less than regular price</small>
+                      <small class="price-info text-muted">
+                        <% 
+                          const productOffer = product.productOffer > 0 ? product.productOffer : null;
+                          const categoryOffer = product.category && product.category.categoryOffer > 0 ? product.category.categoryOffer : null;
+                          if (productOffer || categoryOffer) {
+                            const bestOffer = productOffer && categoryOffer ? Math.max(productOffer, categoryOffer) : (productOffer || categoryOffer);
+                            const offerType = productOffer && (!categoryOffer || productOffer >= categoryOffer) ? 'Product' : 'Category';
+                        %>
+                          Applied <%= offerType %> Offer: <%= bestOffer %>% discount
+                        <% } else { %>
+                          No active offer applied (equals Regular Price)
+                        <% } %>
+                      </small>
                     </div>
                   </div>
                   
@@ -212,7 +199,7 @@
                         <div class="card position-relative image-upload-box" data-index="<%= i %>">
                           <div class="card-body p-2 text-center">
                             <% if(product.productImage && product.productImage[i]) { %>
-                              <img src="/uploads/<%= product.productImage[i] %>" 
+                              <img src="/Uploads/<%= product.productImage[i] %>" 
                                    class="img-preview img-fluid mb-2" alt="Product image <%= i+1 %>"
                                    style="width: 100%; height: 150px; object-fit: cover; border-radius: 5px;">
                               <input type="hidden" name="existingImages[<%= i %>]" value="<%= product.productImage[i] %>">
@@ -257,7 +244,7 @@
     </div>
 
     <footer class="text-center">
-      <p class="mb-0 text-muted">&copy; <%= new Date().getFullYear() %> Admin Dashboard. All rights reserved.</p>
+      <p class="mb-0 text-muted">© <%= new Date().getFullYear() %> Admin Dashboard. All rights reserved.</p>
     </footer>
   </div>
 
@@ -289,22 +276,6 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
 
   <script>
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 document.addEventListener('DOMContentLoaded', function() {
   
   let cropper;
@@ -313,14 +284,11 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Price validation elements
   const regularPriceInput = document.querySelector('input[name="regularPrice"]');
-  const salePriceInput = document.querySelector('input[name="salePrice"]');
   const regularPriceError = document.querySelector('.regular-price-error');
-  const salePriceError = document.querySelector('.sale-price-error');
   
   // Add real-time price validation
   function validatePrices() {
     const regularPrice = parseFloat(regularPriceInput.value);
-    const salePrice = parseFloat(salePriceInput.value);
     
     // Validate regular price is greater than 0
     if (regularPrice <= 0) {
@@ -332,22 +300,11 @@ document.addEventListener('DOMContentLoaded', function() {
       regularPriceInput.classList.remove('is-invalid');
     }
     
-    // Validate sale price is less than regular price
-    if (salePrice >= regularPrice) {
-      salePriceError.style.display = 'block';
-      salePriceInput.classList.add('is-invalid');
-      return false;
-    } else {
-      salePriceError.style.display = 'none';
-      salePriceInput.classList.remove('is-invalid');
-    }
-    
     return true;
   }
   
   // Add event listeners for price validation
   regularPriceInput.addEventListener('input', validatePrices);
-  salePriceInput.addEventListener('input', validatePrices);
   
   // Run initial validation
   validatePrices();
@@ -504,7 +461,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const category = document.querySelector('select[name="category"]').value;
     const imageCount = document.querySelectorAll('.img-preview').length;
     const regularPrice = parseFloat(document.querySelector('input[name="regularPrice"]').value);
-    const salePrice = parseFloat(document.querySelector('input[name="salePrice"]').value);
     
     // Check required fields
     if (!productName || !category) {
@@ -540,18 +496,6 @@ document.addEventListener('DOMContentLoaded', function() {
       return false;
     }
     
-    // Check sale price is less than regular price
-    if (salePrice >= regularPrice) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Price Validation Error',
-        text: 'Sale price must be less than regular price',
-        confirmButtonColor: '#3085d6'
-      });
-      salePriceInput.focus();
-      return false;
-    }
-    
     return true;
   }
 
@@ -560,8 +504,7 @@ document.addEventListener('DOMContentLoaded', function() {
     e.preventDefault();
     if (!validateForm()) {
       return;
-    }
-    
+    } 
     const formData = new FormData(this);
     
     // Show loading indicator
@@ -608,6 +551,3 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 </body>
 </html>
-
-
-   

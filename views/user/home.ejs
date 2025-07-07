@@ -255,9 +255,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-
-
-
         window.addToCart = async (id, productName) => {
             try {
                 const response = await fetch('/cart/add', {
@@ -297,10 +294,6 @@
             }
         };
 
-
-
-
-
         window.addToWishlist = async (productId, productName) => {
             try {
                 const response = await fetch('/addToWishlist', {
@@ -321,6 +314,14 @@
                         timer: 1500,
                         showConfirmButton: false
                     });
+                } else if (data.message === 'Cannot add to wishlist - product is already in your cart') {
+                    Swal.fire({
+                        title: 'Oops!',
+                        text: 'Cannot add to wishlist - product is already in your cart',
+                        icon: 'error',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
                 } else {
                     Swal.fire({
                         title: 'Oops!',
@@ -332,14 +333,10 @@
                 console.error('Fetch error:', error);
                 Swal.fire({
                     title: 'Login required',
-                    text: 'you need to login to do this action .',
+                    text: 'You need to login to do this action.',
                     icon: 'error'
                 });
             }
         };
-
-
-
-
     </script>
     <%- include("../../views/partials/user/footer") %>

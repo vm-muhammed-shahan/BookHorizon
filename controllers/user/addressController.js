@@ -13,8 +13,7 @@ const getAddresses = async (req, res) => {
   }
 };
 
-
-
+// 2. ADD a new address
 const addAddress = async (req, res) => {
   try {
     console.log("addAddress called with body:", req.body); // Debug log
@@ -70,9 +69,7 @@ const addAddress = async (req, res) => {
   }
 };
 
-
-
-
+// 3. GET edit address form
 const getEdit = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -92,8 +89,7 @@ const getEdit = async (req, res) => {
   }
 };
 
-
-
+// 4. EDIT an address
 const editAddress = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -102,6 +98,8 @@ const editAddress = async (req, res) => {
       name, phone, city, state,
       landMark, pincode, altPhone, addressType, isDefault
     } = req.body;
+
+    console.log("editAddress called with params:", { addrId }, "and body:", req.body); // Debug log
 
     const phoneRegex = /^[6-9]\d{9}$/;
     const pincodeRegex = /^\d{6}$/;
@@ -133,20 +131,22 @@ const editAddress = async (req, res) => {
     }
 
     // Update the address
+    const updatedIsDefault = isDefault === true || isDefault === 'true' || isDefault === 'on';
     doc.address[index] = {
       name, phone, city, state, landMark, pincode,
       altPhone, addressType,
-      isDefault: isDefault === 'true' || isDefault === true
+      isDefault: updatedIsDefault
     };
 
     // If this address is set as default, unset others
-    if (doc.address[index].isDefault) {
+    if (updatedIsDefault) {
       doc.address.forEach((addr, i) => {
         if (i !== index) addr.isDefault = false;
       });
     }
 
     await doc.save();
+    console.log("Address updated successfully:", doc.address[index]); // Debug log
     return res.status(200).json({ success: true, message: 'Address updated successfully' });
   } catch (err) {
     console.error("Error updating address:", err);
@@ -154,8 +154,7 @@ const editAddress = async (req, res) => {
   }
 };
 
-
-
+// 5. DELETE an address
 const deleteAddress = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -187,10 +186,7 @@ const deleteAddress = async (req, res) => {
   }
 };
 
-
-
-
-
+// 6. SET default address
 const setDefaultAddress = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -218,7 +214,6 @@ const setDefaultAddress = async (req, res) => {
     return res.status(500).json({ error: 'Server error while setting default address' });
   }
 };
-
 
 module.exports = {
   getAddresses,

@@ -14,19 +14,14 @@ const categorySchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
-
-  isDeleted: {
-    type: Boolean,
-    default: false
-  },
-
   categoryOffer: {
     type: Number,
-    default: 0
-  }
+    default: 0,
+    min: 0,
+    max: 100,
+  },
 }, {
-    timestamps: true
-
+  timestamps: true
 });
 
-module.exports =  mongoose.model("Category", categorySchema);
+module.exports = mongoose.model("Category", categorySchema);

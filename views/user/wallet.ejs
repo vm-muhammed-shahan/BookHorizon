@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include("../partials/user/header") %>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Wallet</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      color: #212529;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 300;
+      color: #000;
+      margin-bottom: 1rem;
+      text-align: center;
+      letter-spacing: -0.02em;
+      position: relative;
+    }
+
+    h1::after {
+      content: '';
+      display: block;
+      width: 60px;
+      height: 2px;
+      background: #000;
+      margin: 1rem auto;
+    }
+
+    /* Wallet Balance Section */
+    .wallet-balance-section {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .wallet-balance {
+      font-size: 2rem;
+      font-weight: 500;
+      color: #2c3e50;
+    }
+
+    .wallet-balance span {
+      color: #28a745;
+    }
+
+    /* Transactions Table */
+    .table-container {
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .transactions-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 1rem;
+    }
+
+    .transactions-table thead {
+      background: #f8f9fa;
+    }
+
+    .transactions-table th {
+      padding: 1.25rem 1rem;
+      text-align: left;
+      font-weight: 600;
+      color: #000;
+      border-bottom: 2px solid #e9ecef;
+      text-transform: uppercase;
+      font-size: 0.875rem;
+      letter-spacing: 0.05em;
+    }
+
+    .transactions-table td {
+      padding: 1.25rem 1rem;
+      border-bottom: 1px solid #f1f3f4;
+      vertical-align: middle;
+    }
+
+    .transactions-table tbody tr {
+      transition: all 0.2s ease;
+    }
+
+    .transactions-table tbody tr:hover {
+      background: #f8f9fa;
+    }
+
+    .transactions-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .no-transactions {
+      text-align: center;
+      color: #6c757d;
+      font-style: italic;
+      padding: 3rem 1rem;
+    }
+
+    /* Transaction Type */
+    .transaction-type {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-transform: capitalize;
+    }
+
+    .transaction-type.credit {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .transaction-type.debit {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      .wallet-balance-section {
+        padding: 1.5rem;
+      }
+
+      .wallet-balance {
+        font-size: 1.5rem;
+      }
+
+      .transactions-table {
+        font-size: 0.875rem;
+      }
+
+      .transactions-table th,
+      .transactions-table td {
+        padding: 0.875rem 0.5rem;
+      }
+
+      /* Stack table on mobile */
+      .transactions-table thead {
+        display: none;
+      }
+
+      .transactions-table tbody tr {
+        display: block;
+        margin-bottom: 1rem;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        padding: 1rem;
+      }
+
+      .transactions-table tbody td {
+        display: block;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f1f3f4;
+        position: relative;
+        padding-left: 50%;
+      }
+
+      .transactions-table tbody td:last-child {
+        border-bottom: none;
+      }
+
+      .transactions-table tbody td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        font-weight: 600;
+        color: #000;
+      }
+    }
+
+    /* Loading animation */
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: #fff;
+      }
+      
+      .transactions-table {
+        font-size: 12px;
+      }
+      
+      .table-container {
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="container">
+    <h1>My Wallet</h1>
+
+    <!-- Wallet Balance -->
+    <div class="wallet-balance-section fade-in">
+      <div class="wallet-balance">
+        Current Balance: <span>₹<%= wallet.balance.toFixed(2) %></span>
+      </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="table-container fade-in">
+      <table class="transactions-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (wallet.transactions.length === 0) { %>
+            <tr>
+              <td colspan="4" class="no-transactions">No transactions found</td>
+            </tr>
+          <% } else { %>
+            <% wallet.transactions.sort((a, b) => b.date - a.date).forEach(transaction => { %>
+              <tr>
+                <td data-label="Date:"><%= transaction.date.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }) %></td>
+                <td data-label="Type:">
+                  <span class="transaction-type <%= transaction.type %>">
+                    <%= transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1) %>
+                  </span>
+                </td>
+                <td data-label="Amount:">₹<%= transaction.amount.toFixed(2) %></td>
+                <td data-label="Description:"><%= transaction.description %></td>
+              </tr>
+            <% }) %>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <%- include("../partials/user/footer") %>
+</body>
+</html>

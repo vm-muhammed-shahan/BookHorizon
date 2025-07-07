@@ -1,5 +1,10 @@
 <%- include("../../views/partials/user/header") %>
 
+<!-- Include SweetAlert CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Include Razorpay SDK -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
 <style>
     * {
         margin: 0;
@@ -277,6 +282,137 @@
         font-weight: 600;
         color: #000;
         font-size: 1.1rem;
+    }
+
+    /* Coupon Section */
+    .coupon-section {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+    }
+
+    .coupon-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 4px;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .coupon-input:focus {
+        outline: none;
+        border-color: #000;
+    }
+
+    .coupon-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-coupon {
+        flex: 1;
+        padding: 0.75rem;
+        border: none;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-remove-coupon {
+        background: #e0e0e0;
+        color: #333;
+    }
+
+    .btn-remove-coupon:hover {
+        background: #d0d0d0;
+    }
+
+    .coupon-message {
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+        text-align: center;
+    }
+
+    .coupon-success {
+        color: #2e7d32;
+    }
+
+    .coupon-error {
+        color: #d32f2f;
+    }
+
+    /* Available Coupons */
+    .available-coupons {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #f9f9f9;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+    }
+
+    .available-coupons h4 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #000;
+    }
+
+    .coupon-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+        background: #fff;
+        transition: all 0.3s ease;
+    }
+
+    .coupon-item:hover {
+        border-color: #000;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .coupon-details {
+        flex: 1;
+    }
+
+    .coupon-code {
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 0.3rem;
+    }
+
+    .coupon-info {
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .btn-apply {
+        padding: 0.5rem 1rem;
+        background: #000;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-apply:hover {
+        background: #333;
+    }
+
+    .btn-apply:disabled {
+        background: #ccc;
+        cursor: not-allowed;
     }
 
     /* Order Summary */
@@ -562,6 +698,14 @@
             width: 95%;
             margin: 1rem;
         }
+
+        .coupon-buttons {
+            flex-direction: column;
+        }
+
+        .btn-coupon {
+            width: 100%;
+        }
     }
 
     .loading {
@@ -595,7 +739,7 @@
         <h1>CHECKOUT</h1>
     </div>
 
-    <form method="POST" action="/checkout/place-order" id="checkoutForm">
+    <form id="checkoutForm">
         <div class="checkout-form">
             <div class="main-content">
                 <!-- Address Selection -->
@@ -606,7 +750,7 @@
                             <div class="no-address">
                                 <h3>No Delivery Address Found</h3>
                                 <p>Please add a delivery address to continue with your order.</p>
-                                <a href="/profile/address" class="add-address-btn">ADD NEW ADDRESS</a>
+                                <a href="/profile/addresses" class="add-address-btn">ADD NEW ADDRESS</a>
                             </div>
                         <% } else { %>
                             <div id="addressList">
@@ -621,13 +765,11 @@
                                         <div class="address-phone">
                                             Phone: <%= address.phone %><% if (address.altPhone) { %> | Alt: <%= address.altPhone %><% } %>
                                         </div>
-                                        <div class="address-actions">
-                                            <button type="button" class="btn-edit" data-index="<%= i %>">EDIT</button>
-                                        </div>
+                                        
                                     </div>
                                 <% }) %>
                             </div>
-                            <a href="/profile/address" class="add-address-btn">ADD NEW ADDRESS</a>
+                            <a href="/profile/addresses" class="add-address-btn">ADD NEW ADDRESS</a>
                         <% } %>
                     </div>
                 </div>
@@ -679,34 +821,70 @@
 
             <!-- Order Summary Sidebar -->
             <div class="sidebar">
+                <!-- Coupon Section -->
+                <div class="coupon-section">
+                    <h3>Coupon</h3>
+                    <input type="text" id="couponCode" class="coupon-input" placeholder="Enter coupon code" value="<%= couponApplied ? couponName : '' %>" readonly>
+                    <div class="coupon-buttons">
+                        <button type="button" id="removeCouponBtn" class="btn-coupon btn-remove-coupon" <%= couponApplied ? '' : 'disabled="disabled"' %>>Remove</button>
+                    </div>
+                    <div id="couponMessage" class="coupon-message"></div>
+
+                    <!-- Available Coupons -->
+                    <div class="available-coupons">
+                        <h4>Available Coupons</h4>
+                        <% if (availableCoupons.length === 0) { %>
+                            <p>No coupons available for this order.</p>
+                        <% } else { %>
+                            <% availableCoupons.forEach(coupon => { %>
+                                <div class="coupon-item">
+                                    <div class="coupon-details">
+                                        <div class="coupon-code"><%= coupon.name %></div>
+                                        <div class="coupon-info">
+                                            Get <%= coupon.discountPercentage.toFixed(2) %>% off on a minimum purchase of ₹<%= coupon.minimumPrice.toFixed(2) %>.<br>
+                                            Expires on: <%= new Date(coupon.expireOn).toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' }) %>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn-apply" onclick="applyCouponFromList('<%= coupon.name %>')" <%= couponApplied ? 'disabled="disabled"' : '' %>>Apply</button>
+                                </div>
+                            <% }) %>
+                        <% } %>
+                    </div>
+                </div>
+
                 <div class="order-summary">
-                    <h3 class="summary-title">ORDER SUMMARY</h3>
+                    <h3 class="summary-title">Order Summary</h3>
                     
                     <div class="summary-row">
                         <span>Subtotal</span>
-                        <span>₹<%= summary.subTotal.toFixed(2) %></span>
+                        <span id="subtotal">₹<%= summaryItems.subtotal.toFixed(2) %></span>
                     </div>
                     
                     <div class="summary-row">
                         <span>Tax (5%)</span>
-                        <span>₹<%= summary.tax.toFixed(2) %></span>
+                        <span id="tax">₹<%= summaryItems.tax.toFixed(2) %></span>
                     </div>
                     
                     <div class="summary-row">
                         <span>Shipping</span>
-                        <span>₹<%= summary.shipping %></span>
+                        <span id="shipping">₹<%= summaryItems.shipping.toFixed(2) %></span>
                     </div>
                     
-                    <% if (summary.discount > 0) { %>
-                        <div class="summary-row discount">
+                    <% if (summaryItems.discount > 0) { %>
+                        <div class="summary-row discount" id="discountRow">
+                            <span>Discount (<%= couponName %>)</span>
+                            <span id="discount">-₹<%= summaryItems.discount.toFixed(2) %></span>
+                        </div>
+                    <% } else { %>
+                        <div class="summary-row discount" id="discountRow" style="display: none;">
                             <span>Discount</span>
-                            <span>-₹<%= summary.discount.toFixed(2) %></span>
+                            <span id="discount">-</span>
                         </div>
                     <% } %>
                     
                     <div class="summary-row total">
                         <span>TOTAL</span>
-                        <span>₹<%= summary.finalAmount.toFixed(2) %></span>
+                        <span id="total">₹<%= summaryItems.totalPrice.toFixed(2) %></span>
                     </div>
                 </div>
 
@@ -714,7 +892,7 @@
                     <div class="payment-method-display" id="selectedPaymentDisplay">
                         Selected: Cash on Delivery
                     </div>
-                    <div id="paymentDescription">
+                    <div id="payment-details">
                         Pay when your order is delivered
                     </div>
                 </div>
@@ -732,7 +910,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2 class="modal-title">Edit Address</h2>
-            <button type="button" class="close-btn" onclick="closeEditModal()">×</button>
+            <button type="button" class="close-btn" onclick="closeModal()">×</button>
         </div>
         <form id="editAddressForm">
             <div class="modal-body">
@@ -740,44 +918,44 @@
                 
                 <div class="form-group">
                     <label class="form-label">Full Name</label>
-                    <input type="text" id="editName" name="name" class="form-input" required>
+                    <input type="text" id="fullName" name="fullName" class="form-input" required>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Phone</label>
-                        <input type="tel" id="editPhone" name="phone" class="form-input" required>
+                        <input type="tel" id="phone" name="phone" class="form-input" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Alternative Phone</label>
-                        <input type="tel" id="editAltPhone" name="altPhone" class="form-input" required>
+                        <input type="tel" id="altPhone" name="alternatePhone" class="form-input">
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Landmark</label>
-                    <input type="text" id="editLandmark" name="landMark" class="form-input" required>
+                    <input type="text" id="landmark" name="landmark" class="form-input">
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">City</label>
-                        <input type="text" id="editCity" name="city" class="form-input" required>
+                        <input type="text" id="city" name="city" class="form-input" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">State</label>
-                        <input type="text" id="editState" name="state" class="form-input" required>
+                        <input type="text" id="state" name="state" class="form-input" required>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Pincode</label>
-                        <input type="text" id="editPincode" name="pincode" class="form-input" required>
+                        <input type="text" id="pincode" name="pincode" class="form-input" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Address Type</label>
-                        <select id="editAddressType" name="addressType" class="form-input" required>
+                        <select id="addressType" name="addressType" class="form-input" required>
                             <option value="home">Home</option>
                             <option value="work">Work</option>
                             <option value="other">Other</option>
@@ -787,11 +965,11 @@
 
                 <div class="form-group">
                     <label class="form-label">Is Default Address</label>
-                    <input type="checkbox" id="editIsDefault" name="isDefault" class="form-input">
+                    <input type="checkbox" id="isDefault" name="isDefault" class="check-input">
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
                 <button type="submit" class="btn btn-primary" id="saveAddressBtn">Update Address</button>
             </div>
         </form>
@@ -804,37 +982,28 @@
     let currentEditingIndex = -1;
 
     function selectAddress(element, index) {
-        // Remove selected class from all address cards
         document.querySelectorAll('.address-card').forEach(card => {
             card.classList.remove('selected');
         });
         
-        // Add selected class to clicked card
         element.classList.add('selected');
-        
-        // Check the radio button
         element.querySelector('.address-radio').checked = true;
     }
 
     function selectPaymentMethod(element, method) {
-        // Remove selected class from all payment methods
         document.querySelectorAll('.payment-method').forEach(method => {
             method.classList.remove('selected');
         });
         
-        // Add selected class to clicked method
         element.classList.add('selected');
-        
-        // Check the radio button
         element.querySelector('.payment-radio').checked = true;
         
-        // Update payment display in sidebar
         updatePaymentDisplay(method);
     }
 
     function updatePaymentDisplay(method) {
         const displayElement = document.getElementById('selectedPaymentDisplay');
-        const descriptionElement = document.getElementById('paymentDescription');
+        const descriptionElement = document.getElementById('payment-details');
         
         if (method === 'cod') {
             displayElement.textContent = 'Selected: Cash on Delivery';
@@ -845,31 +1014,29 @@
         }
     }
 
-    function openEditModal(event, addressIndex) {
-        event.stopPropagation(); // Prevent address selection
+    function openModal(event, addressIndex) {
+        event.stopPropagation();
         
         currentEditingIndex = addressIndex;
         const address = addressesData[addressIndex];
         
-        // Populate form fields
-        document.getElementById('editName').value = address.name || '';
-        document.getElementById('editPhone').value = address.phone || '';
-        document.getElementById('editAltPhone').value = address.altPhone || '';
-        document.getElementById('editLandmark').value = address.landMark || '';
-        document.getElementById('editCity').value = address.city || '';
-        document.getElementById('editState').value = address.state || '';
-        document.getElementById('editPincode').value = address.pincode || '';
-        document.getElementById('editAddressType').value = address.addressType || 'home';
-        document.getElementById('editIsDefault').checked = address.isDefault || false;
+        document.getElementById('fullName').value = address.name || '';
+        document.getElementById('phone').value = address.phone || '';
+        document.getElementById('altPhone').value = address.altPhone || '';
+        document.getElementById('landmark').value = address.landMark || '';
+        document.getElementById('city').value = address.city || '';
+        document.getElementById('state').value = address.state || '';
+        document.getElementById('pincode').value = address.pincode || '';
+        document.getElementById('addressType').value = address.addressType || 'home';
+        document.getElementById('isDefault').checked = address.isDefault || false;
         
-        // Show modal
         const modal = document.getElementById('editAddressModal');
         modal.style.display = 'flex';
         modal.classList.add('show');
         document.body.style.overflow = 'hidden';
     }
 
-    function closeEditModal() {
+    function closeModal() {
         const modal = document.getElementById('editAddressModal');
         modal.style.display = 'none';
         modal.classList.remove('show');
@@ -905,7 +1072,112 @@
         }
     }
 
-    // Handle edit address form submission
+    function showCouponMessage(message, type = 'error') {
+        const messageDiv = document.getElementById('couponMessage');
+        messageDiv.textContent = message;
+        messageDiv.className = `coupon-message ${type === 'success' ? 'coupon-success' : 'coupon-error'}`;
+    }
+
+    function clearCouponMessage() {
+        const messageDiv = document.getElementById('couponMessage');
+        messageDiv.textContent = '';
+        messageDiv.className = 'coupon-message';
+    }
+
+    function updateSummary(subtotal, tax, shipping, discount, total, couponName = '') {
+        document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+        document.getElementById('tax').textContent = `₹${tax.toFixed(2)}`;
+        document.getElementById('shipping').textContent = `₹${shipping.toFixed(2)}`;
+        const discountRow = document.getElementById('discountRow');
+        const discountSpan = document.getElementById('discount');
+        if (discount > 0) {
+            discountRow.style.display = 'flex';
+            discountSpan.textContent = `-₹${discount.toFixed(2)}`;
+            discountRow.querySelector('span:first-child').textContent = `Discount (${couponName})`;
+        } else {
+            discountRow.style.display = 'none';
+            discountSpan.textContent = '-';
+        }
+        document.getElementById('total').textContent = `₹${total.toFixed(2)}`;
+    }
+
+    async function applyCouponFromList(couponCode) {
+        const removeBtn = document.getElementById('removeCouponBtn');
+        const couponInput = document.getElementById('couponCode');
+
+        clearCouponMessage();
+
+        try {
+            const response = await fetch('/checkout/apply-coupon', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ couponCode })
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                couponInput.value = couponCode;
+                updateSummary(
+                    result.summary.subtotal,
+                    result.summary.tax,
+                    result.summary.shipping,
+                    result.summary.discount,
+                    result.summary.totalPrice,
+                    result.couponName
+                );
+                removeBtn.disabled = false;
+                showCouponMessage('Coupon applied successfully!', 'success');
+                document.querySelectorAll('.btn-apply').forEach(btn => btn.disabled = true);
+            } else {
+                showCouponMessage(result.error);
+            }
+        } catch (error) {
+            console.error('Error applying coupon:', error);
+            showCouponMessage('Server error. Please try again.');
+        }
+    }
+
+    document.getElementById('removeCouponBtn').addEventListener('click', async () => {
+        const removeBtn = document.getElementById('removeCouponBtn');
+        const couponInput = document.getElementById('couponCode');
+        const originalText = removeBtn.textContent;
+
+        removeBtn.disabled = true;
+        removeBtn.textContent = 'Removing...';
+        clearCouponMessage();
+
+        try {
+            const response = await fetch('/checkout/remove-coupon', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                updateSummary(
+                    result.summary.subtotal,
+                    result.summary.tax,
+                    result.summary.shipping,
+                    result.summary.discount,
+                    result.summary.totalPrice
+                );
+                couponInput.value = '';
+                removeBtn.disabled = true;
+                showCouponMessage('Coupon removed successfully!', 'success');
+                document.querySelectorAll('.btn-apply').forEach(btn => btn.disabled = false);
+            } else {
+                showCouponMessage(result.error);
+            }
+        } catch (error) {
+            console.error('Error removing coupon:', error);
+            showCouponMessage('Server error. Please try again.');
+        } finally {
+            removeBtn.disabled = false;
+            removeBtn.textContent = originalText;
+        }
+    });
+
     document.getElementById('editAddressForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -914,23 +1186,34 @@
         const saveBtn = document.getElementById('saveAddressBtn');
         const originalText = saveBtn.textContent;
         
-        // Show loading state
         saveBtn.disabled = true;
         saveBtn.textContent = 'Updating...';
         clearModalMessage();
         
-        // Get form data
         const formData = new FormData(this);
-        const addressData = Object.fromEntries(formData);
-        addressData.isDefault = formData.get('isDefault') === 'on';
+        const addressData = {
+            name: formData.get('fullName'),
+            phone: formData.get('phone'),
+            altPhone: formData.get('alternatePhone'),
+            landMark: formData.get('landmark'),
+            city: formData.get('city'),
+            state: formData.get('state'),
+            pincode: formData.get('pincode'),
+            addressType: formData.get('addressType'),
+            isDefault: formData.get('isDefault') === 'on' ? true : false
+        };
         
         try {
-            // Get the original address ID
             const originalAddress = addressesData[currentEditingIndex];
             const addressId = originalAddress._id || originalAddress.id;
             
-            const response = await fetch(`/profile/addresses/edit/${addressId}`, {
-                method: 'PUT',
+            if (!addressId) {
+                showModalMessage('Address ID not found. Cannot update address.');
+                return;
+            }
+            
+            const response = await fetch(`/checkout/addresses/edit/${addressId}`, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -940,89 +1223,208 @@
             const result = await response.json();
             
             if (response.ok) {
-                // Update the addresses data and UI
                 addressesData[currentEditingIndex] = { ...addressesData[currentEditingIndex], ...addressData };
                 updateAddressCard(currentEditingIndex, addressesData[currentEditingIndex]);
                 
-                showModalMessage('Address updated successfully!', 'success');
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: 'Address updated successfully!',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#000'
+                });
                 
-                // Close modal after short delay
-                setTimeout(() => {
-                    closeEditModal();
-                }, 1500);
+                closeModal();
             } else {
-                showModalMessage(result.message || 'Failed to update address. Please try again.');
+                showModalMessage(result.error || 'Failed to update address. Please try again.');
             }
         } catch (error) {
             console.error('Error updating address:', error);
             showModalMessage('Network error. Please check your connection and try again.');
         } finally {
-            // Reset button state
             saveBtn.disabled = false;
             saveBtn.textContent = originalText;
         }
     });
 
-    // Form submission handling
-    document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+    document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
         const selectedAddress = document.querySelector('input[name="selectedAddressIndex"]:checked');
         const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
+        const submitBtn = document.getElementById('placeOrderBtn');
+        const form = this;
         
-        // Validation
         if (!selectedAddress) {
-            e.preventDefault();
-            alert('Please select a delivery address');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Please select a delivery address',
+                confirmButtonColor: '#000'
+            });
             return;
         }
         
         if (!selectedPayment) {
-            e.preventDefault();
-            alert('Please select a payment method');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Please select a payment method',
+                confirmButtonColor: '#000'
+            });
             return;
         }
         
-        // Show loading state
-        const submitBtn = document.getElementById('placeOrderBtn');
-        
-        if (selectedPayment.value === 'cod') {
-            submitBtn.textContent = 'PROCESSING ORDER...';
-        } else {
-            submitBtn.textContent = 'REDIRECTING TO PAYMENT...';
-        }
-        
+        const originalText = submitBtn.textContent;
         submitBtn.disabled = true;
+        submitBtn.textContent = selectedPayment.value === 'cod' ? 'PROCESSING ORDER...' : 'REDIRECTING TO PAYMENT...';
+        form.classList.add('loading');
         
-        // Add loading class to form
-        this.classList.add('loading');
+        try {
+            const response = await fetch('/checkout/place-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    selectedAddressIndex: selectedAddress.value,
+                    paymentMethod: selectedPayment.value
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: result.error,
+                    confirmButtonColor: '#000'
+                });
+                return;
+            }
+            
+            if (selectedPayment.value === 'cod') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Order Placed',
+                    text: 'Your order has been successfully placed!',
+                    confirmButtonColor: '#000'
+                }).then(() => {
+                    window.location.href = result.redirect;
+                });
+            } else if (selectedPayment.value === 'razorpay') {
+                const options = {
+                    key: '<%= razorpayKeyId %>',
+                    amount: result.amount,
+                    currency: result.currency,
+                    name: 'BookHorizon',
+                    description: 'Order Payment',
+                    order_id: result.razorpayOrderId,
+                    handler: async function(response) {
+                        try {
+                            const verifyResponse = await fetch('/checkout/verify-payment', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    orderId: result.orderId,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            });
+                            
+                            const verifyResult = await verifyResponse.json();
+                            
+                            if (verifyResult.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Payment Successful',
+                                    text: 'Your order has been placed!',
+                                    confirmButtonColor: '#000'
+                                }).then(() => {
+                                    window.location.href = verifyResult.redirect;
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Payment Failed',
+                                    text: 'Payment verification failed. Please try again.',
+                                    confirmButtonColor: '#333'
+                                }).then(() => {
+                                    window.location.href = verifyResult.redirect;
+                                });
+                            }
+                        } catch (error) {
+                            console.error('Error verifying payment:', error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'Failed to verify payment. Please try again.',
+                                confirmButtonColor: '#333'
+                            });
+                        }
+                    },
+                    prefill: {
+                        name: '<%= user.name %>',
+                        email: '<%= user.email %>',
+                        contact: addressesData[0]?.phone || ''
+                    },
+                    theme: { color: '#333' },
+                };
+                
+                const rzp = new Razorpay(options);
+                rzp.on('payment.failed', async function(response) {
+                    try {
+                        await fetch('/checkout/payment-failed', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ orderId: result.orderId })
+                        });
+                    } catch (error) {
+                        console.error('Error reporting payment failure:', error);
+                    } finally {
+                        window.location.href = `/order/failure/${result.orderId}`;
+                    }
+                });
+                rzp.open();
+            }
+        } catch (error) {
+            console.error('Error placing order:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Something went wrong. Please try again.',
+                confirmButtonColor: '#333'
+            });
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            form.classList.remove('loading');
+        }
     });
 
-    // Close modal when clicking outside
     document.getElementById('editAddressModal').addEventListener('click', function(e) {
         if (e.target === this) {
-            closeEditModal();
+            closeModal();
         }
     });
 
-    // Close modal with Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && document.getElementById('editAddressModal').classList.contains('show')) {
-            closeEditModal();
+            closeModal();
         }
     });
 
-    // Initialize payment display on page load
     document.addEventListener('DOMContentLoaded', function() {
         const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
         if (selectedPayment) {
             updatePaymentDisplay(selectedPayment.value);
         }
-
-        // Add event listeners for edit buttons
         document.querySelectorAll('.btn-edit').forEach(button => {
             button.addEventListener('click', function(event) {
-                const index = parseInt(this.getAttribute('data-index'), 10);
-                openEditModal(event, index);
+                const index = parseInt(button.getAttribute('data-index'), 10);
+                openModal(event, index);
             });
         });
     });
 </script>
+<%- include("../../views/partials/user/footer") %>

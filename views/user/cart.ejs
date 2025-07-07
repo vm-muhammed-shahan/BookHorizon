@@ -1,4 +1,8 @@
 <%- include("../../views/partials/user/header") %>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
 <div class="cart-container">
   <h2 class="cart-title">Your Cart</h2>
   <% if (items.length === 0) { %>
@@ -12,16 +16,13 @@
         <div class="cart-item">
           <!-- 1. Product Image -->
           <div class="item-image">
-           <% if (item.productId && item.productId.productImage && item.productId.productImage.length > 0) { %>
-  <a href="/productDetails?id=<%=item.productId._id%>">
-    <img src="/uploads/<%= item.productId.productImage[0] %>" alt="<%= item.productId.productName || 'Product' %>">
-  </a>
-<% } else { %>
-  <a href="#">
-    <img src="/images/placeholder.png" alt="No Image Available">
-  </a>
-<% } %>
-
+            <% if (item.productId && item.productId.productImage && item.productId.productImage.length > 0) { %>
+              <a href="/productDetails?id=<%= item.productId._id %>">
+                <img src="/Uploads/<%= item.productId.productImage[0] %>" alt="<%= item.productId.productName || 'Product' %>">
+              </a>
+            <% } else { %>
+              <img src="/images/placeholder.png" alt="No Image Available">
+            <% } %>
           </div>
           <div class="item-details">
             <!-- 2. Product Name -->
@@ -32,44 +33,30 @@
             <p class="item-price">₹ <%= item.price || 0 %></p>
             
             <div class="item-controls">
-            
               <div class="quantity-section">
                 <label class="quantity-label">Quantity:</label>
-                <form method="POST" action="/cart/update-quantity" class="quantity-form">
+                <div class="quantity-form">
                   <input type="hidden" name="productId" value="<%= item.productId._id %>">
-                  
-                  
-                  <button type="submit" 
-                          class="quantity-btn" 
-                          name="action" 
-                          value="decrement" 
+                  <button type="button" 
+                          class="quantity-btn js-quantity-btn" 
+                          data-action="decrement" 
                           <%= item.quantity <= 1 ? 'disabled' : '' %>>
                     -
                   </button>
-                  
-                
                   <span class="quantity"><%= item.quantity || 1 %></span>
-                  
-                  
                   <% 
-                    // Ensure we have a valid stock number
                     let currentStock = parseInt(item.productId.quantity) || 0;
                     let maxQuantity = Math.min(5, currentStock);
                     let canIncrement = (item.quantity || 1) < maxQuantity && currentStock > 0;
-                    
-                    // Debug output (remove in production)
-                    console.log(`Product: ${item.productId.productName}, Stock: ${currentStock}, Max: ${maxQuantity}, Can Increment: ${canIncrement}`);
                   %>
-                  <button type="submit" 
-                          class="quantity-btn" 
-                          name="action" 
-                          value="increment" 
+                  <button type="button" 
+                          class="quantity-btn js-quantity-btn" 
+                          data-action="increment" 
                           <%= !canIncrement ? 'disabled' : '' %>>
                     +
                   </button>
-                </form>
+                </div>
                 
-              
                 <div class="stock-info">
                   <span class="stock-text">
                     <% if (currentStock === 0) { %>
@@ -85,46 +72,37 @@
                 </div>
               </div>
               
-            
               <div class="subtotal-section">
                 <p class="subtotal">Subtotal: ₹ <%= ((item.price || 0) * (item.quantity || 1)).toFixed(2) %></p>
               </div>
             </div>
             
-          
             <% if (item.productId.quantity === 0) { %>
               <div class="stock-warning">
                 <p class="warning-text">⚠️ This item is currently out of stock</p>
               </div>
             <% } %>
             
-          
             <div class="item-actions">
-              <a href="/cart/remove/<%= item.productId._id %>" 
-                 class="remove-btn"
-                 onclick="return confirm('Are you sure you want to remove this item from your cart?')">
+              <button class="remove-btn js-remove-cart" data-id="<%= item.productId._id %>">
                 Remove from Cart
-              </a>
+              </button>
             </div>
           </div>
         </div>
       <% }) %>
     </div>
     
-  
     <div class="cart-summary">
       <div class="total-amount">
         <h3>Total: ₹ <%= items.reduce((total, item) => total + ((item.price || 0) * (item.quantity || 1)), 0).toFixed(2) %></h3>
       </div>
     </div>
     
-    
     <div class="cart-actions">
-    
       <a href="/shop" class="continue-shopping-btn">Continue Shopping</a>
       <% 
-        // Check if any item is out of stock
-        const hasOutOfStockItems = items.some(item => parseInt(item.productId.stock) === 0);
+        const hasOutOfStockItems = items.some(item => parseInt(item.productId.quantity) === 0);
       %>
       <% if (hasOutOfStockItems) { %>
         <button class="checkout-btn checkout-disabled" disabled>
@@ -338,6 +316,8 @@
     border-radius: 6px;
     transition: all 0.3s ease;
     display: inline-block;
+    background: none;
+    cursor: pointer;
   }
 
   .remove-btn:hover {
@@ -417,7 +397,6 @@
     box-shadow: none !important;
   }
 
-  /* Responsive Design */
   @media (max-width: 768px) {
     .cart-item {
       flex-direction: column;
@@ -463,4 +442,152 @@
     }
   }
 </style>
-<%- include("../../views/partials/user/footer") %> 
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const toast = (icon, title) => 
+    Swal.fire({ toast: true, position: 'top-end', icon, title, showConfirmButton: false, timer: 2000 });
+
+  // Remove from cart handler
+  document.querySelectorAll('.js-remove-cart').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const result = await Swal.fire({
+        title: 'Remove this item?',
+        text: 'Are you sure you want to remove this item from your cart?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, remove it!',
+        cancelButtonText: 'Cancel'
+      });
+
+      if (!result.isConfirmed) return;
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Removing...';
+
+      try {
+        const response = await fetch('/cart/remove', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId: btn.dataset.id })
+        });
+        const data = await response.json();
+
+        btn.disabled = false;
+        btn.innerHTML = 'Remove from Cart';
+
+        if (data.success) {
+          toast('success', 'Item removed from cart');
+          const cartItem = btn.closest('.cart-item');
+          cartItem.remove();
+
+          const remainingItems = document.querySelectorAll('.cart-item');
+          if (remainingItems.length === 0) {
+            const cartContainer = document.querySelector('.cart-container');
+            cartContainer.innerHTML = `
+              <h2 class="cart-title">Your Cart</h2>
+              <div class="empty-cart">
+                <p class="empty-cart-message">Your cart is empty</p>
+                <a href="/shop" class="continue-shopping-btn">Continue Shopping</a>
+              </div>`;
+          } else {
+            let total = 0;
+            remainingItems.forEach(item => {
+              const price = parseFloat(item.querySelector('.item-price').textContent.replace('₹ ', '')) || 0;
+              const quantity = parseInt(item.querySelector('.quantity').textContent) || 1;
+              total += price * quantity;
+            });
+            document.querySelector('.total-amount h3').textContent = `Total: ₹ ${total.toFixed(2)}`;
+
+            const hasOutOfStockItems = Array.from(remainingItems).some(item => {
+              const stockText = item.querySelector('.stock-text')?.textContent || '';
+              return stockText.includes('Out of stock');
+            });
+            const checkoutBtn = document.querySelector('.checkout-btn');
+            if (hasOutOfStockItems) {
+              checkoutBtn.classList.add('checkout-disabled');
+              checkoutBtn.setAttribute('disabled', 'true');
+              checkoutBtn.innerHTML = 'Checkout (Remove out of stock items)';
+              checkoutBtn.removeAttribute('href');
+            } else {
+              checkoutBtn.classList.remove('checkout-disabled');
+              checkoutBtn.removeAttribute('disabled');
+              checkoutBtn.setAttribute('href', '/checkout');
+              checkoutBtn.innerHTML = 'Proceed to Checkout';
+            }
+          }
+        } else {
+          throw new Error(data.message || 'Failed to remove item');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        btn.disabled = false;
+        btn.innerHTML = 'Remove from Cart';
+        toast('error', error.message || 'Something went wrong');
+      }
+    });
+  });
+
+  // Quantity update handler
+  document.querySelectorAll('.js-quantity-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const action = btn.dataset.action;
+      const quantityForm = btn.closest('.quantity-form');
+      const productId = quantityForm.querySelector('input[name="productId"]').value;
+      const cartItem = btn.closest('.cart-item');
+      const quantityElement = cartItem.querySelector('.quantity');
+      const subtotalElement = cartItem.querySelector('.subtotal');
+      const price = parseFloat(cartItem.querySelector('.item-price').textContent.replace('₹ ', '')) || 0;
+      const currentStock = parseInt(cartItem.querySelector('.stock-text').textContent.match(/\d+/) || 0);
+      const maxQuantity = Math.min(5, currentStock);
+
+      btn.disabled = true;
+
+      try {
+        const response = await fetch('/cart/update-quantity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId, action })
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to update quantity');
+        }
+
+        // Update quantity
+        quantityElement.textContent = data.quantity;
+
+        // Update subtotal
+        const subtotal = (price * data.quantity).toFixed(2);
+        subtotalElement.textContent = `Subtotal: ₹ ${subtotal}`;
+
+        // Update total
+        let total = 0;
+        document.querySelectorAll('.cart-item').forEach(item => {
+          const itemPrice = parseFloat(item.querySelector('.item-price').textContent.replace('₹ ', '')) || 0;
+          const itemQuantity = parseInt(item.querySelector('.quantity').textContent) || 1;
+          total += itemPrice * itemQuantity;
+        });
+        document.querySelector('.total-amount h3').textContent = `Total: ₹ ${total.toFixed(2)}`;
+
+        // Update button states
+        const decrementBtn = quantityForm.querySelector('[data-action="decrement"]');
+        const incrementBtn = quantityForm.querySelector('[data-action="increment"]');
+        decrementBtn.disabled = data.quantity <= 1;
+        incrementBtn.disabled = data.quantity >= maxQuantity;
+
+        btn.disabled = false;
+      } catch (error) {
+        console.error('Error:', error);
+        btn.disabled = false;
+        toast('error', error.message || 'Something went wrong');
+      }
+    });
+  });
+});
+</script>
+
+<%- include("../../views/partials/user/footer") %>

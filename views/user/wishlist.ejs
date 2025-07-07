@@ -387,7 +387,7 @@
   </style>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
   const toast = (icon, title) =>
     Swal.fire({ toast: true, position: 'top-end', icon, title, showConfirmButton: false, timer: 2000 });
 
@@ -404,7 +404,6 @@
       cancelButtonText: 'Cancel'
     }).then((result) => {
       if (result.isConfirmed) {
-        // Show loading state
         Swal.fire({
           title: 'Clearing wishlist...',
           allowOutsideClick: false,
@@ -415,46 +414,45 @@
 
         fetch('/clear-wishlist', {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
           }
         })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            Swal.fire({
-              title: 'Cleared!',
-              text: 'Your wishlist has been cleared successfully.',
-              icon: 'success',
-              confirmButtonText: 'OK'
-            }).then(() => {
-              // Reload the page to show empty wishlist
-              window.location.reload();
-            });
-          } else {
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              Swal.fire({
+                title: 'Cleared!',
+                text: 'Your wishlist has been cleared successfully.',
+                icon: 'success',
+                confirmButtonText: 'OK'
+              }).then(() => {
+                window.location.reload();
+              });
+            } else {
+              Swal.fire({
+                title: 'Error!',
+                text: data.message || 'Failed to clear wishlist.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+              });
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
             Swal.fire({
               title: 'Error!',
-              text: data.message || 'Failed to clear wishlist. Please try again.',
+              text: 'Something went wrong. Please try again.',
               icon: 'error',
               confirmButtonText: 'OK'
             });
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          Swal.fire({
-            title: 'Error!',
-            text: 'Something went wrong. Please try again.',
-            icon: 'error',
-            confirmButtonText: 'OK'
           });
-        });
       }
     });
   });
 
-  // Existing remove handler
+  // Remove from wishlist handler
   document.querySelectorAll('.js-remove').forEach(btn => {
     btn.addEventListener('click', () => {
       Swal.fire({
@@ -474,55 +472,92 @@
             if (success) {
               toast('success', 'Removed');
               btn.closest('.wishlist-item').remove();
-              
-              // Check if wishlist is now empty
               const remainingItems = document.querySelectorAll('.wishlist-item');
               if (remainingItems.length === 0) {
-                window.location.reload(); // Show empty wishlist message
+                window.location.reload();
               }
             } else {
-              toast('error', 'Failed');
+              toast('error', 'Failed to remove item');
             }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            toast('error', 'Something went wrong');
           });
       });
     });
   });
 
-  // Existing move-to-cart handler
+  // Move-to-cart handler
   document.querySelectorAll('.js-move').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
+      const productId = btn.dataset.id;
       Swal.fire({
         title: 'Move this item to cart?',
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'Yes, move it!'
-      }).then(({ isConfirmed }) => {
+      }).then(async ({ isConfirmed }) => {
         if (!isConfirmed) return;
-        fetch('/moveToCart', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productId: btn.dataset.id })
-        })
-          .then(r => r.json())
-          .then(({ success, message }) => {
-            if (success) {
-              toast('success', 'Moved to cart');
-              btn.closest('.wishlist-item').remove();
-              
-              // Check if wishlist is now empty
-              const remainingItems = document.querySelectorAll('.wishlist-item');
-              if (remainingItems.length === 0) {
-                window.location.reload(); // Show empty wishlist message
-              }
-            } else {
-              toast('error', message || 'Couldn\'t move');
-            }
+
+        // Show loading state
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Moving...';
+
+        try {
+          // Step 1: Move to cart
+          const cartResponse = await fetch('/moveToCart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId })
           });
+          const cartData = await cartResponse.json();
+
+          if (!cartData.success) {
+            throw new Error(cartData.message || 'Couldn\'t move to cart');
+          }
+
+          // Step 2: Explicitly remove from wishlist
+          const wishlistResponse = await fetch('/removeFromWishlist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId })
+          });
+          const wishlistData = await wishlistResponse.json();
+
+          // Reset button state
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
+
+          if (wishlistData.success) {
+            // Update UI
+            toast('success', cartData.message || 'Moved to cart');
+            btn.closest('.wishlist-item').remove();
+            const remainingItems = document.querySelectorAll('.wishlist-item');
+            if (remainingItems.length === 0) {
+              const wishlistContainer = document.querySelector('.wishlist-container');
+              wishlistContainer.innerHTML = `
+                <h2 class="wishlist-title">Your Wishlist</h2>
+                <div class="empty-wishlist">
+                  <p class="empty-wishlist-message">Your wishlist is empty</p>
+                  <a href="/shop" class="continue-shopping-btn">Continue Shopping</a>
+                </div>
+              `;
+            }
+          } else {
+            throw new Error('Failed to remove item from wishlist');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
+          toast('error', error.message || 'Something went wrong');
+        }
       });
     });
   });
 });
-  </script>
+</script>
   <%- include("../../views/partials/user/footer") %>
 </body>
 

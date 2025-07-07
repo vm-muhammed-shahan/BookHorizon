@@ -1,10 +1,8 @@
 const Order = require("../../models/orderSchema");
 const Product = require("../../models/productSchema");
+const Wallet = require("../../models/walletSchema");
 const PDFDocument = require("pdfkit");
 const path = require("path");
-
-
-
 
 const getOrders = async (req, res) => {
   try {
@@ -29,8 +27,20 @@ const getOrders = async (req, res) => {
       }
     });
 
+    // Fetch the user's wallet
+    let wallet = await Wallet.findOne({ user: userId });
+    if (!wallet) {
+      // Create a new wallet if it doesn't exist
+      wallet = new Wallet({
+        user: userId,
+        balance: 0,
+        transactions: [],
+      });
+      await wallet.save();
+    }
+
     console.log('User Orders:', orders);
-    res.render("orders", { orders, search, user: req.session.user });
+    res.render("orders", { orders, search, user: req.session.user, wallet });
   } catch (error) {
     console.error("Error fetching orders:", error);
     res.status(500).render("error", { message: "Error fetching orders" });
@@ -55,11 +65,75 @@ const getOrderDetail = async (req, res) => {
       console.warn(`User not found for order ${orderId}`);
       order.user = { name: 'N/A', email: 'N/A' };
     }
-    res.render("order-Detail", { order, user: req.session.user, req });
+    // Pass the notification from the session to the template
+    const notification = req.session.message || null;
+    // Clear the notification from the session after rendering
+    req.session.message = null;
+    res.render("order-Detail", { 
+      order, 
+      user: req.session.user, 
+      notification // Pass notification to the template
+    });
   } catch (error) {
     console.error("Error in order listing", error);
     req.session.message = { type: "error", text: "Error fetching order details. Please try again." };
     res.redirect("/orders");
+  }
+};
+
+// Fetch order status dynamically
+const getOrderStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await Order.findOne({ orderId })
+      .populate("orderedItems.product")
+      .populate("user", "name email");
+
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      order: {
+        status: order.status,
+        paymentStatus: order.paymentStatus,
+        orderedItems: order.orderedItems.map(item => ({
+          productId: item.product._id,
+          cancelled: item.cancelled,
+          cancelReason: item.cancelReason,
+          returned: item.returned,
+          returnReason: item.returnReason,
+          returnStatus: item.returnStatus,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching order status:", error);
+    res.status(500).json({ error: "Server error while fetching order status" });
+  }
+};
+
+// Get wallet details for the user
+const getWalletDetails = async (req, res) => {
+  try {
+    const userId = req.session.user._id;
+    let wallet = await Wallet.findOne({ user: userId }).populate("user", "name email");
+
+    if (!wallet) {
+      // Create a new wallet if it doesn't exist
+      wallet = new Wallet({
+        user: userId,
+        balance: 0,
+        transactions: [],
+      });
+      await wallet.save();
+    }
+
+    res.render("wallet", { wallet, user: req.session.user });
+  } catch (error) {
+    console.error("Error fetching wallet details:", error);
+    res.status(500).render("page-404", { message: "Error fetching wallet details" });
   }
 };
 
@@ -71,9 +145,12 @@ const cancelOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
-    if (order.status !== 'Pending' && order.status !== 'Processing') {
+    if (order.status !== 'Pending' && order.status !== 'Processing' && order.status !== 'Shipped') {
       return res.status(400).json({ error: 'Cannot cancel order in this status' });
     }
+
+    let refundAmount = 0;
+
     if (productId) {
       const itemIndex = order.orderedItems.findIndex(i => i.product._id.toString() === productId);
       if (itemIndex === -1) {
@@ -84,11 +161,12 @@ const cancelOrder = async (req, res) => {
         return res.status(400).json({ error: 'Item already cancelled' });
       }
       // Increment product stock
-      await Product.findByIdAndUpdate(item.product._id, { $inc: { stock: item.quantity } });
+      await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } });
       // Mark item as cancelled and save reason
       item.cancelled = true;
       item.cancelReason = reason || 'No reason provided';
-      order.totalPrice -= item.price * item.quantity;
+      refundAmount = item.price * item.quantity;
+      order.totalPrice -= refundAmount;
       order.finalAmount = order.totalPrice + order.shippingCharge - order.discount;
 
       // Check if all items are cancelled
@@ -98,8 +176,6 @@ const cancelOrder = async (req, res) => {
         order.cancelReason = reason || 'No reason provided';
         order.paymentStatus = 'Failed';
       }
-      await order.save();
-      return res.status(200).json({ success: true, message: 'Item cancelled successfully' });
     } else {
       // Cancel entire order
       if (order.status === 'Cancelled') {
@@ -109,18 +185,49 @@ const cancelOrder = async (req, res) => {
       // Increment stock for all items
       for (const item of order.orderedItems) {
         if (!item.cancelled) {
-          await Product.findByIdAndUpdate(item.product._id, { $inc: { stock: item.quantity } });
+          await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } });
           item.cancelled = true;
           item.cancelReason = reason || 'No reason provided';
+          refundAmount += item.price * item.quantity;
         }
       }
 
       order.status = 'Cancelled';
       order.cancelReason = reason || 'No reason provided';
       order.paymentStatus = 'Failed';
-      await order.save();
-      return res.status(200).json({ success: true, message: 'Order cancelled successfully' });
     }
+
+    // Refund to wallet
+    if (refundAmount > 0) {
+      let wallet = await Wallet.findOne({ user: order.user });
+      if (!wallet) {
+        wallet = new Wallet({
+          user: order.user,
+          balance: refundAmount,
+          transactions: [{
+            type: "credit",
+            amount: refundAmount,
+            description: `Refund for ${productId ? 'item in ' : ''}order ${order.orderId} (Cancelled)`,
+            date: new Date()
+          }],
+        });
+      } else {
+        wallet.balance += refundAmount;
+        wallet.transactions.push({
+          type: "credit",
+          amount: refundAmount,
+          description: `Refund for ${productId ? 'item in ' : ''}order ${order.orderId} (Cancelled)`,
+          date: new Date()
+        });
+      }
+      await wallet.save();
+    }
+
+    await order.save();
+    return res.status(200).json({ 
+      success: true, 
+      message: `Item${productId ? '' : 's'} cancelled successfully. Refund of ₹${refundAmount.toFixed(2)} credited to your wallet.` 
+    });
   } catch (error) {
     console.error('Error cancelling order:', error);
     return res.status(500).json({ error: 'Server error while cancelling order' });
@@ -186,8 +293,11 @@ const downloadInvoice = async (req, res) => {
     }
 
     const doc = new PDFDocument({ margin: 40, size: "A4" });
+    
+    // Enhanced headers with proper encoding
     res.setHeader("Content-disposition", `attachment; filename=invoice-${order.orderId}.pdf`);
-    res.setHeader("Content-type", "application/pdf");
+    res.setHeader("Content-type", "application/pdf; charset=utf-8");
+    res.setHeader("Content-Transfer-Encoding", "binary");
 
     doc.pipe(res);
 
@@ -213,6 +323,10 @@ const downloadInvoice = async (req, res) => {
     const addText = (text, x, y, options = {}) => {
       return doc.text(text, x, y, options);
     };
+
+    // Helper function to format currency with Indian Rupee symbol
+    const formatCurrency = (amount) => `Rs ${amount.toFixed(2)}`;
+    
 
     // Header
     doc.fontSize(28)
@@ -399,11 +513,11 @@ const downloadInvoice = async (req, res) => {
         width: colWidths.qty, 
         align: 'center' 
       });
-      doc.text(`₹${item.price.toFixed(2)}`, colPositions.price, rowY + 8, { 
+      doc.text(formatCurrency(item.price), colPositions.price, rowY + 8, { 
         width: colWidths.price, 
         align: 'right' 
       });
-      doc.text(`₹${(item.price * item.quantity).toFixed(2)}`, colPositions.total, rowY + 8, { 
+      doc.text(formatCurrency(item.price * item.quantity), colPositions.total, rowY + 8, { 
         width: colWidths.total, 
         align: 'right' 
       });
@@ -438,12 +552,12 @@ const downloadInvoice = async (req, res) => {
     const summaryY = yPosition;
 
     const summaryItems = [
-      ['Subtotal:', `₹${order.totalPrice.toFixed(2)}`],
-      ['Shipping:', `₹${order.shippingCharge.toFixed(2)}`]
+      ['Subtotal:', formatCurrency(order.totalPrice)],
+      ['Shipping:', formatCurrency(order.shippingCharge)]
     ];
 
     if (order.discount > 0) {
-      summaryItems.push(['Discount:', `-₹${order.discount.toFixed(2)}`]);
+      summaryItems.push(['Discount:', `-${formatCurrency(order.discount)}`]);
     }
 
     summaryItems.forEach((item, index) => {
@@ -471,7 +585,7 @@ const downloadInvoice = async (req, res) => {
        .fillColor('#2c3e50')
        .text('Total:', summaryX, totalY + 15);
     
-    doc.text(`₹${order.finalAmount.toFixed(2)}`, summaryX + 100, totalY + 15, { 
+    doc.text(formatCurrency(order.finalAmount), summaryX + 100, totalY + 15, { 
       width: 80, 
       align: 'right' 
     });
@@ -487,7 +601,6 @@ const downloadInvoice = async (req, res) => {
          footerY,
          { align: 'center', width: contentWidth }
        );
-
     doc.fontSize(9)
        .text(
          'For support queries, please contact our customer service team.',
@@ -495,7 +608,6 @@ const downloadInvoice = async (req, res) => {
          footerY + 15,
          { align: 'center', width: contentWidth }
        );
-
     doc.end();
   } catch (error) {
     console.error('Error generating invoice:', error);
@@ -503,11 +615,12 @@ const downloadInvoice = async (req, res) => {
   }
 };
 
-
 module.exports = {
   downloadInvoice,
   returnOrder,
   cancelOrder,
   getOrderDetail,
   getOrders,
+  getWalletDetails,
+  getOrderStatus,
 };

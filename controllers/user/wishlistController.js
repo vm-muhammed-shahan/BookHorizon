@@ -9,8 +9,8 @@ const getwishlist = async (req, res) => {
   if (!req.session.user) return res.redirect('/login');
 
   try {
-    const userData = req.session.user ? await User.findById(req.session.user) : null;
-    const wishlist = await Wishlist.findOne({ userId: req.session.user.id }).populate('products.productId');
+    const userData = req.session.user ? await User.findById(req.session.user._id) : null;
+    const wishlist = await Wishlist.findOne({ userId: req.session.user._id }).populate('products.productId');
     res.render('wishlist', { user: userData, products: wishlist ? wishlist.products : [] });
   } catch (err) {
     console.error(err);
@@ -18,17 +18,12 @@ const getwishlist = async (req, res) => {
   }
 };
 
-
-
-
-
 const addToWishlist = async (req, res) => {
   try {
-    const userId = req.session.user.id;
-    const { productId } = req.body
-    console.log(productId)
-    const product =
-      await Product.findById(productId).select('isBlocked quantity');
+    const userId = req.session.user._id;
+    const { productId } = req.body;
+    console.log(productId);
+    const product = await Product.findById(productId).select('isBlocked quantity');
     if (!product || product.isBlocked) {
       return res.status(404).json({
         success: false,
@@ -74,13 +69,9 @@ const addToWishlist = async (req, res) => {
   }
 };
 
-
-
-
-
 const removeFromWishlist = async (req, res) => {
   try {
-    const userId = req.session.user.id;
+    const userId = req.session.user._id;
     const { productId } = req.body;
     await Wishlist.findOneAndUpdate(
       { userId },
@@ -91,14 +82,11 @@ const removeFromWishlist = async (req, res) => {
     console.error(err);
     return res.status(500).json({ success: false, message: 'Could not remove item.' });
   }
-}
-
-
-
+};
 
 const moveToCart = async (req, res) => {
   try {
-    const userId = req.session.user.id || req.session.user?._id;
+    const userId = req.session.user._id;
     const { productId } = req.body;
     const product = await Product.findById(productId).select('salePrice regularPrice quantity productName');
     const price = product.salePrice || product.regularPrice;
@@ -113,7 +101,6 @@ const moveToCart = async (req, res) => {
       cart = new Cart({ userId, items: [] });
     }
 
-    // 3️⃣ See if the item’s already in the cart
     const existing = cart.items.find(i => i.productId.toString() === productId);
     if (existing) {
       if (existing.quantity >= product.quantity) {
@@ -122,46 +109,36 @@ const moveToCart = async (req, res) => {
       existing.quantity += 1;
       existing.totalPrice = existing.quantity * existing.price;
     } else {
-      // push new item
       cart.items.push({
         productId,
         quantity: 1,
         price: price,
         totalPrice: price,
         stock: product.quantity
-        // status and cancellationReason will use their defaults
       });
     }
 
-    // 4️⃣ Persist the cart
     await cart.save();
 
-    // 5️⃣ Remove from wishlist
     await Wishlist.findOneAndUpdate(
       { userId },
       { $pull: { products: { productId } } }
     );
 
-    return res.json({ success: true, message: `"${product.name}" has been moved to your cart.` });
+    return res.json({ success: true, message: `"${product.productName}" has been moved to your cart.` });
   } catch (err) {
     console.error(err);
-    return res
-      .status(500)
-      .json({ success: false, message: 'Could not move to cart.' });
+    return res.status(500).json({ success: false, message: 'Could not move to cart.' });
   }
-}
-
-
+};
 
 const clearWishlist = async (req, res) => {
   try {
     const userId = req.session.user._id;
-    // clear out products array
     await Wishlist.findOneAndUpdate(
       { userId },
       { $set: { products: [] } }
     );
-    // respond with JSON for AJAX
     res.json({ success: true, message: 'Your wishlist has been cleared successfully.' });
   } catch (error) {
     console.error("Error clearing wishlist:", error);
@@ -170,10 +147,7 @@ const clearWishlist = async (req, res) => {
       message: "Failed to clear wishlist. Please try again."
     });
   }
-}
-
-
-
+};
 
 module.exports = {
   addToWishlist,
@@ -181,4 +155,4 @@ module.exports = {
   removeFromWishlist,
   moveToCart,
   clearWishlist,
-}
+};

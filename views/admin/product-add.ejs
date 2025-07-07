@@ -164,9 +164,9 @@
                             </div>
                             <div class="col-lg-4">
                                 <div class="mb-4">
-                                    <label class="form-label">Sale price</label>
-                                    <input placeholder="$" name="salePrice" type="text" class="form-control border">
-                                    <div id="salePrice-error" class="error-message"></div>
+                                    <label class="form-label">Sale Price (Calculated)</label>
+                                    <input placeholder="$" type="text" class="form-control border" value="Will be calculated" readonly>
+                                    <small class="text-muted">Will be set based on best offer or regular price</small>
                                 </div>
                             </div>
                             <div class="col-lg-4">
@@ -185,7 +185,7 @@
                                         <label class="form-label">Category</label>
                                         <select class="form-select border" name="category">
                                             <% for(let i=0; i<cat.length; i++) { %>
-                                                <option value="<%= cat[i].name %>">
+                                                <option value="<%= cat[i]._id %>">
                                                     <%= cat[i].name %>
                                                 </option>
                                             <% } %>
@@ -544,7 +544,6 @@ function validateForm() {
     const name = document.getElementsByName('productName')[0].value;
     const description = document.getElementById('descriptionid').value;
     const price = document.getElementsByName('regularPrice')[0].value;
-    const salePrice = document.getElementsByName('salePrice')[0].value;
     const quantity = document.getElementsByName('quantity')[0].value;
     let isValid = true;
 
@@ -581,19 +580,6 @@ function validateForm() {
     } else if (parseFloat(price) <= 0) {
         displayErrorMessage('regularPrice-error', 'Regular price must be greater than zero.');
         isValid = false;
-    }
-    
-    if (salePrice.trim() !== "") {
-        if (!/^\d+(\.\d{1,2})?$/.test(salePrice)) {
-            displayErrorMessage('salePrice-error', 'Please enter a valid price format (e.g., 19.99).');
-            isValid = false;
-        } else if (parseFloat(salePrice) <= 0) {
-            displayErrorMessage('salePrice-error', 'Sale price must be greater than zero.');
-            isValid = false;
-        } else if (parseFloat(price) <= parseFloat(salePrice)) {
-            displayErrorMessage('salePrice-error', 'Sale price must be less than regular price.');
-            isValid = false;
-        }
     }
     
     if (selectedImages.length === 0) {

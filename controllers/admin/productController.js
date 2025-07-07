@@ -1,10 +1,11 @@
 const Product = require("../../models/productSchema");
 const Category = require("../../models/categorySchema");
-const User = require("../../models/userSchema");
+const Offer = require('../../models/offerSchema');
 const fs = require("fs");
 const path = require("path");
-const { session } = require("passport");
+// const { session } = require("passport");
 const { getRandomNumber } = require("../../helpers/multer");
+
 
 
 const getProductAddPage = async (req, res) => {
@@ -29,144 +30,241 @@ const addProducts = async (req, res) => {
       description,
       category,
       regularPrice,
-      salePrice,
       quantity,
-      } = req.body;
-      if(!productName || !description || !category || !regularPrice || !salePrice || !quantity) {
-        return res.status(400).json({
-          success: false,
-        message: "All required fields must be filled"
-        });
-      }
-      if(!req.files || req.files.length !== 3) {
+    } = req.body;
+
+    if (!productName || !description || !category || !regularPrice || !quantity) {
       return res.status(400).json({
         success: false,
-        message: "Exactly 3 product images are required"
+        message: "All required fields must be filled",
       });
     }
+
+    if (!req.files || req.files.length !== 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Exactly 3 product images are required",
+      });
+    }
+
     const regPrice = parseFloat(regularPrice);
-    const discPrice = salePrice ? parseFloat(salePrice) : 0;
     if (isNaN(regPrice) || regPrice <= 0) {
       return res.status(400).json({
         success: false,
-        message: "Regular price must be a positive number greater than zero"
+        message: "Regular price must be a positive number greater than zero",
       });
     }
-    if (salePrice && (isNaN(discPrice) || discPrice <= 0)) {
-      return res.status(400).json({
-        success: false,
-        message: "Sale price must be a positive number greater than zero"
-      });
-    }
-    if (discPrice && discPrice >= regPrice) {
-      return res.status(400).json({
-        success: false,
-        message: "Sale price must be less than regular price"
-      });
-    }
-     const productQty = parseInt(quantity);
+
+    const productQty = parseInt(quantity);
     if (isNaN(productQty) || productQty <= 0) {
       return res.status(400).json({
         success: false,
-        message: "Quantity must be a positive number greater than zero"
+        message: "Quantity must be a positive number greater than zero",
       });
     }
-    const productExist = await Product.findOne({
-      productName: productName
-    });
-if (productExist) {
+
+    const productExist = await Product.findOne({ productName });
+    if (productExist) {
       return res.status(400).json({
         success: false,
-        message: "Product already exists, please try with another name"
+        message: "Product already exists, please try with another name",
       });
     }
-    const categoryId = await Category.findOne({ name: category });
-    if(!categoryId) {
+
+    const categoryId = await Category.findOne({ _id: category });
+    if (!categoryId) {
       return res.status(400).json({
         success: false,
-        message: "Invalid category name"
+        message: "Invalid category ID",
       });
     }
+
     const images = [];
     const imageDir = path.join(__dirname, '../../public/uploads');
     if (!fs.existsSync(imageDir)) {
       fs.mkdirSync(imageDir, { recursive: true });
     }
+
     if (req.files && req.files.length > 0) {
       for (let i = 0; i < req.files.length; i++) {
-        const originalImagePath = req.files[i].path;
-        const resizedImagePath = path.join(imageDir, req.files[i].filename);
         images.push(req.files[i].filename);
       }
     }
+
     const newProduct = new Product({
       productName,
       description,
       category: categoryId._id,
       regularPrice: regPrice,
-      salePrice: discPrice || undefined,
-      createdOn: new Date(),
       quantity: productQty,
       productImage: images,
       status: 'Available',
     });
+
+    // Calculate salePrice using applyBestOffer
+    const { discountedPrice } = await applyBestOffer(newProduct);
+    newProduct.salePrice = discountedPrice;
+
     await newProduct.save();
-    return res.status(200).json({success: true, message: "Product added successfully"}); 
+    return res.status(200).json({ success: true, message: "Product added successfully" });
   } catch (error) {
     console.error("Error saving product", error);
     return res.status(500).json({
       success: false,
-      message: error.message || "An error occurred while adding the product"
+      message: error.message || "An error occurred while adding the product",
     });
-  }
-}
-
-
-
-
-const getAllProducts = async (req, res) => {
-  try {
-    const search = req.query.search || "";
-    const page = parseInt(req.query.page) || 1;
-    const limit = 6;
-    const productData = await Product.find({
-      $or: [
-        { productName: { $regex: new RegExp(".*" + search + ".*", "i") } },
-      ],
-    })
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .populate('category')
-      .exec();
-    console.log(productData.map(p => ({ 
-      name: p.productName, 
-      createdAt: p.createdAt,
-      dateFormatted: p.createdAt ? new Date(p.createdAt).toISOString() : 'undefined' 
-    })));
-    const count = await Product.find({
-      $or: [
-        { productName: { $regex: new RegExp(".*" + search + ".*", "i") } },
-      ],
-    }).countDocuments();
-    const category = await Category.find({ isListed: true });
-    if (category) {
-      res.render("products", {
-        data: productData,
-        currentPage: page,
-        totalPages: Math.ceil(count / limit),
-        cat: category,
-        session: req.session
-      });
-    } else {
-      res.render("page-404");
-    }
-  } catch (error) {
-    console.error("Error in getAllProducts:", error);
-    res.redirect("/pageerror");
   }
 };
 
+
+const getAllProducts = async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = 10;
+  const search = req.query.search || '';
+  const skip = (page - 1) * limit;
+
+  try {
+    const query = {
+      $or: [
+        { productName: { $regex: search, $options: 'i' } },
+      ],
+    };
+
+    const totalProducts = await Product.countDocuments(query);
+    const products = await Product.find(query)
+      .populate('category')
+      .skip(skip)
+      .limit(limit);
+
+    // Fetch all active offers for products and categories
+    const offers = await Offer.find({
+      offerType: { $in: ['product', 'category'] },
+      isActive: true,
+      startDate: { $lte: new Date() },
+      endDate: { $gte: new Date() },
+    });
+
+    // Apply best offer to each product and update salePrice
+    for (const product of products) {
+      const { discountedPrice } = await applyBestOffer(product, offers);
+      if (product.salePrice !== discountedPrice) {
+        product.salePrice = discountedPrice;
+        await product.save();
+      }
+    }
+
+    res.render('products', {
+      data: products,
+      currentPage: page,
+      totalPages: Math.ceil(totalProducts / limit),
+      search,
+      offers,
+    });
+  } catch (error) {
+    console.error(error);
+    res.redirect('/admin/pageerror');
+  }
+};
+
+
+const addProductOffer = async (req, res) => {
+  try {
+    const percentage = parseInt(req.body.percentage);
+    const productId = req.body.productId;
+    const endDate = new Date(req.body.endDate);
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ status: false, message: "Product not found" });
+    }
+
+    const existingOffer = await Offer.findOne({
+      offerType: 'product',
+      applicableId: productId,
+      isActive: true,
+    });
+    if (existingOffer) {
+      return res.status(400).json({
+        status: false,
+        message: "An active offer already exists for this product",
+      });
+    }
+
+    const category = await Category.findById(product.category);
+    const categoryOffer = await Offer.findOne({
+      offerType: 'category',
+      applicableId: product.category,
+      isActive: true,
+      startDate: { $lte: new Date() },
+      endDate: { $gte: new Date() },
+    });
+
+    if (categoryOffer && categoryOffer.discountPercentage > percentage) {
+      return res.json({
+        status: false,
+        message: "Category offer is higher than the product offer",
+      });
+    }
+
+    const offer = new Offer({
+      offerType: 'product',
+      name: `Product Offer for ${product.productName}`,
+      discountPercentage: percentage,
+      applicableId: productId,
+      offerTypeModel: 'Product',
+      startDate: new Date(),
+      endDate: endDate,
+      isActive: true,
+    });
+    await offer.save();
+
+    // Update salePrice using applyBestOffer
+    const offers = await Offer.find({
+      offerType: { $in: ['product', 'category'] },
+      isActive: true,
+      startDate: { $lte: new Date() },
+      endDate: { $gte: new Date() },
+    });
+    const { discountedPrice } = await applyBestOffer(product, offers);
+    product.salePrice = discountedPrice;
+    product.productOffer = percentage;
+    await product.save();
+
+    res.json({ status: true, message: "Product offer added successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: false, message: "Failed to add product offer" });
+  }
+};
+
+const removeProductOffer = async (req, res) => {
+  try {
+    const { productId } = req.body;
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ status: false, message: "Product not found" });
+    }
+
+    await Offer.deleteOne({ offerType: 'product', applicableId: productId });
+
+    // Recalculate salePrice using applyBestOffer
+    const offers = await Offer.find({
+      offerType: { $in: ['product', 'category'] },
+      isActive: true,
+      startDate: { $lte: new Date() },
+      endDate: { $gte: new Date() },
+    });
+    const { discountedPrice } = await applyBestOffer(product, offers);
+    product.salePrice = discountedPrice;
+    product.productOffer = 0;
+    await product.save();
+
+    res.json({ status: true, message: "Product offer removed successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: false, message: "Failed to remove product offer" });
+  }
+};
 
 
 const blockProduct = async (req, res) => {
@@ -238,6 +336,7 @@ const getEditProduct = async (req, res) => {
   }
 };
 
+
 const editProduct = async (req, res) => {
   try {
     const id = req.params.id;
@@ -248,9 +347,6 @@ const editProduct = async (req, res) => {
     }
     
     const data = req.body;
-    console.log("Received data:", data);
-    console.log("Received files:", req.files);
-    
     
     const existingProduct = await Product.findOne({
       productName: data.productName,
@@ -262,11 +358,9 @@ const editProduct = async (req, res) => {
         error: "Product with this name already exists. Please try with another name" 
       });
     }
-    
    
     let finalImages = [];
     
-   
     if (data.existingImages) {
       for (const index in data.existingImages) {
         const imageName = data.existingImages[index];
@@ -276,14 +370,12 @@ const editProduct = async (req, res) => {
       }
     }
     
-    
     if (req.files) {
       for (let i = 0; i < 3; i++) {
         const fieldName = `images[${i}]`;
         if (req.files[fieldName] && req.files[fieldName].length > 0) {
           const file = req.files[fieldName][0];
           
-          
           if (finalImages[i]) {
             const oldImagePath = path.join(__dirname, '../../public/uploads/', finalImages[i]);
             if (fs.existsSync(oldImagePath)) {
@@ -295,29 +387,20 @@ const editProduct = async (req, res) => {
               }
             }
           }
-          
-          
           finalImages[i] = file.filename;
         }
       }
     }
-    
-    
+   
     if (data.croppedImages) {
       for (const index in data.croppedImages) {
         const imageData = data.croppedImages[index];
         if (imageData && imageData.trim() !== '' && imageData.startsWith('data:image')) {
-          
           const i = parseInt(index);
-          
-          
           const base64Data = imageData.replace(/^data:image\/\w+;base64,/, "");
           const buffer = Buffer.from(base64Data, 'base64');
-          
-        
           const filename = `${Date.now()}_${getRandomNumber(0, 10)}_cropped.jpeg`;
           const filePath = path.join(__dirname, '../../public/uploads/', filename);
-          
           
           if (finalImages[i]) {
             const oldImagePath = path.join(__dirname, '../../public/uploads/', finalImages[i]);
@@ -330,31 +413,36 @@ const editProduct = async (req, res) => {
               }
             }
           }
-          
-         
           fs.writeFileSync(filePath, buffer);
           finalImages[i] = filename;
         }
       }
     }
     
-      finalImages = finalImages.filter(img => img !== undefined);
+    finalImages = finalImages.filter(img => img !== undefined);
     
     if (finalImages.length < 3) {
       return res.status(400).json({ error: "Product must have exactly 3 images" });
     }
     
-   
     product.productName = data.productName;
     product.description = data.description;
     product.category = data.category;
-    product.regularPrice = data.regularPrice;
-    product.salePrice = data.salePrice;
-    product.quantity = data.quantity;
+    product.regularPrice = parseFloat(data.regularPrice);
+    product.quantity = parseInt(data.quantity);
     product.productImage = finalImages;
+
+    // Calculate salePrice using applyBestOffer
+    const offers = await Offer.find({
+      offerType: { $in: ['product', 'category'] },
+      isActive: true,
+      startDate: { $lte: new Date() },
+      endDate: { $gte: new Date() },
+    });
+    const { discountedPrice } = await applyBestOffer(product, offers);
+    product.salePrice = discountedPrice;
     
     await product.save();
-    
     return res.status(200).json({ 
       success: true, 
       message: "Product updated successfully" 
@@ -366,6 +454,7 @@ const editProduct = async (req, res) => {
     });
   }
 };
+
 
 const deleteSingleImage = async (req, res) => {
   try {
@@ -389,6 +478,38 @@ const deleteSingleImage = async (req, res) => {
 }
 
 
+const applyBestOffer = async (product, offers) => {
+  try {
+    // Filter offers for this product or its category
+    const productOffers = offers.filter(
+      offer => offer.offerType === 'product' && 
+      offer.applicableId.toString() === product._id.toString() &&
+      offer.isActive &&
+      offer.startDate <= new Date() &&
+      offer.endDate >= new Date()
+    );
+
+    const categoryOffers = offers.filter(
+      offer => offer.offerType === 'category' && 
+      offer.applicableId.toString() === product.category.toString() &&
+      offer.isActive &&
+      offer.startDate <= new Date() &&
+      offer.endDate >= new Date()
+    );
+
+    let bestDiscount = 0;
+    if (productOffers.length > 0 || categoryOffers.length > 0) {
+      const allOffers = [...productOffers, ...categoryOffers];
+      bestDiscount = Math.max(...allOffers.map(o => o.discountPercentage), 0);
+    }
+
+    const discountedPrice = product.regularPrice * (1 - bestDiscount / 100);
+    return { discountedPrice, bestDiscount };
+  } catch (error) {
+    console.error("Error applying best offer:", error);
+    return { discountedPrice: product.regularPrice, bestDiscount: 0 };
+  }
+};
 
 
 
@@ -396,9 +517,12 @@ module.exports = {
   getProductAddPage,
   addProducts,
   getAllProducts,
+  addProductOffer,
+  removeProductOffer,
   blockProduct,
   unblockProduct,
   getEditProduct,
   editProduct,
   deleteSingleImage,
+  applyBestOffer,
 };

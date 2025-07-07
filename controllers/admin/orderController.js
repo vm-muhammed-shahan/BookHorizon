@@ -34,7 +34,7 @@ const getOrders = async (req, res) => {
 
     const orders = await Order.find(query)
       .populate("user", "name email")
-      .populate("orderedItems.product", "name")
+      .populate("orderedItems.product", "productName")
       .sort(sort)
       .skip(skip)
       .limit(limit);
@@ -61,20 +61,26 @@ const getOrders = async (req, res) => {
   }
 };
 
+
 const getOrderDetails = async (req, res) => {
   try {
     const order = await Order.findOne({ orderId: req.params.orderId })
       .populate("user", "name email")
-      .populate("orderedItems.product", "name price");
+      .populate("orderedItems.product", "productName price");
     if (!order) {
       return res.status(404).render("admin-error", {
         title: "Error",
         message: `Order ${req.params.orderId} not found`,
       });
     }
+    // Pass the notification from the session to the template
+    const notification = req.session.notification || null;
+    // Clear the notification from the session after rendering
+    req.session.notification = null;
     res.render("orderDetails", {
       title: `Order ${order.orderId}`,
       order,
+      notification,
     });
   } catch (error) {
     console.error('Error in getOrderDetails:', error);
@@ -84,6 +90,7 @@ const getOrderDetails = async (req, res) => {
     });
   }
 };
+
 
 const updateOrderStatus = async (req, res) => {
   try {
@@ -99,8 +106,16 @@ const updateOrderStatus = async (req, res) => {
     }
 
     order.status = status;
+    // Update payment status if necessary
+    if (status === 'Delivered') {
+      order.paymentStatus = 'Completed';
+    } else if (status === 'Cancelled') {
+      order.paymentStatus = 'Failed';
+    }
+    // No change to paymentStatus for "Out for Delivery" (remains as is, typically "Pending" until Delivered)
     await order.save();
 
+    req.session.notification = { type: 'info', text: `Order status updated to ${status}.` };
     res.redirect(`/admin/orders/${orderId}`);
   } catch (error) {
     console.error('Error in updateOrderStatus:', error);
@@ -111,10 +126,11 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
+
 const verifyReturnRequest = async (req, res) => {
   try {
     const { orderId, itemIndex, action } = req.body;
-    const order = await Order.findOne({ orderId });
+    const order = await Order.findOne({ orderId }).populate('orderedItems.product');
     if (!order) {
       return res.status(404).render("admin-error", {
         title: "Error",
@@ -131,50 +147,53 @@ const verifyReturnRequest = async (req, res) => {
     }
 
     let notificationMessage = '';
+    let refundAmount = item.price * item.quantity;
+
     if (action === "accept") {
       item.returnStatus = 'approved';
-      const product = await Product.findById(item.product);
-      if (product) {
-        product.stock += item.quantity;
-        await product.save();
-      }
-      const wallet = await Wallet.findOne({ user: order.user });
+      // Increment product stock atomically
+      await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } });
+      
+      // Refund to wallet
+      let wallet = await Wallet.findOne({ user: order.user });
       if (!wallet) {
-        const newWallet = new Wallet({
+        wallet = new Wallet({
           user: order.user,
-          balance: item.price * item.quantity,
+          balance: refundAmount,
           transactions: [{
             type: "credit",
-            amount: item.price * item.quantity,
-            description: `Refund for order ${order.orderId}`,
+            amount: refundAmount,
+            description: `Refund for item in order ${order.orderId} (Returned)`,
+            date: new Date()
           }],
         });
-        await newWallet.save();
       } else {
-        wallet.balance += item.price * item.quantity;
+        wallet.balance += refundAmount;
         wallet.transactions.push({
           type: "credit",
-          amount: item.price * item.quantity,
-          description: `Refund for order ${order.orderId}`,
+          amount: refundAmount,
+          description: `Refund for item in order ${order.orderId} (Returned)`,
+          date: new Date()
         });
-        await wallet.save();
       }
-      notificationMessage = `Your return request for order ${order.orderId} has been approved, and a refund has been credited to your wallet.`;
+      await wallet.save();
+      
+      console.log(`Refunded ₹${refundAmount.toFixed(2)} to wallet for user ${order.user} for order ${order.orderId}`);
+      notificationMessage = `Your return request for an item in order ${order.orderId} has been approved, and a refund of ₹${refundAmount.toFixed(2)} has been credited to your wallet.`;
     } else if (action === "reject") {
-      item.returned = false;
-      item.returnReason = "";
       item.returnStatus = 'rejected';
-      notificationMessage = `Your return request for order ${order.orderId} has been rejected.`;
+      notificationMessage = `Your return request for an item in order ${order.orderId} has been rejected.`;
     }
 
-    // Update order status based on all items
+    // Update order status based on the items' return statuses
     const allApproved = order.orderedItems.every(i => i.returnStatus === 'approved' || i.cancelled || !i.returned);
     const hasPendingReturns = order.orderedItems.some(i => i.returnStatus === 'pending');
-    if (allApproved) {
+    if (allApproved && order.orderedItems.every(i => i.returnStatus === 'approved' || i.cancelled)) {
       order.status = 'Returned';
       order.paymentStatus = 'Completed';
     } else if (!hasPendingReturns) {
-      order.status = 'Delivered';
+      // If there are no pending returns, revert to the original status (e.g., Delivered)
+      order.status = 'Delivered'; // Assuming the order was delivered before the return request
       order.paymentStatus = 'Completed';
     } else {
       order.status = 'Return Request';
@@ -183,7 +202,6 @@ const verifyReturnRequest = async (req, res) => {
 
     await order.save();
 
-    // Store notification in user session
     req.session.notification = { type: 'info', text: notificationMessage };
 
     res.redirect(`/admin/orders/${orderId}`);
@@ -196,9 +214,11 @@ const verifyReturnRequest = async (req, res) => {
   }
 };
 
+
 const clearFilters = async (req, res) => {
   res.redirect("/admin/orders");
 };
+
 
 module.exports = {
   getOrders,

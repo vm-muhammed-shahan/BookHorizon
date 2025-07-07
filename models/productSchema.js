@@ -21,11 +21,7 @@ const productSchema = new Schema({
   },
   salePrice: {
     type: Number,
-    required: true,
-  },
-  productOffer: {
-    type: Number,
-    default: 0,
+    required:false,
   },
   quantity: {
     type: Number,
@@ -44,12 +40,16 @@ const productSchema = new Schema({
     enum: ["Available", "Out of Stock", "Discontinued"],
     required: true,
     default: "Available",
-  }
-},{
-     timestamps: true
+  },
+  productOffer: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100,
+  },
+}, {
+  timestamps: true
 });
-
-
 
 productSchema.pre("save", function (next) {
   if (this.quantity === 0) {
@@ -60,6 +60,5 @@ productSchema.pre("save", function (next) {
   next();
 });
 
-
 const Product = mongoose.model("Product", productSchema);
-module.exports = Product; 
+module.exports = Product;

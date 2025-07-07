@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <%- include("../../views/partials/user/header") %>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,8 +15,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick-theme.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.12/sweetalert2.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-
-
 
   <style>
     :root {
@@ -59,7 +58,6 @@
       background-color: #ccc;
       cursor: not-allowed;
     }
-
 
     :root {
       --primary-color: #3a86ff;
@@ -1022,8 +1020,8 @@
               <%= category.name %>
             </a>
             <span></span>
-            <% } %>
-              <%= product.productName %>
+          <% } %>
+          <%= product.productName %>
         </div>
       </div>
     </div>
@@ -1032,13 +1030,12 @@
       <div class="container">
         <div class="row">
           <div class="col-lg-10 mx-auto">
-            <% if (product.status==='blocked' || product.status==='unavailable' ) { %>
+            <% if (product.status === 'blocked' || product.status === 'unavailable') { %>
               <div class="alert-product">
                 <i class="fas fa-exclamation-circle"></i>
                 <div>
                   <h5 class="mb-1">Product Unavailable</h5>
-                  <p class="mb-0">Sorry, this product is currently unavailable. You will be redirected to our shop page.
-                  </p>
+                  <p class="mb-0">Sorry, this product is currently unavailable. You will be redirected to our shop page.</p>
                 </div>
               </div>
               <script>
@@ -1046,425 +1043,404 @@
                   window.location.href = '/shop';
                 }, 3000);
               </script>
-              <% } else { %>
-                <div class="product-detail">
-                  <div class="row mb-5">
-                    <div class="col-md-6 col-sm-12">
-                      <div class="detail-gallery">
-                        <div class="product-image-slider mb-4" id="productImageSlider">
-                          <% let imageArray; if (Array.isArray(product.productImage)) { imageArray=[...new
-                            Set(product.productImage)]; } else if(product.productImage){
-                            imageArray=[product.productImage] } %>
-                            <% imageArray.forEach(function(image, index) { %>
-                              <div>
-                                <img src="/Uploads/<%= image %>"
-                                  alt="<%= product.productName %> - Image <%= index + 1 %>" class="rounded product-img"
-                                  data-index="<%= index %>">
-                                <div class="magnify-icon" onclick="openZoom(<%= index %>)">
-                                  <i class="fas fa-search-plus"></i>
-                                </div>
-                              </div>
-                              <% }); %>
-                        </div>
-                        <div class="slider-nav-thumbnails" id="thumbnailSlider">
-                          <% imageArray.forEach(function(image, index) { %>
-                            <div>
-                              <img src="/Uploads/<%= image %>"
-                                alt="<%= product.productName %> - Thumbnail <%= index + 1 %>">
+            <% } else { %>
+              <div class="product-detail">
+                <div class="row mb-5">
+                  <div class="col-md-6 col-sm-12">
+                    <div class="detail-gallery">
+                      <div class="product-image-slider mb-4" id="productImageSlider">
+                        <% let imageArray; if (Array.isArray(product.productImage)) { imageArray = [...new Set(product.productImage)]; } else if (product.productImage) { imageArray = [product.productImage] } %>
+                        <% imageArray.forEach(function(image, index) { %>
+                          <div>
+                            <img src="/Uploads/<%= image %>"
+                                 alt="<%= product.productName %> - Image <%= index + 1 %>"
+                                 class="rounded product-img" data-index="<%= index %>">
+                            <div class="magnify-icon" onclick="openZoom(<%= index %>)">
+                              <i class="fas fa-search-plus"></i>
                             </div>
-                            <% }); %>
-                        </div>
+                          </div>
+                        <% }); %>
                       </div>
-                    </div>
-
-                    <div class="col-md-6 col-sm-12">
-                      <div class="detail-info">
-                        <h1 class="title-detail">
-                          <%= product.productName %>
-                        </h1>
-
-                        <div class="product-detail-rating mb-3">
-                          <div class="d-flex justify-content-between align-items-center">
-                            <div class="pro-details-brand">
-                              <% if (category) { %>
-                                <span>Category: <a href="/filter?category=<%= category._id %>"
-                                    class="text-decoration-none">
-                                    <%= category.name %>
-                                  </a></span>
-                                <% } %>
-                            </div>
-                            <div class="product-rate-cover text-end">
-                              <div class="rating-stars">
-                                <% for (let i=0; i < 5; i++) { %>
-                                  <i class="<%= i < 4 ? 'fas' : 'far' %> fa-star"></i>
-                                  <% } %>
-                              </div>
-                              <span class="rating-count">( reviews)</span>
-                            </div>
+                      <div class="slider-nav-thumbnails" id="thumbnailSlider">
+                        <% imageArray.forEach(function(image, index) { %>
+                          <div>
+                            <img src="/Uploads/<%= image %>"
+                                 alt="<%= product.productName %> - Thumbnail <%= index + 1 %>">
                           </div>
-                        </div>
-
-                        <% if (quantity> 0) { %>
-                          <div class="stock-status in-stock mb-3">
-                            <i class="fas fa-check-circle me-1"></i>
-                            <%= quantity %> in stock
-                          </div>
-                          <% } else { %>
-                            <div class="stock-status out-of-stock mb-3">
-                              <i class="fas fa-times-circle me-1"></i>
-                              Out of stock
-                            </div>
-                            <% } %>
-
-                              <div class="product-price-wrap">
-                                <div class="product-price">
-                                  <span class="current-price">₹<%= product.salePrice.toLocaleString('en-IN') %></span>
-                                  <span class="old-price">₹<%= product.regularPrice.toLocaleString('en-IN') %></span>
-                                  <% const discount=Math.round(((product.regularPrice - product.salePrice) /
-                                    product.regularPrice) * 100); %>
-                                    <% if (discount> 0) { %>
-                                      <span class="save-price">
-                                        <span class="badge bg-success">
-                                          <%= discount %>% Off
-                                        </span>
-                                      </span>
-                                      <% } %>
-                                </div>
-                              </div>
-
-                              <div class="border-color-1 my-4"></div>
-
-                              <div class="product-highlights mb-4">
-                                <h4>Highlights</h4>
-                                <div class="row">
-                                  <div class="col-md-6">
-                                    <div class="highlight-feature">
-                                      <i class="fas fa-check"></i>
-                                      <span>Premium Quality</span>
-                                    </div>
-                                    <div class="highlight-feature">
-                                      <i class="fas fa-check"></i>
-                                      <span>Authentic Product</span>
-                                    </div>
-                                  </div>
-                                  <div class="col-md-6">
-                                    <div class="highlight-feature">
-                                      <i class="fas fa-check"></i>
-                                      <span>Fast Shipping</span>
-                                    </div>
-                                    <div class="highlight-feature">
-                                      <i class="fas fa-check"></i>
-                                      <span>Customer Support</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div class="product_sort_info mb-4">
-                                <ul class="ps-0">
-                                  <li class="mb-2"><i class="fas fa-crown me-2"></i> 1 Year Brand Warranty</li>
-                                  <li class="mb-2"><i class="fas fa-undo me-2"></i> 30 Day Return Policy</li>
-                                  <li><i class="fas fa-money-bill me-2"></i> Cash on Delivery available</li>
-                                </ul>
-                              </div>
-
-                              <div class="border-color-1 my-4"></div>
-
-                              <div class="detail-extralink d-flex flex-wrap align-items-center">
-                                  <!-- <div class="detail-qty me-3">
-                                  <a href="javascript:void(0)" class="qty-down" onclick="decreaseQuantity()"><i
-                                      class="fas fa-minus"></i></a>
-                                  <span class="qty-val" id="quantity" >1</span>
-                                  <a href="javascript:void(0)" class="qty-up" onclick="increaseQuantity()"><i
-                                      class="fas fa-plus"></i></a>
-                                </div>   -->
-                                <div class="product-extra-link2">
-                                  <% if (quantity> 0) { %>
-                                    <button class="add-to-cart-btn" onclick="addToCart('<%= product._id %>', '<%= product.productName %>',1)">Add to Cart</button>
-                                    <% } else { %>
-                                      <button type="button" class="button-add-to-cart button-disabled" disabled>
-                                        <i class="fas fa-shopping-cart"></i>Out of stock
-                                      </button>
-                                      <% } %>
-                                        <a aria-label="Add To Wishlist" class="action-btn" href="javascript:void(0)"
-                                          onclick="addToWishlist('<%= product._id %>')">
-                                          <i class="fas fa-heart"></i>
-                                        </a>
-                                        <a aria-label="Share Product" class="action-btn" href="javascript:void(0)"
-                                          onclick="shareProduct()">
-                                          <i class="fas fa-share-alt"></i>
-                                        </a>
-                                </div>
-                              </div>
-
-                              <ul class="product-meta mt-4 ps-0">
-                                <li class="mb-2">
-                                  <strong>SKU:</strong>
-                                  <span class="meta-value">
-                                    <%= product._id.toString().slice(-8).toUpperCase() %>
-                                  </span>
-                                </li>
-                                <% if (category) { %>
-                                  <li class="mb-2">
-                                    <strong>Category:</strong>
-                                    <span class="meta-value">
-                                      <a href="/filter?category=<%= category._id %>" class="text-decoration-none">
-                                        <%= category.name %>
-                                      </a>
-                                    </span>
-                                  </li>
-                                  <% } %>
-                                    <li>
-                                      <strong>Availability:</strong>
-                                      <% if (quantity> 0) { %>
-                                        <span class="in-stock ms-1">
-                                          <%= quantity %> Items in Stock
-                                        </span>
-                                        <% } else { %>
-                                          <span class="out-of-stock ms-1">Out of Stock</span>
-                                          <% } %>
-                                    </li>
-                              </ul>
+                        <% }); %>
                       </div>
                     </div>
                   </div>
 
-                  <div class="product-info mb-5">
-                    <ul class="nav nav-tabs" id="productTabs" role="tablist">
-                      <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="Description-tab" data-bs-toggle="tab"
-                          data-bs-target="#Description" type="button" role="tab"
-                          aria-selected="true">Description</button>
-                      </li>
-                      <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="Specifications-tab" data-bs-toggle="tab"
-                          data-bs-target="#Specifications" type="button" role="tab"
-                          aria-selected="false">Specifications</button>
-                      </li>
-                      <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="Reviews-tab" data-bs-toggle="tab" data-bs-target="#Reviews"
-                          type="button" role="tab" aria-selected="false">Reviews (25)</button>
-                      </li>
-                    </ul>
-                    <div class="tab-content" id="productTabContent">
-                      <div class="tab-pane fade show active" id="Description" role="tabpanel"
-                        aria-labelledby="Description-tab">
-                        <div class="tab-content-item">
-                          <p>
-                            <%= product.description %>
-                          </p>
-                          <% if (product.longDescription) { %>
-                            <p>
-                              <%= product.longDescription %>
-                            </p>
+                  <div class="col-md-6 col-sm-12">
+                    <div class="detail-info">
+                      <h1 class="title-detail">
+                        <%= product.productName %>
+                      </h1>
+
+                      <div class="product-detail-rating mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                          <div class="pro-details-brand">
+                            <% if (category) { %>
+                              <span>Category: <a href="/filter?category=<%= category._id %>"
+                                                class="text-decoration-none">
+                                  <%= category.name %>
+                                </a></span>
                             <% } %>
-                        </div>
-                      </div>
-                      <div class="tab-pane fade" id="Specifications" role="tabpanel"
-                        aria-labelledby="Specifications-tab">
-                        <div class="tab-content-item">
-                          <table class="table specifications-table">
-                            <tbody>
-                              <tr>
-                                <th>Product Name</th>
-                                <td>
-                                  <%= product.productName %>
-                                </td>
-                              </tr>
-                              <tr>
-                                <th>Category</th>
-                                <td>
-                                  <%= category ? category.name : 'N/A' %>
-                                </td>
-                              </tr>
-                              <tr>
-                                <th>Regular Price</th>
-                                <td>₹<%= product.regularPrice.toLocaleString('en-IN') %>
-                                </td>
-                              </tr>
-                              <tr>
-                                <th>Sale Price</th>
-                                <td>₹<%= product.salePrice.toLocaleString('en-IN') %>
-                                </td>
-                              </tr>
-                              <tr>
-                                <th>Discount</th>
-                                <td>
-                                  <%= Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) *
-                                    100) %>%
-                                </td>
-                              </tr>
-                              <tr>
-                                <th>Stock</th>
-                                <td>
-                                  <%= quantity %>
-                                </td>
-                              </tr>
-                              <tr>
-                                <th>SKU</th>
-                                <td>
-                                  <%= product._id.toString().slice(-8).toUpperCase() %>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                      <div class="tab-pane fade" id="Reviews" role="tabpanel" aria-labelledby="Reviews-tab">
-                        <div class="tab-content-item">
-                          <div class="comments-area">
-                            <div class="row">
-                              <div class="col-lg-8">
-                                <h4 class="mb-4">Customer Reviews</h4>
-                                <div class="comment-list">
-                                  <!-- Sample reviews for demonstration -->
-                                  <div class="review-item">
-                                    <div class="review-meta">
-                                      <div class="review-avatar">
-                                        <img src="/api/placeholder/50/50" alt="User">
-                                      </div>
-                                      <div>
-                                        <h6 class="mb-1">John Doe</h6>
-                                        <div class="review-rating">
-                                          <i class="fas fa-star text-warning"></i>
-                                          <i class="fas fa-star text-warning"></i>
-                                          <i class="fas fa-star text-warning"></i>
-                                          <i class="fas fa-star text-warning"></i>
-                                          <i class="fas fa-star text-warning"></i>
-                                        </div>
-                                        <div class="review-date">Posted on March 15, 2025</div>
-                                      </div>
-                                    </div>
-                                    <div class="review-content">
-                                      <p>This product exceeded my expectations! The quality is excellent and it arrived
-                                        earlier than expected. Would definitely recommend it to others.</p>
-                                    </div>
-                                  </div>
-
-                                  <div class="review-item">
-                                    <div class="review-meta">
-                                      <div class="review-avatar">
-                                        <img src="/api/placeholder/50/50" alt="User">
-                                      </div>
-                                      <div>
-                                        <h6 class="mb-1">Jane Smith</h6>
-                                        <div class="review-rating">
-                                          <i class="fas fa-star text-warning"></i>
-                                          <i class="fas fa-star text-warning"></i>
-                                          <i class="fas fa-star text-warning"></i>
-                                          <i class="fas fa-star text-warning"></i>
-                                          <i class="far fa-star text-warning"></i>
-                                        </div>
-                                        <div class="review-date">Posted on March 10, 2025</div>
-                                      </div>
-                                    </div>
-                                    <div class="review-content">
-                                      <p>Great product for the price. Fast shipping and good customer service when I had
-                                        questions about the delivery.</p>
-                                    </div>
-                                  </div>
-
-                                  <a href="#" class="btn btn-outline-primary mt-3">View All Reviews</a>
-                                </div>
-                              </div>
-
-                              <div class="col-lg-4">
-                                <div class="review-form-wrapper p-4 bg-light rounded">
-                                  <h4 class="mb-3">Add a Review</h4>
-                                  <form class="review-form">
-                                    <div class="mb-3">
-                                      <label class="form-label">Your Rating</label>
-                                      <div class="rating-select">
-                                        <i class="far fa-star fs-4 me-1 rating-star" data-value="1"></i>
-                                        <i class="far fa-star fs-4 me-1 rating-star" data-value="2"></i>
-                                        <i class="far fa-star fs-4 me-1 rating-star" data-value="3"></i>
-                                        <i class="far fa-star fs-4 me-1 rating-star" data-value="4"></i>
-                                        <i class="far fa-star fs-4 rating-star" data-value="5"></i>
-                                      </div>
-                                    </div>
-                                    <div class="mb-3">
-                                      <textarea class="form-control" rows="4" placeholder="Your review"></textarea>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">Submit Review</button>
-                                  </form>
-                                </div>
-                              </div>
+                          </div>
+                          <div class="product-rate-cover text-end">
+                            <div class="rating-stars">
+                              <% for (let i = 0; i < 5; i++) { %>
+                                <i class="<%= i < 4 ? 'fas' : 'far' %> fa-star"></i>
+                              <% } %>
                             </div>
+                            <span class="rating-count">( reviews)</span>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
 
-                  <section class="related-products-section">
-                    <div class="container my-5">
-                      <h2 class="section-title mb-4">Related Products</h2>
-
-                      <% if (relatedProducts && relatedProducts.length> 0) { %>
-                        <div class="row products-slider">
-                          <% relatedProducts.forEach(relatedProd=> { %>
-                            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                              <div class="product-card h-100">
-                                <% const discount=Math.round((relatedProd.regularPrice -
-                                  relatedProd.salePrice)/relatedProd.regularPrice*100); if (discount> 0) { %>
-                                  <div class="discount-badge"><i class="fas fa-tag me-1"></i>
-                                    <%= discount %>% OFF
-                                  </div>
-                                  <% } %>
-
-                                    <% if (relatedProd.status==='Out of Stock' ) { %>
-                                      <div class="sold-out-badge"><i class="fas fa-exclamation-circle me-1"></i> Sold
-                                        Out</div>
-                                      <% } %>
-
-                                        <a href="/productDetails?id=<%= relatedProd._id %>"
-                                          class="text-decoration-none">
-                                          <div class="product-image-container">
-                                            <img src="/Uploads/<%= relatedProd.productImage[0] %>"
-                                              alt="<%= relatedProd.productName %>" class="img-fluid" />
-                                          </div>
-                                          <div class="product-info">
-                                            <h5 class="product-name">
-                                              <%= relatedProd.productName %>
-                                            </h5>
-                                            <div class="price-container">
-                                              <span class="product-price">₹<%=
-                                                  relatedProd.salePrice.toLocaleString('en-IN') %></span>
-                                              <% if (discount> 0) { %>
-                                                <span class="original-price">₹<%=
-                                                    relatedProd.regularPrice.toLocaleString('en-IN') %></span>
-                                                <% } %>
-                                            </div>
-                                          </div>
-                                        </a>
-
-                                        <div class="px-3 pb-3 mt-auto">
-                                          <% if (relatedProd.status==='Out of Stock' ) { %>
-                                            <button class="add-to-cart-btn w-100" disabled>
-                                              <i class="fas fa-ban me-2"></i> Out of Stock
-                                            </button>
-                                            <% } else { %>
-                                              <form action="/cart/add" method="POST">
-                                                <input type="hidden" name="productId" value="<%= product._id %>">
-                                                <input type="hidden" name="quantity" value="1">
-                                                <button type="submit" class="add-to-cart-btn">Add to Cart</button>
-                                              </form>
-                                              <% } %>
-                                        </div>
-                              </div>
-                            </div>
-                            <% }) %>
+                      <% if (quantity > 0) { %>
+                        <div class="stock-status in-stock mb-3">
+                          <i class="fas fa-check-circle me-1"></i>
+                          <%= quantity %> in stock
                         </div>
-                        <% } else { %>
-                          <div class="no-related-products">
-                            <i class="fas fa-search fa-3x mb-3 text-muted"></i>
-                            <p class="mb-0">No related products found at the moment.</p>
-                          </div>
+                      <% } else { %>
+                        <div class="stock-status out-of-stock mb-3">
+                          <i class="fas fa-times-circle me-1"></i>
+                          Out of stock
+                        </div>
+                      <% } %>
+
+                      <div class="product-price-wrap">
+                        <div class="product-price">
+                          <span class="current-price">₹<%= product.salePrice.toLocaleString('en-IN') %></span>
+                          <span class="old-price">₹<%= product.regularPrice.toLocaleString('en-IN') %></span>
+                          <% if (productOffer && productOffer.discountPercentage > 0) { %>
+                            <span class="save-price">
+                              <span class="badge bg-success">
+                                <%= productOffer.discountPercentage %>% Off
+                              </span>
+                            </span>
                           <% } %>
+                        </div>
+                      </div>
+
+                      <div class="border-color-1 my-4"></div>
+
+                      <div class="product-highlights mb-4">
+                        <h4>Highlights</h4>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div class="highlight-feature">
+                              <i class="fas fa-check"></i>
+                              <span>Premium Quality</span>
+                            </div>
+                            <div class="highlight-feature">
+                              <i class="fas fa-check"></i>
+                              <span>Authentic Product</span>
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div class="highlight-feature">
+                              <i class="fas fa-check"></i>
+                              <span>Fast Shipping</span>
+                            </div>
+                            <div class="highlight-feature">
+                              <i class="fas fa-check"></i>
+                              <span>Customer Support</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="product_sort_info mb-4">
+                        <ul class="ps-0">
+                          <li class="mb-2"><i class="fas fa-crown me-2"></i> 1 Year Brand Warranty</li>
+                          <li class="mb-2"><i class="fas fa-undo me-2"></i> 30 Day Return Policy</li>
+                          <li><i class="fas fa-money-bill me-2"></i> Cash on Delivery available</li>
+                        </ul>
+                      </div>
+
+                      <div class="border-color-1 my-4"></div>
+
+                      <div class="detail-extralink d-flex flex-wrap align-items-center">
+                        <div class="product-extra-link2">
+                          <% if (quantity > 0) { %>
+                            <button class="add-to-cart-btn"
+                                    onclick="addToCart('<%= product._id %>', '<%= product.productName %>', 1)">Add to Cart</button>
+                          <% } else { %>
+                            <button type="button" class="button-add-to-cart button-disabled" disabled>
+                              <i class="fas fa-shopping-cart"></i>Out of stock
+                            </button>
+                          <% } %>
+                          <a aria-label="Add To Wishlist" class="action-btn" href="javascript:void(0)"
+                             onclick="addToWishlist('<%= product._id %>', '<%= product.productName %>')">
+                            <i id="wishlist-icon-<%= product._id %>" class="far fa-heart"></i>
+                          </a>
+                        </div>
+                      </div>
+
+                      <ul class="product-meta mt-4 ps-0">
+                        <li class="mb-2">
+                          <strong>SKU:</strong>
+                          <span class="meta-value">
+                            <%= product._id.toString().slice(-8).toUpperCase() %>
+                          </span>
+                        </li>
+                        <% if (category) { %>
+                          <li class="mb-2">
+                            <strong>Category:</strong>
+                            <span class="meta-value">
+                              <a href="/filter?category=<%= category._id %>" class="text-decoration-none">
+                                <%= category.name %>
+                              </a>
+                            </span>
+                          </li>
+                        <% } %>
+                        <li>
+                          <strong>Availability:</strong>
+                          <% if (quantity > 0) { %>
+                            <span class="in-stock ms-1">
+                              <%= quantity %> Items in Stock
+                            </span>
+                          <% } else { %>
+                            <span class="out-of-stock ms-1">Out of Stock</span>
+                          <% } %>
+                        </li>
+                      </ul>
                     </div>
-                  </section>
+                  </div>
                 </div>
-                <% } %>
+
+                <div class="product-info mb-5">
+                  <ul class="nav nav-tabs" id="productTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link active" id="Description-tab" data-bs-toggle="tab"
+                              data-bs-target="#Description" type="button" role="tab"
+                              aria-selected="true">Description</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link" id="Specifications-tab" data-bs-toggle="tab"
+                              data-bs-target="#Specifications" type="button" role="tab"
+                              aria-selected="false">Specifications</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link" id="Reviews-tab" data-bs-toggle="tab" data-bs-target="#Reviews"
+                              type="button" role="tab" aria-selected="false">Reviews (25)</button>
+                    </li>
+                  </ul>
+                  <div class="tab-content" id="productTabContent">
+                    <div class="tab-pane fade show active" id="Description" role="tabpanel"
+                         aria-labelledby="Description-tab">
+                      <div class="tab-content-item">
+                        <p>
+                          <%= product.description %>
+                        </p>
+                        <% if (product.longDescription) { %>
+                          <p>
+                            <%= product.longDescription %>
+                          </p>
+                        <% } %>
+                      </div>
+                    </div>
+                    <div class="tab-pane fade" id="Specifications" role="tabpanel"
+                         aria-labelledby="Specifications-tab">
+                      <div class="tab-content-item">
+                        <table class="table specifications-table">
+                          <tbody>
+                          <tr>
+                            <th>Product Name</th>
+                            <td>
+                              <%= product.productName %>
+                            </td>
+                          </tr>
+                          <tr>
+                            <th>Category</th>
+                            <td>
+                              <%= category ? category.name : 'N/A' %>
+                            </td>
+                          </tr>
+                          <tr>
+                            <th>Regular Price</th>
+                            <td>₹<%= product.regularPrice.toLocaleString('en-IN') %></td>
+                          </tr>
+                          
+                          <tr>
+                            <th>Discount</th>
+                            <td>
+                              <%= productOffer ? productOffer.discountPercentage : 0 %>%
+                            </td>
+                          </tr>
+                          <tr>
+                            <th>Stock</th>
+                            <td>
+                              <%= quantity %>
+                            </td>
+                          </tr>
+                          <tr>
+                            
+                            <td>
+                              
+                            </td>
+                          </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div class="tab-pane fade" id="Reviews" role="tabpanel" aria-labelledby="Reviews-tab">
+                      <div class="tab-content-item">
+                        <div class="comments-area">
+                          <div class="row">
+                            <div class="col-lg-8">
+                              <h4 class="mb-4">Customer Reviews</h4>
+                              <div class="comment-list">
+                                <!-- Sample reviews for demonstration -->
+                                <div class="review-item">
+                                  <div class="review-meta">
+                                    <div class="review-avatar">
+                                      <img src="/api/placeholder/50/50" alt="User">
+                                    </div>
+                                    <div>
+                                      <h6 class="mb-1">John Doe</h6>
+                                      <div class="review-rating">
+                                        <i class="fas fa-star text-warning"></i>
+                                        <i class="fas fa-star text-warning"></i>
+                                        <i class="fas fa-star text-warning"></i>
+                                        <i class="fas fa-star text-warning"></i>
+                                        <i class="fas fa-star text-warning"></i>
+                                      </div>
+                                      <div class="review-date">Posted on March 15, 2025</div>
+                                    </div>
+                                  </div>
+                                  <div class="review-content">
+                                    <p>This product exceeded my expectations! The quality is excellent and it arrived
+                                      earlier than expected. Would definitely recommend it to others.</p>
+                                  </div>
+                                </div>
+
+                                <div class="review-item">
+                                  <div class="review-meta">
+                                    <div class="review-avatar">
+                                      <img src="/api/placeholder/50/50" alt="User">
+                                    </div>
+                                    <div>
+                                      <h6 class="mb-1">Jane Smith</h6>
+                                      <div class="review-rating">
+                                        <i class="fas fa-star text-warning"></i>
+                                        <i class="fas fa-star text-warning"></i>
+                                        <i class="fas fa-star text-warning"></i>
+                                        <i class="fas fa-star text-warning"></i>
+                                        <i class="far fa-star text-warning"></i>
+                                      </div>
+                                      <div class="review-date">Posted on March 10, 2025</div>
+                                    </div>
+                                  </div>
+                                  <div class="review-content">
+                                    <p>Great product for the price. Fast shipping and good customer service when I had
+                                      questions about the delivery.</p>
+                                  </div>
+                                </div>
+
+                                <a href="#" class="btn btn-outline-primary mt-3">View All Reviews</a>
+                              </div>
+                            </div>
+
+                            <div class="col-lg-4">
+                              <div class="review-form-wrapper p-4 bg-light rounded">
+                                <h4 class="mb-3">Add a Review</h4>
+                                <form class="review-form">
+                                  <div class="mb-3">
+                                    <label class="form-label">Your Rating</label>
+                                    <div class="rating-select">
+                                      <i class="far fa-star fs-4 me-1 rating-star" data-value="1"></i>
+                                      <i class="far fa-star fs-4 me-1 rating-star" data-value="2"></i>
+                                      <i class="far fa-star fs-4 me-1 rating-star" data-value="3"></i>
+                                      <i class="far fa-star fs-4 me-1 rating-star" data-value="4"></i>
+                                      <i class="far fa-star fs-4 rating-star" data-value="5"></i>
+                                    </div>
+                                  </div>
+                                  <div class="mb-3">
+                                    <textarea class="form-control" rows="4" placeholder="Your review"></textarea>
+                                  </div>
+                                  <button type="submit" class="btn btn-primary">Submit Review</button>
+                                </form>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <section class="related-products-section">
+                  <div class="container my-5">
+                    <h2 class="section-title mb-4">Related Products</h2>
+
+                    <% if (relatedProducts && relatedProducts.length > 0) { %>
+                      <div class="row products-slider">
+                        <% relatedProducts.forEach(relatedProd => { %>
+                          <% 
+                            const relatedOffer = relatedProd.productOffer > 0 ? { discountPercentage: relatedProd.productOffer } : null;
+                          %>
+                          <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                            <div class="product-card h-100">
+                              <% if (relatedOffer && relatedOffer.discountPercentage > 0) { %>
+                                <div class="discount-badge"><i class="fas fa-tag me-1"></i>
+                                  <%= relatedOffer.discountPercentage %>% OFF
+                                </div>
+                              <% } %>
+
+                              <% if (relatedProd.status === 'Out of Stock') { %>
+                                <div class="sold-out-badge"><i class="fas fa-exclamation-circle me-1"></i> Sold Out</div>
+                              <% } %>
+
+                              <a href="/productDetails?id=<%= relatedProd._id %>"
+                                 class="text-decoration-none">
+                                <div class="product-image-container">
+                                  <img src="/Uploads/<%= relatedProd.productImage[0] %>"
+                                       alt="<%= relatedProd.productName %>" class="img-fluid"/>
+                                </div>
+                                <div class="product-info">
+                                  <h5 class="product-name">
+                                    <%= relatedProd.productName %>
+                                  </h5>
+                                  <div class="price-container">
+                                    <span class="product-price">₹<%= relatedProd.salePrice.toLocaleString('en-IN') %></span>
+                                    <% if (relatedOffer && relatedOffer.discountPercentage > 0) { %>
+                                      <span class="original-price">₹<%= relatedProd.regularPrice.toLocaleString('en-IN') %></span>
+                                    <% } %>
+                                  </div>
+                                </div>
+                              </a>
+
+                              <div class="px-3 pb-3 mt-auto">
+                                <% if (relatedProd.status === 'Out of Stock') { %>
+                                  <button class="add-to-cart-btn w-100" disabled>
+                                    <i class="fas fa-ban me-2"></i> Out of Stock
+                                  </button>
+                                <% } else { %>
+                                  <form action="/cart/add" method="POST">
+                                    <input type="hidden" name="productId" value="<%= relatedProd._id %>">
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button type="submit" class="add-to-cart-btn">Add to Cart</button>
+                                  </form>
+                                <% } %>
+                              </div>
+                            </div>
+                          </div>
+                        <% }) %>
+                      </div>
+                    <% } else { %>
+                      <div class="no-related-products">
+                        <i class="fas fa-search fa-3x mb-3 text-muted"></i>
+                        <p class="mb-0">No related products found at the moment.</p>
+                      </div>
+                    <% } %>
+                  </div>
+                </section>
+              </div>
+            <% } %>
           </div>
         </div>
       </div>
@@ -1485,30 +1461,27 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
-    onerror="console.error('Failed to load Bootstrap script')"></script>
+          onerror="console.error('Failed to load Bootstrap script')"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
-    onerror="console.error('Failed to load jQuery script')"></script>
+          onerror="console.error('Failed to load jQuery script')"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.8.1/slick.min.js"
-    onerror="console.error('Failed to load Slick Carousel script')"></script>
+          onerror="console.error('Failed to load Slick Carousel script')"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.12/sweetalert2.min.js"
-    onerror="console.error('Failed to load SweetAlert2 script')"></script>
+          onerror="console.error('Failed to load SweetAlert2 script')"></script>
 
   <script>
+    // Define user variable for client-side JavaScript
+    const user = <%- user ? JSON.stringify(user) : 'null' %>;
+    const productId = '<%= product._id %>';
+
     document.addEventListener('DOMContentLoaded', function () {
-      // Initialize the product sliders
+      // Initialize all functionalities
       initializeProductSliders();
-
-      // Setup the enhanced image zoom functionality
       setupImageZoom();
-
-      // Initialize the review star rating
       initReviewRating();
-
-      // Check product status
       checkProductStatus();
-
-      // Setup form submission for add to cart
       setupAddToCartForm();
+      checkWishlistStatus(productId); // Check wishlist status on page load
     });
 
     // Function to initialize product image sliders
@@ -1683,206 +1656,14 @@
 
     // Check product status (blocked/unavailable)
     function checkProductStatus() {
-       if (product.status === 'blocked' || product.status === 'unavailable') { 
+      if (product.status === 'blocked' || product.status === 'unavailable') {
         console.log('Product is blocked or unavailable');
-       } 
-    }
-
-    // Quantity control functions
-//     function increaseQuantity() {
-//       const quantityElement = document.getElementById('quantity');
-//       let currentVal = parseInt(quantityElement.textContent);
-
-//       if (!isNaN(currentVal)) {
-//     if (currentVal >= 5) {
-//       Swal.fire({
-//         icon: 'warning',
-//         title: 'Limit Reached',
-//         text: 'You can only add up to 5 quantities of this item.',
-//         confirmButtonColor: '#3a86ff'
-//       });
-//       return;
-//     }
-
-//     const maxQuantity = parseInt('<%= quantity %>') || 5;
-//     const newVal = Math.min(currentVal + 1, maxQuantity);
-//     quantityElement.textContent = newVal;
-
-//     const formQuantityInput = document.getElementById('formQuantity');
-//     if (formQuantityInput) {
-//       formQuantityInput.value = newVal;
-//     }
-//   }
-// }
-
-
-     
-
-      // function getSelectedQuantity() {
-      // const quantityElement = document.getElementById('quantity');
-      // return parseInt(quantityElement.textContent) || 1;
-      // }
-
-
-
-
-
-    // function decreaseQuantity() {
-    //   const quantityElement = document.getElementById('quantity');
-    //   let currentVal = parseInt(quantityElement.textContent);
-
-    //   if (!isNaN(currentVal) && currentVal > 1) {
-    //     quantityElement.textContent = currentVal - 1;
-    //     document.getElementById('formQuantity').value = currentVal - 1;
-    //   }
-    // }
-
-    // Setup add to cart form submission
-    // function setupAddToCartForm() {
-    //   const form = document.getElementById('addToCartForm');
-    //   const button = document.getElementById('addToCartBtn');
-
-    //   if (form && button) {
-    //     form.addEventListener('submit', function (e) {
-    //       e.preventDefault();
-          
-    //       <% if (!user) { %>
-    //         window.location.href = '/login?redirect=productDetails?id=<%= product._id %>';
-    //         return;
-    //       <% } %>
-          
-    //       const quantity = parseInt(document.getElementById('formQuantity').value);
-    //       if (isNaN(quantity) || quantity < 1) {
-    //         showAlert('Please select a valid quantity', 'error');
-    //         return;
-    //       }
-
-    //       // Add visual feedback
-    //       const originalText = button.innerHTML;
-    //       button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Adding...';
-    //       button.disabled = true;
-
-    //       const formData = new FormData(form);
-    //       fetch('/cart/add', {
-    //         method: 'POST',
-    //         body: formData
-    //       })
-    //         .then(response => {
-    //           if (!response.ok) {
-    //             throw new Error(`HTTP error! status: ${response.status}`);
-    //           }
-    //           return response.text(); // Get raw text to handle potential non-JSON responses
-    //         })
-    //         .then(text => {
-    //           let data;
-    //           try {
-    //             data = JSON.parse(text); // Attempt to parse JSON
-    //           } catch (e) {
-    //             console.error('Invalid JSON response:', text);
-    //             throw new Error('Server returned an invalid response');
-    //           }
-
-    //           if (data.success) {
-    //             button.innerHTML = '<i class="fas fa-check me-1"></i> Added';
-    //             setTimeout(() => {
-    //               button.innerHTML = originalText;
-    //               button.disabled = false;
-    //             }, 1500);
-    //             showAlert('Product added to cart!', 'success');
-    //           } else {
-    //             button.innerHTML = originalText;
-    //             button.disabled = false;
-    //             if (data.message === 'Product is unavailable' || data.message === 'Product is blocked') {
-    //               showAlert('This product is currently unavailable', 'error');
-    //               setTimeout(() => {
-    //                 window.location.href = '/shop';
-    //               }, 2000);
-    //             } else {
-    //               showAlert(data.message || 'Failed to add product to cart', 'error');
-    //             }
-    //           }
-    //         })
-    //         .catch(error => {
-    //           console.error('Error:', error);
-    //           button.innerHTML = originalText;
-    //           button.disabled = false;
-    //           showAlert('Something went wrong. Please try again.', 'error');
-    //         });
-    //     });
-    //   }
-    // }
-
-    // Add to wishlist function
-    function addToWishlist(productId) {
-       if (!user) { 
-        window.location.href = '/login?redirect=productDetails?id=<%= product._id %>';
-        return;
-       } 
-
-        fetch('/wishlist/add', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            productId: productId
-          })
-        })
-          .then(response => {
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.text();
-          })
-          .then(text => {
-            let data;
-            try {
-              data = JSON.parse(text);
-            } catch (e) {
-              console.error('Invalid JSON response:', text);
-              throw new Error('Server returned an invalid response');
-            }
-
-            if (data.success) {
-              showAlert('Product added to wishlist!', 'success');
-            } else {
-              if (data.message === 'Product is unavailable' || data.message === 'Product is blocked') {
-                showAlert('This product is currently unavailable', 'error');
-                setTimeout(() => {
-                  window.location.href = '/shop';
-                }, 2000);
-              } else {
-                showAlert(data.message || 'Failed to add product to wishlist', 'error');
-              }
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            showAlert('Something went wrong. Please try again.', 'error');
-          });
-    }
-
-    // Share product function
-    function shareProduct() {
-      if (navigator.share) {
-        navigator.share({
-          title: '<%= product.productName %>',
-          text: 'Check out this amazing product: <%= product.productName %>',
-          url: window.location.href
-        })
-          .then(() => console.log('Shared successfully'))
-          .catch((error) => console.log('Error sharing:', error));
-      } else {
-        // Fallback for browsers that don't support the Web Share API
-        const tempInput = document.createElement('input');
-        tempInput.value = window.location.href;
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand('copy');
-        document.body.removeChild(tempInput);
-
-        showAlert('Link copied to clipboard!', 'success');
       }
+    }
+
+    // Setup form submission for add to cart
+    function setupAddToCartForm() {
+      // This function can be used if you need to handle form submissions dynamically
     }
 
     // Show alert function using SweetAlert if available
@@ -1901,6 +1682,166 @@
       }
     }
 
+    // Wishlist Functionality
+    // Function to check if the product is in the wishlist on page load
+    function checkWishlistStatus(productId) {
+      if (!user) return; // Skip if user is not logged in
+
+      fetch('/wishlist', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          const isInWishlist = data.products && data.products.some(item => item.productId._id === productId);
+          const icon = document.getElementById(`wishlist-icon-${productId}`);
+          if (isInWishlist) {
+            icon.classList.remove('far');
+            icon.classList.add('fas');
+            icon.style.color = '#ff006e'; // Filled heart color
+          } else {
+            icon.classList.remove('fas');
+            icon.classList.add('far');
+            icon.style.color = ''; // Default color
+          }
+        })
+        .catch(error => {
+          console.error('Error checking wishlist status:', error);
+          showAlert('Failed to check wishlist status. Please try again.', 'error');
+        });
+    }
+
+    // Function to toggle (add/remove) the product in the wishlist
+    window.addToWishlist = async (productId, productName) => {
+      if (!user) {
+        window.location.href = '/login?redirect=productDetails?id=' + productId;
+        return;
+      }
+
+      const icon = document.getElementById(`wishlist-icon-${productId}`);
+      const isInWishlist = icon.classList.contains('fas'); // Check if already in wishlist
+
+      try {
+        const response = await fetch(isInWishlist ? '/removeFromWishlist' : '/addToWishlist', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ productId })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          if (isInWishlist) {
+            // Remove from wishlist
+            icon.classList.remove('fas');
+            icon.classList.add('far');
+            icon.style.color = ''; // Default color
+            Swal.fire({
+              title: 'Removed from Wishlist!',
+              text: `${productName} has been removed from your wishlist.`,
+              icon: 'success',
+              timer: 1500,
+              showConfirmButton: false
+            });
+          } else {
+            // Add to wishlist
+            icon.classList.remove('far');
+            icon.classList.add('fas');
+            icon.style.color = '#ff006e'; // Filled heart color
+            Swal.fire({
+              title: 'Added to Wishlist!',
+              text: `${productName} has been added to your wishlist.`,
+              icon: 'success',
+              timer: 1500,
+              showConfirmButton: false
+            });
+          }
+        } else if (data.message === 'Cannot add to wishlist - product is already in your cart') {
+          Swal.fire({
+            title: 'Oops!',
+            text: 'Cannot add to wishlist - product is already in your cart',
+            icon: 'error',
+            timer: 1500,
+            showConfirmButton: false
+          });
+        } else {
+          if (data.message === 'Product is unavailable' || data.message === 'Product is blocked') {
+            Swal.fire({
+              title: 'Oops!',
+              text: 'This product is currently unavailable',
+              icon: 'error',
+              timer: 2000,
+              showConfirmButton: false
+            });
+            setTimeout(() => {
+              window.location.href = '/shop';
+            }, 2000);
+          } else {
+            Swal.fire({
+              title: 'Oops!',
+              text: data.message || 'Could not update wishlist.',
+              icon: 'error'
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error updating wishlist:', error);
+        Swal.fire({
+          title: 'Error',
+          text: 'Something went wrong. Please try again.',
+          icon: 'error'
+        });
+      }
+    };
+
+    // Add to cart function
+    window.addToCart = (productId, productName, quantity) => {
+      fetch('/cart/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ productId, quantity })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            Swal.fire({
+              title: 'Added to Cart!',
+              text: `${data.productName || productName} has been added to your cart.`,
+              icon: 'success',
+              timer: 1500,
+              showConfirmButton: false
+            });
+          } else {
+            Swal.fire({
+              title: 'Error!',
+              text: data.message || 'Something went wrong.',
+              icon: 'error',
+              showConfirmButton: true
+            });
+          }
+        })
+        .catch(error => {
+          console.error('Error adding to cart:', error);
+          Swal.fire({
+            title: 'Error!',
+            text: 'Failed to add item to cart.',
+            icon: 'error',
+            showConfirmButton: true
+          });
+        });
+    };
+
     // Add to cart quick function for related products
     function addToCartQuick(productId) {
       <% if (!user) { %>
@@ -1908,7 +1849,6 @@
         return;
       <% } %>
 
-      // Add visual feedback before the fetch
       const button = event.currentTarget;
       const originalText = button.innerHTML;
       button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Adding...';
@@ -1956,54 +1896,9 @@
           console.error('Error:', error);
           button.innerHTML = originalText;
           button.disabled = false;
-          showAlert('Something went wrong. Please try again.', error);
+          showAlert('Something went wrong. Please try again.', 'error');
         });
     }
   </script>
 </body>
-
 </html>
-
-<script>
- 
-
-  window.addToCart = (productId, productName, quantity) => {
-    fetch('/cart/add', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ productId , quantity})
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        Swal.fire({
-          title: 'Added to Cart!',
-          text: `${data.productName || productName} has been added to your cart.`,
-          icon: 'success',
-          timer: 1500,
-          showConfirmButton: false
-        });
-      } else {
-        Swal.fire({
-          title: 'Error!',
-          text: data.message || 'Something went wrong.',
-          icon: 'error',
-          showConfirmButton: true
-        });
-      }
-    })
-    .catch(error => {
-      console.error('Error adding to cart:', error);
-      Swal.fire({
-        title: 'Error!',
-        text: 'Failed to add item to cart.',
-        icon: 'error',
-        showConfirmButton: true
-      });
-    });
-  };
-
-
-</script>
