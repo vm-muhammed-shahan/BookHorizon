@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <%- include("../partials/user/header") %>
+  <%- include("../../views/partials/user/header") %>
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -386,6 +386,7 @@
             <th>Date</th>
             <th>Status</th>
             <th>Payment Status</th>
+            <th>Coupon Discount</th>
             <th>Total</th>
             <th>Actions</th>
           </tr>
@@ -402,6 +403,7 @@
                 <td data-label="Date:"><%= order.createdOn ? new Date(order.createdOn).toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' }) : 'N/A' %></td>
                 <td data-label="Status:"><span class="status-badge"><%= order.status || 'N/A' %></span></td>
                 <td data-label="Payment Status:"><span class="status-badge"><%= order.paymentStatus || 'N/A' %></span></td>
+                <td data-label="Discount:">₹<%= order.discount ? order.discount.toFixed(2) : '0.00' %></td> 
                 <td data-label="Total:">₹<%= order.finalAmount ? order.finalAmount.toFixed(2) : '0.00' %></td>
                 <td data-label="Actions:">
                   <a href="/orders/<%= order.orderId %>" class="table-link">View Details</a>
@@ -414,6 +416,6 @@
     </div>
   </div>
 
-  <%- include("../partials/user/footer") %>
+ <%- include("../../views/partials/user/footer") %>
 </body>
 </html>

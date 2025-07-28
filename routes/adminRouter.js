@@ -4,10 +4,10 @@ const adminController = require("../controllers/admin/adminController");
 const customerController = require("../controllers/admin/customerController");
 const orderController = require("../controllers/admin/orderController");
 const categoryController = require("../controllers/admin/categoryController");
-const brandController = require("../controllers/admin/brandController");
 const productController = require("../controllers/admin/productController");
 const couponController = require('../controllers/admin/couponController');
 const salesController = require('../controllers/admin/salesController');
+const dashboardController = require('../controllers/admin/dashboardController');
 const uploads = require("../helpers/multer");
 const { adminAuth } = require("../middlewares/auth");
 
@@ -20,7 +20,7 @@ router.get("/pageerror", adminController.pageerror);
 // Login Management
 router.get("/login", adminController.loadLogin);
 router.post("/login", adminController.login);
-router.get("/", adminAuth, adminController.loadDashboard);
+router.get("/", adminAuth, customerController.customerInfo)
 router.get("/logout", adminController.logout);
 
 
@@ -44,8 +44,6 @@ router.get("/editCategory", adminAuth, categoryController.getEditCategory);
 router.post("/editCategory/:id", adminAuth, categoryController.editCategory);
 
 
-
-// Product Management
 router.get("/addProducts", adminAuth, productController.getProductAddPage);
 router.post("/addProducts", uploads.array('productImages', 3), adminAuth, productController.addProducts);
 router.get("/products", adminAuth, productController.getAllProducts);
@@ -65,16 +63,12 @@ router.post("/editProduct/:id", adminAuth,
 router.post("/deleteImage", adminAuth, productController.deleteSingleImage);
 
 
-
-
 // Order Management
 router.get("/orders", adminAuth, orderController.getOrders);
 router.get("/orders/clear", adminAuth, orderController.clearFilters);
 router.get("/orders/:orderId", adminAuth, orderController.getOrderDetails);
 router.post("/orders/:orderId/status", adminAuth, orderController.updateOrderStatus);
 router.post("/orders/:orderId/return", adminAuth, orderController.verifyReturnRequest);
-
-
 
 
 // Sales Report
@@ -86,6 +80,12 @@ router.get("/sales-report/download", adminAuth, salesController.downloadSalesRep
 router.get('/coupons', adminAuth, couponController.getCouponPage);
 router.post('/coupons/create', adminAuth, couponController.createCoupon);
 router.post('/coupons/delete/:couponId', adminAuth, couponController.deleteCoupon);
+
+
+
+
+// Dashboard Management
+router.get("/dashboard", adminAuth, dashboardController.getDashboard);
 
 
 

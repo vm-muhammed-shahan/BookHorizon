@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zxx">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="description" content="Male_Fashion Template" />
@@ -26,22 +27,27 @@
       text-decoration: none;
       font-weight: 600;
     }
+
     .header__nav__option .sign-in-link:hover {
       color: #ff7f50;
     }
+
     .signup-section {
       display: flex;
       justify-content: space-between;
       flex-wrap: wrap;
     }
+
     .signup-form,
     .signup-image {
       flex: 1;
       padding: 10px;
     }
+
     .signup-form {
       max-width: 50%;
     }
+
     .signup-image {
       display: flex;
       flex-direction: column;
@@ -49,16 +55,19 @@
       justify-content: center;
       max-width: 40%;
     }
+
     .signup-image img {
       max-width: 100%;
       height: auto;
     }
+
     .social-btns {
       display: flex;
       flex-direction: column;
       align-items: center;
       margin-top: 10px;
     }
+
     .social-btns button {
       width: 50px;
       height: 50px;
@@ -68,37 +77,58 @@
       justify-content: center;
       font-size: 1.5rem;
     }
+
     .spacer {
       height: 30px;
     }
+
     .form-group label {
       font-size: 0.875rem;
     }
+
     .form-control {
       font-size: 0.875rem;
       padding: 0.5rem;
     }
+
     .btn-primary {
       padding: 0.5rem 1rem;
       font-size: 0.875rem;
     }
+
     .card-title {
       font-size: 1.25rem;
     }
+
     .signup-image .sign-in-link {
       color: #333;
       text-decoration: none;
     }
+
     .signup-image .sign-in-link:hover {
       color: #ff7f50;
     }
+
     .error-message {
       color: red;
       font-size: 0.75rem;
       display: none;
     }
+
+    .valid-field {
+      border: 2px solid #28a745 !important;
+    }
+
+    .valid-tick {
+      color: #28a745;
+      font-size: 1.5rem;
+      display: none;
+      text-align: center;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
+
 <body>
   <div class="container mt-5 mb-1">
     <div class="row justify-content-center">
@@ -106,42 +136,35 @@
         <div class="card">
           <div class="card-body signup-section">
             <div class="signup-form">
+              <div id="valid-tick" class="valid-tick">
+                <i class="fas fa-check-circle"></i> All fields are valid
+              </div>
               <h3 class="card-title text-center">Sign Up</h3>
               <form id="signform" method="post" action="/signup">
                 <div class="form-group">
                   <label for="name">Full Name</label>
-                  <input type="text" class="form-control" name="name" id="name" placeholder="Enter Name" required
-                    autocomplete="name" />
+                  <input type="text" class="form-control" name="name" id="name" placeholder="Enter Name" />
                   <div id="error1" class="error-message"></div>
                 </div>
                 <div class="form-group">
                   <label for="email">Email address</label>
-                  <input type="email" class="form-control" name="email" id="email" placeholder="Enter email" required
-                    autocomplete="email" />
+                  <input type="email" class="form-control" name="email" id="email" placeholder="Enter email" />
                   <div id="error2" class="error-message"></div>
                 </div>
                 <div class="form-group">
                   <label for="phone">Phone Number</label>
-                  <input type="tel" class="form-control" name="phone" id="phone" placeholder="Enter phone number"
-                    required autocomplete="tel" pattern="^\+?[0-9]{10,15}$" />
+                  <input type="text" class="form-control" name="phone" id="phone" placeholder="Enter phone number" />
                   <div id="error3" class="error-message"></div>
                 </div>
                 <div class="form-group">
-                  <label for="referralCode">Referral Code (Optional)</label>
-                  <input type="text" class="form-control" name="referralCode" id="referralCode" placeholder="Enter referral code"
-                    autocomplete="off" />
-                  <div id="error6" class="error-message"></div>
-                </div>
-                <div class="form-group">
                   <label for="password">Password</label>
-                  <input type="password" class="form-control" name="password" id="password" placeholder="Password"
-                    required autocomplete="new-password" minlength="6" maxlength="20" />
+                  <input type="password" class="form-control" name="password" id="password" placeholder="Password" />
                   <div id="error4" class="error-message"></div>
                 </div>
                 <div class="form-group">
                   <label for="confirm-password">Confirm Password</label>
-                  <input type="password" class="form-control" name="confirm_password" id="confirm-password"
-                    placeholder="Confirm Password" required autocomplete="new-password" minlength="6" maxlength="20" />
+                  <input type="password" class="form-control" name="cpassword" id="confirm-password"
+                    placeholder="Confirm Password" />
                   <div id="error5" class="error-message"></div>
                 </div>
                 <% if(locals.message && message.length > 0) { %>
@@ -150,7 +173,7 @@
                   </div>
                 <% } %>
                 <div class="d-flex justify-content-between align-items-center">
-                  <button type="submit" class="btn btn-primary" name="submit">
+                  <button type="submit" class="btn btn-primary" name="submit" id="submit-btn" disabled>
                     Sign Up
                   </button>
                   <div class="mt-2px">
@@ -166,10 +189,10 @@
             </div>
             <div class="signup-image">
               <a href="/">
-                <!-- <img src="img/signup.svg" alt="Shopping Site" />  -->
+                <!-- <img src="img/signup.svg" alt="Shopping Site" /> -->
               </a>
               <div class="text-center mt-2">
-                <a href="#" class="sign-in-link">Already registered? Log in</a>
+                <a href="/login" class="sign-in-link">Already registered? Log in</a>
               </div>
             </div>
           </div>
@@ -184,128 +207,184 @@
     const nameid = document.getElementById("name");
     const emailid = document.getElementById("email");
     const phoneid = document.getElementById("phone");
-    const referralCodeid = document.getElementById("referralCode");
-    const passwordid = document.getElementById("password");
-    const confirmpasswordid = document.getElementById("confirm-password");
+    const passid = document.getElementById("password");
+    const cpassid = document.getElementById("confirm-password");
     const error1 = document.getElementById("error1");
     const error2 = document.getElementById("error2");
     const error3 = document.getElementById("error3");
     const error4 = document.getElementById("error4");
     const error5 = document.getElementById("error5");
-    const error6 = document.getElementById("error6");
     const signform = document.getElementById("signform");
+    const submitBtn = document.getElementById("submit-btn");
+    const validTick = document.getElementById("valid-tick");
 
-    function nameValidateChecking(e) {
-      const nameval = nameid.value;
-      const namepattern = /^[A-Za-z\s]+$/;
-      if (nameval.trim() === "") {
+    // Debounce function to limit real-time validation frequency
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
+    function nameValidateChecking() {
+      const nameval = nameid.value.trim();
+      const namepattern = /^[A-Za-z\s]{2,50}$/;
+      if (!nameval) {
         error1.style.display = "block";
-        error1.innerHTML = "Please enter a valid name";
+        error1.innerHTML = "Name is required";
+        nameid.classList.remove("valid-field");
+        return false;
       } else if (!namepattern.test(nameval)) {
         error1.style.display = "block";
-        error1.innerHTML = "Name can only contain letters and spaces";
+        error1.innerHTML = "Name must be 2-50 characters, letters and spaces only";
+        nameid.classList.remove("valid-field");
+        return false;
       } else {
         error1.style.display = "none";
         error1.innerHTML = "";
+        nameid.classList.add("valid-field");
+        return true;
       }
     }
 
-    function emailValidateChecking(e) {
-      const emailval = emailid.value;
-      const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9-]+(\.[a-zA-Z]{2,10})+$/;
-      if (!emailPattern.test(emailval)) {
+    function emailValidateChecking() {
+      const emailval = emailid.value.trim();
+      const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailval) {
         error2.style.display = "block";
-        error2.innerHTML = "Invalid Format";
+        error2.innerHTML = "Email is required";
+        emailid.classList.remove("valid-field");
+        return false;
+      } else if (!emailPattern.test(emailval)) {
+        error2.style.display = "block";
+        error2.innerHTML = "Invalid email format";
+        emailid.classList.remove("valid-field");
+        return false;
       } else {
         error2.style.display = "none";
         error2.innerHTML = "";
+        emailid.classList.add("valid-field");
+        return true;
       }
     }
 
-    function phoneValidateChecking(e) {
+    function phoneValidateChecking() {
       const phoneval = phoneid.value.trim();
-      if (phoneval === "") {
+      const phonePattern = /^\d{10}$/;
+      if (!phoneval) {
         error3.style.display = "block";
-        error3.innerHTML = "Enter a valid phone number";
-      } else if (!/^\d{10}$/.test(phoneval)) {
+        error3.innerHTML = "Phone number is required";
+        phoneid.classList.remove("valid-field");
+        return false;
+      } else if (!phonePattern.test(phoneval)) {
         error3.style.display = "block";
         error3.innerHTML = "Phone number must be exactly 10 digits";
+        phoneid.classList.remove("valid-field");
+        return false;
       } else {
         error3.style.display = "none";
         error3.innerHTML = "";
+        phoneid.classList.add("valid-field");
+        return true;
       }
     }
 
-    function referralCodeValidateChecking(e) {
-      const referralCodeval = referralCodeid.value.trim();
-      if (referralCodeval && referralCodeval.length < 8) {
-        error6.style.display = "block";
-        error6.innerHTML = "Referral code must be at least 8 characters long";
-      } else {
-        error6.style.display = "none";
-        error6.innerHTML = "";
-      }
-    }
+    function passValidationChecking() {
+      const passval = passid.value;
+      const cpassval = cpassid.value;
+      const passPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      let isValid = true;
 
-    function passValidationChecking(e) {
-      const passval = passwordid.value;
-      const confirmpasswordval = confirmpasswordid.value;
-      const alpha = /[a-zA-Z]/;
-      const digit = /\d/;
-      if (passval.length < 8) {
+      if (!passval) {
         error4.style.display = "block";
-        error4.innerHTML = "Should contain at least 8 characters";
-      } else if (!alpha.test(passval) || !digit.test(passval)) {
+        error4.innerHTML = "Password is required";
+        passid.classList.remove("valid-field");
+        isValid = false;
+      } else if (!passPattern.test(passval)) {
         error4.style.display = "block";
-        error4.innerHTML = "Should contain numbers and alphabets";
+        error4.innerHTML = "Password must be 8+ characters with uppercase, lowercase, number, and special character";
+        passid.classList.remove("valid-field");
+        isValid = false;
       } else {
         error4.style.display = "none";
         error4.innerHTML = "";
+        passid.classList.add("valid-field");
       }
-      if (passval !== confirmpasswordval) {
+
+      if (!cpassval) {
+        error5.style.display = "block";
+        error5.innerHTML = "Confirm password is required";
+        cpassid.classList.remove("valid-field");
+        isValid = false;
+      } else if (passval !== cpassval) {
         error5.style.display = "block";
         error5.innerHTML = "Passwords do not match";
+        cpassid.classList.remove("valid-field");
+        isValid = false;
       } else {
         error5.style.display = "none";
         error5.innerHTML = "";
+        cpassid.classList.add("valid-field");
       }
+
+      return isValid;
+    }
+
+    function checkAllFieldsValid() {
+      const isNameValid = nameValidateChecking();
+      const isEmailValid = emailValidateChecking();
+      const isPhoneValid = phoneValidateChecking();
+      const isPassValid = passValidationChecking();
+
+      const allValid = isNameValid && isEmailValid && isPhoneValid && isPassValid;
+      submitBtn.disabled = !allValid;
+      validTick.style.display = allValid ? "block" : "none";
     }
 
     document.addEventListener("DOMContentLoaded", function () {
+      // Initially disable the submit button
+      submitBtn.disabled = true;
+
+      // Form submission validation
       signform.addEventListener("submit", function (e) {
-        nameValidateChecking();
-        emailValidateChecking();
-        phoneValidateChecking();
-        referralCodeValidateChecking();
-        passValidationChecking();
-        if (
-          !nameid ||
-          !emailid ||
-          !phoneid ||
-          !referralCodeid ||
-          !passwordid ||
-          !error1 ||
-          !error2 ||
-          !error3 ||
-          !error4 ||
-          !error5 ||
-          !error6 ||
-          !signform
-        ) {
-          console.error("One or more elements not found");
-        }
-        if (
-          error1.innerHTML ||
-          error2.innerHTML ||
-          error3.innerHTML ||
-          error4.innerHTML ||
-          error5.innerHTML ||
-          error6.innerHTML
-        ) { 
+        const isNameValid = nameValidateChecking();
+        const isEmailValid = emailValidateChecking();
+        const isPhoneValid = phoneValidateChecking();
+        const isPassValid = passValidationChecking();
+
+        if (!isNameValid || !isEmailValid || !isPhoneValid || !isPassValid) {
           e.preventDefault();
         }
       });
+
+      // Real-time validation with debounce
+      nameid.addEventListener("input", debounce(() => {
+        nameValidateChecking();
+        checkAllFieldsValid();
+      }, 300));
+      emailid.addEventListener("input", debounce(() => {
+        emailValidateChecking();
+        checkAllFieldsValid();
+      }, 300));
+      phoneid.addEventListener("input", debounce(() => {
+        phoneValidateChecking();
+        checkAllFieldsValid();
+      }, 300));
+      passid.addEventListener("input", debounce(() => {
+        passValidationChecking();
+        checkAllFieldsValid();
+      }, 300));
+      cpassid.addEventListener("input", debounce(() => {
+        passValidationChecking();
+        checkAllFieldsValid();
+      }, 300));
     });
   </script>
 </body>
+
 </html>

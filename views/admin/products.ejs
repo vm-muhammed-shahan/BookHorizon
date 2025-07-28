@@ -283,16 +283,19 @@
   });
 
   async function addProductOffer(productId) {
+    const today = new Date().toISOString().split('T')[0]; // Current date: 2025-07-26
     const { value: formValues } = await Swal.fire({
       title: "Add Product Offer",
       html:
-        '<p style="margin-bottom: 15px;">Set a discount for this product. The offer will be active until the end date.</p>' +
+        '<p style="margin-bottom: 15px;">Set a discount for this product. The offer will be active from start date to end date.</p>' +
         '<input id="swal-input2" type="number" class="swal2-input" placeholder="Discount Percentage (%)" min="1" max="100">' +
+        '<input id="swal-input3" type="date" class="swal2-input" placeholder="Start Date" value="' + today + '">' +
         '<input id="swal-input4" type="date" class="swal2-input" placeholder="End Date">',
       focusConfirm: false,
       preConfirm: () => {
         return {
           percentage: document.getElementById('swal-input2').value,
+          startDate: document.getElementById('swal-input3').value,
           endDate: document.getElementById('swal-input4').value,
         };
       },
@@ -300,12 +303,12 @@
     });
 
     if (formValues) {
-      const { percentage, endDate } = formValues;
-      if (!percentage || !endDate) {
+      const { percentage, startDate, endDate } = formValues;
+      if (!percentage || !startDate || !endDate) {
         Swal.fire({
           icon: 'error',
           title: 'Invalid Input',
-          text: 'Both Discount Percentage and End Date are required!',
+          text: 'All fields (Discount Percentage, Start Date, and End Date) are required!',
           confirmButtonColor: '#212529',
         });
         return;
@@ -322,12 +325,22 @@
         return;
       }
 
-      const today = new Date().toISOString().split('T')[0];
-      if (endDate <= today) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (startDate < todayStr) {
         Swal.fire({
           icon: 'error',
           title: 'Invalid Input',
-          text: 'End Date must be a future date!',
+          text: 'Start Date cannot be in the past!',
+          confirmButtonColor: '#212529',
+        });
+        return;
+      }
+
+      if (endDate <= startDate) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid Input',
+          text: 'End Date must be after Start Date!',
           confirmButtonColor: '#212529',
         });
         return;
@@ -341,6 +354,7 @@
           },
           body: JSON.stringify({
             percentage,
+            startDate,
             endDate,
             productId,
           }),

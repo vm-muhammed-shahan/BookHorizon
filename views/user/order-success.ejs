@@ -17,12 +17,37 @@
     }
     .btn-primary { background-color: #2c3e50; border-color: #2c3e50; }
     .btn-primary:hover { background-color: #34495e; }
+    .success-tick {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 20px;
+      animation: checkmark 0.6s ease-in-out;
+    }
+    @keyframes checkmark {
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+      50% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
   </style>
 </head>
 <body>
 
   <div class="success-container">
-   
+    <!-- Green tick SVG -->
+    <svg class="success-tick" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="45" fill="#28a745" stroke="#1e7e34" stroke-width="3"/>
+      <path d="M30 50 L45 65 L70 35" stroke="white" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    
     <h2>Thank You for Your Order!</h2>
     <p>Your order #<%= order.orderId %> has been successfully placed.</p>
     <div class="mt-4">

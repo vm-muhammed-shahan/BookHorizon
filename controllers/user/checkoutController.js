@@ -1,5 +1,7 @@
 const Cart = require("../../models/cartSchema");
+const User = require("../../models/userSchema");
 const Address = require("../../models/addressSchema");
+const Wallet = require("../../models/walletSchema");
 const Order = require("../../models/orderSchema");
 const Product = require("../../models/productSchema");
 const Coupon = require("../../models/couponSchema");
@@ -18,20 +20,44 @@ const checkoutPage = async (req, res) => {
     const cart = await Cart.findOne({ userId }).populate("items.productId");
 
     if (!cart || cart.items.length === 0) {
-      return res.redirect("/cart");
+      const userData = await User.findOne({ _id: userId });
+      return res.render("checkout", {
+        user: userData,
+        message: "Your cart is empty.",
+        subtotal: 0,
+        walletBalance: 0, // Pass default wallet balance
+      });
     }
 
-    const addressDoc = await Address.findOne({ userId });
     const validItems = cart.items.filter(
       (item) =>
         item.productId &&
         !item.productId.isBlocked &&
         item.productId.status === "Available" &&
-        item.productId.quantity >= item.quantity
+        item.productId.quantity > 0 &&
+        item.quantity > 0
     );
 
     if (validItems.length === 0) {
-      return res.redirect("/cart");
+      const userData = await User.findOne({ _id: userId });
+      return res.render("checkout", {
+        user: userData,
+        message: "All items in your cart are out of stock or have zero quantity.",
+        items: [],
+        subtotal: 0,
+        walletBalance: 0, // Pass default wallet balance
+      });
+    }
+
+    const addressDoc = await Address.findOne({ userId });
+    let wallet = await Wallet.findOne({ user: userId });
+    if (!wallet) {
+      wallet = new Wallet({
+        user: userId,
+        balance: 0,
+        transactions: [],
+      });
+      await wallet.save();
     }
 
     const subTotal = validItems.reduce((acc, item) => acc + item.totalPrice, 0);
@@ -40,14 +66,13 @@ const checkoutPage = async (req, res) => {
       const coupon = await Coupon.findById(cart.coupon.couponId);
       if (coupon) {
         discount = (subTotal * coupon.discountPercentage) / 100;
-        if (discount > subTotal) discount = subTotal; // Ensure discount doesn't exceed subtotal
+        if (discount > subTotal) discount = subTotal;
       }
     }
     const shipping = 50;
     const tax = subTotal * 0.05;
     const finalAmount = subTotal - discount + tax + shipping;
 
-    // Fetch available coupons
     const currentDate = new Date();
     const availableCoupons = await Coupon.find({
       islist: true,
@@ -56,8 +81,10 @@ const checkoutPage = async (req, res) => {
       minimumPrice: { $lte: subTotal },
     });
 
+    const userData = await User.findOne({ _id: userId });
+
     res.render("checkout", {
-      user: req.session.user,
+      user: userData,
       addresses: addressDoc?.address || [],
       items: validItems,
       summaryItems: {
@@ -71,14 +98,14 @@ const checkoutPage = async (req, res) => {
       couponName: cart.coupon?.couponName || "",
       availableCoupons: availableCoupons,
       razorpayKeyId: process.env.RAZORPAY_KEY_ID,
+      subtotal: subTotal,
+      walletBalance: wallet.balance, // Pass wallet balance to EJS
     });
   } catch (error) {
     console.error("Checkout page error:", error);
     res.status(500).render("error", { message: "Error loading checkout page" });
   }
-}
-
-
+};
 
 const applyCoupon = async (req, res) => {
   try {
@@ -155,7 +182,6 @@ const applyCoupon = async (req, res) => {
 };
 
 
-
 const removeCoupon = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -224,18 +250,20 @@ const createRazorpayOrder = async (req, res) => {
       return res.status(400).json({ error: "Your cart is empty" });
     }
 
-    const validItems = cart.items.filter(
-      (item) =>
-        item.productId &&
-        item.productId.status === "Available" &&
-        !item.productId.isBlocked &&
-        item.productId.quantity >= item.quantity
-    );
+    const allItems = cart.items;
+    const validItems = [];
+    const outOfStockItems = [];
+
+    for (const item of allItems) {
+      if (item.productId && item.productId.status === "Available" && !item.productId.isBlocked && item.productId.quantity >= item.quantity && item.quantity > 0) {
+        validItems.push(item);
+      } else {
+        outOfStockItems.push(item);
+      }
+    }
 
     if (validItems.length === 0) {
-      return res
-        .status(400)
-        .json({ error: "No valid items in your cart. Please check product availability." });
+      return res.status(400).json({ error: "No valid items in your cart. Please check product availability." });
     }
 
     const addressDoc = await Address.findOne({ userId });
@@ -245,13 +273,68 @@ const createRazorpayOrder = async (req, res) => {
 
     const selectedAddress = addressDoc.address[selectedAddressIndex];
     const subTotal = validItems.reduce((sum, item) => sum + item.totalPrice, 0);
+    
+    // Add COD restriction validation
+    if (paymentMethod === "cod" && subTotal > 1000) {
+      return res.status(400).json({ error: "Cash on Delivery is not available for orders above ₹1000" });
+    }
+
     const tax = subTotal * 0.05;
     const shipping = 50;
     const discount = cart.coupon?.discount || 0;
     const finalAmount = subTotal + tax + shipping - discount;
 
+    let wallet = await Wallet.findOne({ user: userId });
+    if (!wallet) {
+      wallet = new Wallet({
+        user: userId,
+        balance: 0,
+        transactions: [],
+      });
+      await wallet.save();
+    }
+
+    let walletAmountUsed = 0;
     let razorpayOrder = null;
-    if (paymentMethod === "razorpay") {
+    let effectivePaymentMethod = paymentMethod;
+
+    if (paymentMethod === "wallet") {
+      if (wallet.balance >= finalAmount) {
+        // Full payment from wallet
+        walletAmountUsed = finalAmount;
+        effectivePaymentMethod = "wallet";
+      } else {
+        // Partial payment: use wallet balance and Razorpay for the rest
+        walletAmountUsed = wallet.balance;
+        const remainingAmount = finalAmount - walletAmountUsed;
+        if (remainingAmount > 0) {
+          effectivePaymentMethod = "wallet+razorpay";
+          const receipt = `rcpt_${uuidv4().replace(/-/g, "").slice(0, 32)}`;
+          try {
+            razorpayOrder = await razorpay.orders.create({
+              amount: Math.round(remainingAmount * 100),
+              currency: "INR",
+              receipt,
+            });
+          } catch (razorpayError) {
+            console.error("Razorpay error:", razorpayError);
+            return res.status(400).json({ error: `Failed to create Razorpay order: ${razorpayError.error?.description || "Unknown error"}` });
+          }
+        }
+      }
+
+      // Deduct wallet balance
+      if (walletAmountUsed > 0) {
+        wallet.balance -= walletAmountUsed;
+        wallet.transactions.push({
+          type: "debit",
+          amount: walletAmountUsed,
+          description: `Payment for order ${uuidv4()}`,
+          date: new Date(),
+        });
+        await wallet.save();
+      }
+    } else if (paymentMethod === "razorpay") {
       const receipt = `rcpt_${uuidv4().replace(/-/g, "").slice(0, 32)}`;
       try {
         razorpayOrder = await razorpay.orders.create({
@@ -275,21 +358,22 @@ const createRazorpayOrder = async (req, res) => {
       totalPrice: subTotal,
       discount,
       finalAmount,
+      walletAmount: walletAmountUsed,
       user: userId,
       address: selectedAddress,
       invoiceDate: new Date(),
       couponApplied: cart.coupon?.couponId ? true : false,
       couponId: cart.coupon?.couponId || null,
       status: "Pending",
-      paymentMethod: paymentMethod || "cod",
-      paymentStatus: paymentMethod === "razorpay" ? "Pending" : "Pending",
+      paymentMethod: effectivePaymentMethod,
+      paymentStatus: effectivePaymentMethod.includes("razorpay") ? "Pending" : "Completed",
       shippingCharge: shipping,
-      razorpayOrderId: paymentMethod === "razorpay" ? razorpayOrder.id : null,
+      razorpayOrderId: razorpayOrder ? razorpayOrder.id : null,
     });
 
     await order.save();
 
-    if (cart.coupon?.couponId && paymentMethod === "cod") {
+    if (cart.coupon?.couponId && (paymentMethod === "cod" || paymentMethod === "wallet")) {
       const coupon = await Coupon.findById(cart.coupon.couponId);
       if (coupon && !coupon.userId.includes(userId)) {
         coupon.userId.push(userId);
@@ -297,28 +381,43 @@ const createRazorpayOrder = async (req, res) => {
       }
     }
 
-    if (paymentMethod === "cod") {
-      for (let item of validItems) {
-        await Product.findByIdAndUpdate(item.productId._id, {
-          $inc: { quantity: -item.quantity },
-        });
-      }
-      cart.items = [];
-      cart.coupon = { couponId: null, discount: 0, couponName: "" };
-      await cart.save();
-      return res.json({ redirect: `/order/success/${order.orderId}` });
-    }
+    // Clear cart and update product quantities after order is saved
+    await clearCartAfterOrder(cart, validItems, outOfStockItems);
 
-    res.json({
-      orderId: order.orderId,
-      razorpayOrderId: razorpayOrder.id,
-      amount: finalAmount * 100,
-      currency: "INR",
-      key: process.env.RAZORPAY_KEY_ID,
-    });
+    if (effectivePaymentMethod === "cod" || effectivePaymentMethod === "wallet") {
+      res.json({ redirect: `/order/success/${order.orderId}` });
+    } else {
+      res.json({
+        orderId: order.orderId,
+        razorpayOrderId: razorpayOrder.id,
+        amount: effectivePaymentMethod === "wallet+razorpay" ? (finalAmount - walletAmountUsed) * 100 : finalAmount * 100,
+        currency: "INR",
+        key: process.env.RAZORPAY_KEY_ID,
+      });
+    }
   } catch (error) {
     console.error("Error creating Razorpay order:", error);
     res.status(500).json({ error: "Error creating order" });
+  }
+};
+
+
+const clearCartAfterOrder = async (cart, validItems, outOfStockItems) => {
+  try {
+    // Update product quantities
+    for (let item of validItems) {
+      await Product.findByIdAndUpdate(item.productId._id, {
+        $inc: { quantity: -item.quantity },
+      });
+    }
+
+    // Clear cart items, keeping only out-of-stock items if any
+    cart.items = cart.items.filter(item => outOfStockItems.some(out => out.productId.toString() === item.productId.toString()));
+    cart.coupon = { couponId: null, discount: 0, couponName: "" };
+    await cart.save();
+  } catch (error) {
+    console.error("Error clearing cart after order:", error);
+    throw error; // Let the calling function handle the error
   }
 };
 
@@ -339,7 +438,7 @@ const verifyPayment = async (req, res) => {
     if (generatedSignature === razorpay_signature) {
       order.paymentStatus = "Completed";
       order.status = "Processing";
-      
+
       if (order.couponApplied && order.couponId) {
         const coupon = await Coupon.findById(order.couponId);
         if (coupon && !coupon.userId.includes(order.user)) {
@@ -363,6 +462,31 @@ const verifyPayment = async (req, res) => {
       res.json({ success: true, redirect: `/order/success/${order.orderId}` });
     } else {
       order.paymentStatus = "Failed";
+      // If payment fails, refund the wallet amount used (if any)
+      if (order.walletAmount > 0) {
+        let wallet = await Wallet.findOne({ user: order.user });
+        if (!wallet) {
+          wallet = new Wallet({
+            user: order.user,
+            balance: order.walletAmount,
+            transactions: [{
+              type: "credit",
+              amount: order.walletAmount,
+              description: `Refund for failed payment of order ${order.orderId}`,
+              date: new Date(),
+            }],
+          });
+        } else {
+          wallet.balance += order.walletAmount;
+          wallet.transactions.push({
+            type: "credit",
+            amount: order.walletAmount,
+            description: `Refund for failed payment of order ${order.orderId}`,
+            date: new Date(),
+          });
+        }
+        await wallet.save();
+      }
       await order.save();
       res.json({ success: false, redirect: `/order/failure/${order.orderId}` });
     }
@@ -383,15 +507,73 @@ const retryPayment = async (req, res) => {
       return res.status(404).json({ error: "Order not found" });
     }
 
-    if (order.paymentMethod !== "razorpay" || order.paymentStatus !== "Failed") {
+    if (order.paymentMethod !== "razorpay" && order.paymentMethod !== "wallet+razorpay") {
       return res.status(400).json({ error: "Cannot retry payment for this order" });
+    }
+
+    // Refund wallet amount used in the previous failed attempt
+    if (order.walletAmount > 0) {
+      let wallet = await Wallet.findOne({ user: userId });
+      if (!wallet) {
+        wallet = new Wallet({
+          user: userId,
+          balance: order.walletAmount,
+          transactions: [{
+            type: "credit",
+            amount: order.walletAmount,
+            description: `Refund for failed payment retry of order ${order.orderId}`,
+            date: new Date(),
+          }],
+        });
+      } else {
+        wallet.balance += order.walletAmount;
+        wallet.transactions.push({
+          type: "credit",
+          amount: order.walletAmount,
+          description: `Refund for failed payment retry of order ${order.orderId}`,
+          date: new Date(),
+        });
+      }
+      await wallet.save();
+      order.walletAmount = 0; // Reset wallet amount for the retry
+    }
+
+    let amountToPay = order.finalAmount;
+    let effectivePaymentMethod = order.paymentMethod;
+
+    // Re-evaluate wallet balance for retry
+    let wallet = await Wallet.findOne({ user: userId });
+    if (!wallet) {
+      wallet = new Wallet({
+        user: userId,
+        balance: 0,
+        transactions: [],
+      });
+      await wallet.save();
+    }
+
+    if (order.paymentMethod === "wallet+razorpay" && wallet.balance > 0) {
+      const walletAmountUsed = Math.min(wallet.balance, order.finalAmount);
+      amountToPay = order.finalAmount - walletAmountUsed;
+      order.walletAmount = walletAmountUsed;
+
+      if (walletAmountUsed > 0) {
+        wallet.balance -= walletAmountUsed;
+        wallet.transactions.push({
+          type: "debit",
+          amount: walletAmountUsed,
+          description: `Payment for order ${order.orderId} (retry)`,
+          date: new Date(),
+        });
+        await wallet.save();
+      }
     }
 
     const receipt = `rcpt_${uuidv4().replace(/-/g, "").slice(0, 32)}`;
     let razorpayOrder;
     try {
       razorpayOrder = await razorpay.orders.create({
-        amount: Math.round(order.finalAmount * 100),
+        amount: Math.round(amountToPay * 100),
         currency: "INR",
         receipt,
       });
@@ -407,7 +589,7 @@ const retryPayment = async (req, res) => {
     res.json({
       orderId: order.orderId,
       razorpayOrderId: razorpayOrder.id,
-      amount: order.finalAmount * 100,
+      amount: amountToPay * 100,
       currency: "INR",
       key: process.env.RAZORPAY_KEY_ID,
     });
@@ -427,11 +609,38 @@ const paymentFailed = async (req, res) => {
       return res.status(404).json({ error: "Order not found" });
     }
 
-    if (order.paymentMethod !== "razorpay") {
+    if (order.paymentMethod !== "razorpay" && order.paymentMethod !== "wallet+razorpay") {
       return res.status(400).json({ error: "Invalid payment method for this order" });
     }
 
     order.paymentStatus = "Failed";
+
+    // Refund wallet amount if used
+    if (order.walletAmount > 0) {
+      let wallet = await Wallet.findOne({ user: userId });
+      if (!wallet) {
+        wallet = new Wallet({
+          user: userId,
+          balance: order.walletAmount,
+          transactions: [{
+            type: "credit",
+            amount: order.walletAmount,
+            description: `Refund for failed payment of order ${order.orderId}`,
+            date: new Date(),
+          }],
+        });
+      } else {
+        wallet.balance += order.walletAmount;
+        wallet.transactions.push({
+          type: "credit",
+          amount: order.walletAmount,
+          description: `Refund for failed payment of order ${order.orderId}`,
+          date: new Date(),
+        });
+      }
+      await wallet.save();
+    }
+
     await order.save();
 
     res.json({ success: true, redirect: `/order/failure/${order.orderId}` });
@@ -497,7 +706,6 @@ const editCheckout = async (req, res) => {
 
 
 
-
 module.exports = {
   checkoutPage,
   applyCoupon,
@@ -509,5 +717,4 @@ module.exports = {
   successPage,
   failurePage,
   editCheckout,
- 
 };

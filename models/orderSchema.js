@@ -58,13 +58,17 @@ const orderSchema = new Schema({
     type: Number,
     default: 0,
   },
-  couponDiscount: { // Added new field for coupon-specific discount
+  couponDiscount: {
     type: Number,
     default: 0,
   },
   finalAmount: {
     type: Number,
     required: true,
+  },
+  walletAmount: {
+    type: Number,
+    default: 0,
   },
   address: {
     type: {
@@ -86,7 +90,7 @@ const orderSchema = new Schema({
   status: {
     type: String,
     required: true,
-enum: ["Pending", "Processing", "Shipped", "Out for Delivery", "Delivered", "Cancelled", "Return Request", "Returned"],
+    enum: ["Pending", "Processing", "Shipped", "Out for Delivery", "Delivered", "Cancelled", "Return Request", "Returned"],
   },
   createdOn: {
     type: Date,
@@ -104,7 +108,7 @@ enum: ["Pending", "Processing", "Shipped", "Out for Delivery", "Delivered", "Can
   paymentMethod: {
     type: String,
     required: true,
-    enum: ["cod", "razorpay"],
+    enum: ["cod", "razorpay", "wallet", "wallet+razorpay"],
     default: "cod",
   },
   paymentStatus: {

@@ -28,8 +28,7 @@ router.get('/auth/google/callback', passport.authenticate('google', { failureRed
   res.redirect('/');
 });
 
-// Referral Link Route
-//router.get("/referral/:referralCode", userController.loadSignupWithReferral);
+
 
 router.get("/login", userController.loadLogin);
 router.post("/login", userController.login);
@@ -40,14 +39,31 @@ router.get("/logout", userController.logout);
 
 
 // Profile Management
-router.get("/change-email", userAuth, userController.changeEmail);
-router.post("/change-email", userAuth, userController.changeEmailEmailValid);
+router.get("/forgot-password", profileController.getForgotPassPage);
+router.post("/forgot-email-valid", profileController.forgotEmailValid);
+
+router.post("/verify-passForgot-otp", profileController.verifyForgotPassOtp);
+router.get("/reset-password", profileController.getResetPassPage);
+
+router.post("/resend-forgot-otp", profileController.resendotp)
+router.post("/reset-password", profileController.postNewPassword);
+
 router.get('/profile', userAuth, userController.getProfile);
 router.get("/profile/edit", userAuth, userController.editProfilePage);
 router.post("/profile/edit", userAuth, userController.updateProfile);
-router.get("/profile/change-password", userAuth, userController.changePassword);
-router.post("/change-password", userAuth, userController.changePasswordValid);
-router.post("/verify-changepassword-otp", userAuth, userController.verifyChangePassOtp);
+
+router.get("/change-email",userAuth,profileController.changeEmail);
+router.post("/change-email",userAuth,profileController.changeEmailValid);
+
+router.post("/verify-email-otp",userAuth,profileController.verifyEmailOtp);
+router.post("/update-email",userAuth,profileController.updateEmail);
+
+router.get("/change-password", userAuth, profileController.changePassword);
+router.post("/change-password", userAuth, profileController.changePasswordValid);
+
+
+
+
 
 
 
@@ -74,6 +90,7 @@ router.post("/addToWishlist", userAuth, wishlistController.addToWishlist);
 router.post('/removeFromWishlist', userAuth, wishlistController.removeFromWishlist);
 router.post('/moveToCart', userAuth, wishlistController.moveToCart);
 router.post("/clear-wishlist", userAuth, wishlistController.clearWishlist);
+router.post("/toggleWishlist", userAuth, wishlistController.toggleWishlist);
 
 // Cart Management
 router.get("/cart", userAuth, cartController.viewCart);
@@ -94,16 +111,13 @@ router.get('/order/success/:orderID', userAuth, checkoutController.successPage);
 router.get('/order/failure/:orderID', userAuth, checkoutController.failurePage);
 router.get('/edit-address', userAuth, checkoutController.editCheckout);
 
-
 // Wallet Management
 router.get('/wallet', orderController.getWalletDetails);
 
-// Order Management
 router.get("/orders", userAuth, orderController.getOrders);
 router.get("/orders/:orderId", userAuth, orderController.getOrderDetail);
 router.post("/orders/cancel", userAuth, orderController.cancelOrder);
 router.post("/orders/return", userAuth, orderController.returnOrder);
 router.get("/orders/invoice/:orderId", userAuth, orderController.downloadInvoice);
 router.get("/orders/status/:orderId", userAuth, orderController.getOrderStatus);
-
 module.exports = router;

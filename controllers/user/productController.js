@@ -2,13 +2,10 @@ const Product = require("../../models/productSchema");
 const Category = require("../../models/categorySchema");
 const User = require("../../models/userSchema");
 const Offer = require("../../models/offerSchema");
-const { applyBestOffer } = require("../admin/productController"); // Import applyBestOffer
+const { applyBestOffer } = require("../admin/productController");
 
-
-
-
-const productDetails = async (req, res) => {
-  try {
+ const productDetails = async (req, res) => {
+ try {
     const user = req.session.user;
     const userData = user ? await User.findById(user._id) : null;
     const productId = req.query.id;
@@ -16,7 +13,7 @@ const productDetails = async (req, res) => {
       console.log("No product ID provided");
       return res.redirect("/shop");
     }
-    const product = await Product.findById(productId).populate('category');
+    let product = await Product.findById(productId).populate('category');
     if (Array.isArray(product.productImage)) {
       product.productImage = [...new Set(product.productImage)];
     }
@@ -29,7 +26,7 @@ const productDetails = async (req, res) => {
       return res.redirect("/shop");
     }
 
-    // Fetch active product and category offers
+    // Fetch the latest active offers for both product and category
     const currentDate = new Date();
     const offers = await Offer.find({
       $or: [
@@ -39,11 +36,21 @@ const productDetails = async (req, res) => {
       isActive: true,
       startDate: { $lte: currentDate },
       endDate: { $gte: currentDate },
-    });
+    }).lean();
 
-    // Apply best offer to calculate salePrice
-    const { discountedPrice, bestDiscount } = await applyBestOffer(product, offers);
-    product.salePrice = discountedPrice;
+    // Apply best offer and update product if necessary
+    const { discountedPrice, bestDiscount, bestOfferType } = await applyBestOffer(product, offers);
+    if (discountedPrice !== product.salePrice || !product.salePrice) {
+      product.salePrice = discountedPrice;
+      // Update categoryOffer based on the best offer
+      const categoryOfferDoc = offers.find(offer => 
+        offer.offerType === 'category' && 
+        offer.applicableId.toString() === product.category._id.toString() && 
+        offer.isActive
+      );
+      product.categoryOffer = categoryOfferDoc ? categoryOfferDoc.discountPercentage : 0;
+      await product.save(); // Persist the updated categoryOffer
+    }
 
     const category = product.category;
     const relatedProducts = await Product.find({
@@ -72,7 +79,7 @@ const productDetails = async (req, res) => {
       category: category,
       relatedProducts: relatedProducts,
       productOffer: productOffer || null,
-      categoryOffer: categoryOffer || null,
+      categoryOffer: categoryOffer || { discountPercentage: product.categoryOffer }, // Fallback to product.categoryOffer
       bestDiscount: bestDiscount
     });
   } catch (error) {
@@ -83,9 +90,11 @@ const productDetails = async (req, res) => {
 
 
 
+
+
 module.exports = {
   productDetails,
-};  
+};
 
 
 

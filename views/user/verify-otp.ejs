@@ -119,7 +119,7 @@
         <div class="heading_s1">
           <h3>Email Verification Page</h3>
         </div>
-        <form id="otpForm" action="/verify-otp" method="post"  onsubmit="return validateOTPForm()">
+        <form id="otpForm" action="/verify-otp" method="post" onsubmit="return validateOTPForm()">
           <div class="form-group">
             <label for="otp">Enter OTP:</label>
             <input type="text" id="otp" name="otp" class="form-control" required maxlength="6" pattern="\d*" />
@@ -146,189 +146,113 @@
   <script src="https://code.jquery.com/jquery-3.6.4.min.js" integrity="sha256-oP6HI9z1XaZNBrJURtCoUT5SUnxFr8s3BzRl+cbzUq8=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
-   
-    if (typeof jQuery === 'undefined') {
-      console.error('jQuery failed to load');
-    } else {
-      console.log('jQuery loaded successfully:', jQuery.fn.jquery);
-    }
-    if (typeof Swal === 'undefined') {
-      console.error('SweetAlert2 failed to load');
-    } else {
-      console.log('SweetAlert2 loaded successfully');
-    }
+  let timer = 60;
+  let timerInterval;
+  let isOtpExpired = false;
 
-    document.getElementById("otp").focus();
-    let timer = 60;
-    let timerInterval;
-
-    function startTimer() {
-      timerInterval = setInterval(() => {
-        timer--;
-        document.getElementById("timerValue").textContent = timer;
-        if (timer <= 0) {
-          clearInterval(timerInterval);
-          document.getElementById("timerValue").classList.add("expired");
-          document.getElementById("timerValue").textContent = "Expired";
-          document.getElementById("otp").disabled = true;
-        }
-      }, 1000);
-    }
-    startTimer();
-
-    // function validateOTPForm(){
-    //   const otpInput = document.getElementById("otp").value;
-
-    //   $.ajax({
-    //    type: "POST",
-    //    url: "verify-otp",
-    //    data:{otp:otpInput},
-    //    success: function(response){
-    //     if(response.success){
-    //       Swal.fire({
-    //         icon:"success",
-    //         title:"OTP Verified Successfully ",
-    //          showConfirmButton: false,
-    //          timer: 1500,
-    //       }).then(()=>{
-    //         window.location.href = response.redirectUrl;
-    //       })
-    //     }else{
-    //       swal.fire({
-    //         icon:"error",
-    //         tittle: Error,
-    //         text: response.message,
-    //       })
-    //     }
-    //    },
-    //    error: function(){
-    //     swal.fire({
-    //       icon:"error",
-    //       title: "Invalid OTP",
-    //       text: "Please try again"
-    //     })
-    //    }
-
-    //   })
-    //   return false;
-    // }
-     
-   
-
-
-
-
-
-
-    function resendOTP() {
-      clearInterval(timerInterval);
-      timer = 60;
-      document.getElementById("otp").disabled = false;
-      document.getElementById("timerValue").classList.remove("expired");
+  function startTimer() {
+    timerInterval = setInterval(() => {
+      timer--;
       document.getElementById("timerValue").textContent = timer;
-      startTimer();
-      $.ajax({
-        type: "POST",
-        url: "/resend-otp",
-        data: { email: "<%= email %>" },
-        success: function (response) {
-          console.log("Resend OTP response:", response);
-          if (response.success) {
-            Swal.fire({
-              icon: "success",
-              title: "OTP Resent Successfully",
-              showConfirmButton: false,
-              timer: 1500
-            });
-          } else {
-            Swal.fire({
-              icon: "error",
-              title: "Error",
-              text: response.message || "An error occurred while resending OTP. Please try again."
-            }).then(() => {
-              if (response.message === "Email not found in session" || response.message === "Session expired. Please sign up again.") {
-                console.log("Redirecting to /signup due to session error");
-                window.location.href = "/signup";
-              }
-            });
-          }
-        },
-        error: function (xhr, status, error) {
-          console.error("Resend OTP error:", status, error, xhr.responseText);
+      if (timer <= 0) {
+        clearInterval(timerInterval);
+        document.getElementById("timerValue").classList.add("expired");
+        document.getElementById("timerValue").textContent = "Expired";
+        document.getElementById("otp").disabled = true;
+        isOtpExpired = true;
+      }
+    }, 1000);
+  }
+  startTimer();
+
+  function validateOTPForm() {
+    if (isOtpExpired) {
+      Swal.fire({
+        icon: "error",
+        title: "OTP Expired",
+        text: "OTP has expired. Please resend OTP.",
+        showConfirmButton: true,
+      });
+      return false;
+    }
+
+    const otpInput = document.getElementById("otp").value.trim();
+
+    $.ajax({
+      type: "POST",
+      url: "/verify-otp",
+      data: { otp: otpInput },
+      success: function (response) {
+        if (response.success) {
+          Swal.fire({
+            icon: "success",
+            title: "OTP Verified Successfully",
+            text: "You can now log in with your credentials.",
+            showConfirmButton: false,
+            timer: 2000,
+          }).then(() => {
+            console.log("Redirecting to:", response.redirectUrl);
+            window.location.href = response.redirectUrl;
+          });
+        } else {
           Swal.fire({
             icon: "error",
             title: "Error",
-            text: "An error occurred while resending OTP. Please try again."
-          }).then(() => {
-            console.log("Redirecting to /signup due to resend OTP error");
-            window.location.href = "/signup";
+            text: response.message,
           });
         }
-      });
-    }
-
-    
-    document.getElementById("otpForm").addEventListener("submit", function (event) {
-      event.preventDefault(); // Prevent default form submission
-      const otpInput = document.getElementById("otp").value;
-      if (!/^\d{6}$/.test(otpInput)) {
+      },
+      error: function (xhr, status, error) {
+        console.error("AJAX error:", status, error);
         Swal.fire({
           icon: "error",
           title: "Error",
-          text: "OTP must be a 6-digit number"
+          text: "An error occurred while verifying OTP. Please try again.",
         });
-        return;
-      }
-      $.ajax({
-        type: "POST",
-        url: "/verify-otp",
-        data: { otp: otpInput },
-        success: function (response) {
-          console.log("Verify OTP response:", response);
-          if (response.success) {
-            Swal.fire({
-              icon: "success",
-              title: "OTP Verified Successfully",
-              showConfirmButton: false,
-              timer: 1500
-            }).then(() => {
-              const redirectUrl = response.redirectUrl || "/login";
-              console.log("Attempting redirect to:", redirectUrl);
-              try {
-                window.location.href = redirectUrl;
-              } catch (err) {
-                console.error("Redirect failed:", err);
-                window.location.assign(redirectUrl); // Fallback
-              }
-            }).catch((error) => {
-              console.error("SweetAlert error:", error);
-              const redirectUrl = response.redirectUrl || "/login";
-              console.log("Falling back to redirect to:", redirectUrl);
-              window.location.href = redirectUrl; // Fallback
-            });
-          } else {
-            Swal.fire({
-              icon: "error",
-              title: "Error",
-              text: response.message || "Invalid OTP, please try again"
-            }).then(() => {
-              if (response.message === "Session expired. Please sign up again.") {
-                console.log("Redirecting to /signup due to session expired");
-                window.location.href = "/signup";
-              }
-            });
-          }
-        },
-        error: function (xhr, status, error) {
-          console.error("Verify OTP error:", status, error, xhr.responseText);
+      },
+    });
+    return false;
+  }
+
+  function resendOTP() {
+    clearInterval(timerInterval);
+    timer = 60;
+    document.getElementById("otp").disabled = false;
+    document.getElementById("timerValue").classList.remove("expired");
+    document.getElementById("timerValue").textContent = timer;
+    isOtpExpired = false;
+    startTimer();
+
+    $.ajax({
+      type: "POST",
+      url: "/resend-otp",
+      success: function (response) {
+        if (response.success) {
+          Swal.fire({
+            icon: "success",
+            title: "OTP Resent Successfully",
+            showConfirmButton: false,
+            timer: 1500,
+          });
+        } else {
           Swal.fire({
             icon: "error",
             title: "Error",
-            text: "An error occurred while verifying OTP. Please try again."
+            text: response.message || "An error occurred while resending OTP. Please try again.",
           });
         }
-      });
+      },
+      error: function (xhr, status, error) {
+        console.error("Resend OTP AJAX error:", status, error);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "An error occurred while resending OTP. Please try again.",
+        });
+      },
     });
+    return false;
+  }
   </script>
   <%- include("../../views/partials/user/footer") %>
 </body>

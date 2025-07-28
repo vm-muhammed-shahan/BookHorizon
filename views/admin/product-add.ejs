@@ -241,13 +241,10 @@ let currentImageIndex = null;
 let selectedImages = [];
 const MAX_IMAGES = 3;
 
-// Add event listener when DOM content is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the form and image input
     document.getElementById('imageInput').addEventListener('change', handleImageSelection);
     document.getElementById('productForm').addEventListener('submit', handleFormSubmit);
     
-    // Set up modal buttons
     document.getElementById('saveCropBtn').addEventListener('click', saveCroppedImage);
     document.getElementById('cancelCropBtn').addEventListener('click', closeModal);
 });
@@ -310,7 +307,6 @@ async function handleFormSubmit(e) {
 
 function handleImageSelection(event) {
     const files = event.target.files;
-    // Clear previous error message
     clearErrorMessage('images-error');
 
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -322,10 +318,9 @@ function handleImageSelection(event) {
         }
     }
     
-    // Show error if invalid file types are found
     if (invalidFiles.length > 0) {
         displayErrorMessage('images-error', `Invalid file type(s): ${invalidFiles.join(', ')}. Only JPG, JPEG, PNG, and WEBP are allowed.`);
-        event.target.value = ''; // Reset the input
+        event.target.value = '';
         return;
     }
     
@@ -336,7 +331,6 @@ function handleImageSelection(event) {
         } else {
             displayErrorMessage('images-error', `Maximum ${MAX_IMAGES} images allowed. Please remove some images before adding more.`);
         }
-        // Reset the input field so the same files can be selected again if needed
         event.target.value = '';
         return;
     }
@@ -345,7 +339,6 @@ function handleImageSelection(event) {
         const file = files[i];
         const objectUrl = URL.createObjectURL(file);
 
-        // Create image object
         const imageObj = {
             originalFile: file,
             croppedBlob: null,
@@ -405,17 +398,11 @@ function addThumbnail(imageObj, index) {
 }
 
 function removeImage(index) {
-    // Revoke URL to prevent memory leaks
     URL.revokeObjectURL(selectedImages[index].blobUrl);
-    
-    // Remove the image from the array
     selectedImages.splice(index, 1);
-    
-    // Refresh the thumbnails display and update counter
     refreshThumbnails();
     updateImageCounter();
     
-    // Show validation message if not exactly 3 images
     if (selectedImages.length < MAX_IMAGES) {
         const remaining = MAX_IMAGES - selectedImages.length;
         displayErrorMessage('images-error', `Please select exactly ${MAX_IMAGES} images. You need ${remaining} more image${remaining !== 1 ? 's' : ''}.`);
@@ -428,7 +415,6 @@ function refreshThumbnails() {
     const container = document.getElementById('thumbnails-container');
     container.innerHTML = '';
 
-    // Reassign indexes based on current array
     selectedImages.forEach((imageObj, index) => {
         addThumbnail(imageObj, index);
     });
@@ -438,7 +424,6 @@ function updateImageCounter() {
     const countElement = document.getElementById('imageCount');
     countElement.textContent = selectedImages.length;
     
-    // Update the counter with a visual indicator
     if (selectedImages.length === MAX_IMAGES) {
         countElement.classList.remove('incomplete');
         countElement.classList.add('complete');
@@ -449,27 +434,20 @@ function updateImageCounter() {
 }
 
 function openCropModal(index) {
-    // Store the current image index
     currentImageIndex = index;
     const imageObj = selectedImages[index];
     
-    // Get modal elements
     const modal = document.getElementById('cropModal');
     const cropImage = document.getElementById('cropImage');
     
-    // Destroy any existing cropper instance
     if (cropper) {
         cropper.destroy();
         cropper = null;
     }
     
-    // Set the image source
     cropImage.src = imageObj.originalUrl;
-    
-    // Display the modal
     modal.style.display = 'flex';
     
-    // Initialize the cropper when the image is loaded
     cropImage.onload = function() {
         cropper = new Cropper(cropImage, {
             aspectRatio: 1,
@@ -488,7 +466,6 @@ function closeModal() {
     const modal = document.getElementById('cropModal');
     modal.style.display = 'none';
     
-    // Destroy the cropper instance
     if (cropper) {
         cropper.destroy();
         cropper = null;
@@ -503,7 +480,6 @@ function saveCroppedImage() {
 
     const imageObj = selectedImages[currentImageIndex];
     
-    // Get the cropped canvas
     const canvas = cropper.getCroppedCanvas({
         width: 600,
         height: 600,
@@ -512,18 +488,14 @@ function saveCroppedImage() {
         imageSmoothingQuality: 'high'
     });
 
-    // Convert canvas to blob
     canvas.toBlob(function(blob) {
-        // Revoke the previous blob URL if it exists
         if (imageObj.blobUrl && imageObj.blobUrl !== imageObj.originalUrl) {
             URL.revokeObjectURL(imageObj.blobUrl);
         }
         
-        // Store the cropped blob and create a new URL
         imageObj.croppedBlob = blob;
         imageObj.blobUrl = URL.createObjectURL(blob);
 
-        // Update the thumbnail image
         const thumbnails = document.querySelectorAll('.thumbnail');
         const thumbnail = Array.from(thumbnails).find(
             el => parseInt(el.dataset.index) === currentImageIndex
@@ -534,7 +506,6 @@ function saveCroppedImage() {
             img.src = imageObj.blobUrl;
         }
 
-        // Close the modal
         closeModal();
     }, 'image/jpeg', 0.9);
 }
@@ -550,24 +521,21 @@ function validateForm() {
     if (name.trim() === "") {
         displayErrorMessage('productName-error', 'Please enter a product name.');
         isValid = false;
-    } else if (!/^[a-zA-Z0-9\s]+$/.test(name.trim())) {
-        displayErrorMessage('productName-error', 'Product name should contain only alphanumeric characters.');
+    } else if (!/^[a-zA-Z0-9\s!@#$%^&*()_+\-=\[\]{};:'",.<>?/\\|`~]*$/.test(name.trim())) {
+        displayErrorMessage('productName-error', 'Product name contains invalid characters.');
         isValid = false;
     }
     
     if (description.trim() === "") {
         displayErrorMessage('description-error', 'Please enter a product description.');
         isValid = false;
-    } else if (!/^[a-zA-Z0-9\s.,!?()-]+$/.test(description.trim())) {
+    } else if (!/^[a-zA-Z0-9\s.,!?()-]*$/.test(description.trim())) {
         displayErrorMessage('description-error', 'Product description contains invalid characters.');
         isValid = false;
     }
     
     if (quantity.trim() === "" || isNaN(parseInt(quantity))) {
         displayErrorMessage('quantity-error', 'Please enter a valid quantity.');
-        isValid = false;
-    } else if (parseInt(quantity) <= 0) {
-        displayErrorMessage('quantity-error', 'Quantity must be greater than zero.');
         isValid = false;
     }
     

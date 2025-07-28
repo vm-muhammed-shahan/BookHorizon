@@ -56,10 +56,10 @@ const addProducts = async (req, res) => {
     }
 
     const productQty = parseInt(quantity);
-    if (isNaN(productQty) || productQty <= 0) {
+    if (isNaN(productQty)) {
       return res.status(400).json({
         success: false,
-        message: "Quantity must be a positive number greater than zero",
+        message: "Quantity must be a valid number",
       });
     }
 
@@ -101,8 +101,8 @@ const addProducts = async (req, res) => {
       status: 'Available',
     });
 
-    // Calculate salePrice using applyBestOffer
-    const { discountedPrice } = await applyBestOffer(newProduct);
+    // Pass categoryId._id to applyBestOffer
+    const { discountedPrice } = await applyBestOffer(newProduct, null, categoryId._id);
     newProduct.salePrice = discountedPrice;
 
     await newProduct.save();
@@ -171,7 +171,22 @@ const addProductOffer = async (req, res) => {
   try {
     const percentage = parseInt(req.body.percentage);
     const productId = req.body.productId;
+    const startDate = new Date(req.body.startDate);
     const endDate = new Date(req.body.endDate);
+
+    if (startDate < new Date().setHours(0, 0, 0, 0)) {
+      return res.status(400).json({
+        status: false,
+        message: "Start date cannot be in the past",
+      });
+    }
+
+    if (endDate <= startDate) {
+      return res.status(400).json({
+        status: false,
+        message: "End date must be after start date",
+      });
+    }
 
     const product = await Product.findById(productId);
     if (!product) {
@@ -212,13 +227,12 @@ const addProductOffer = async (req, res) => {
       discountPercentage: percentage,
       applicableId: productId,
       offerTypeModel: 'Product',
-      startDate: new Date(),
+      startDate: startDate,
       endDate: endDate,
       isActive: true,
     });
     await offer.save();
 
-    // Update salePrice using applyBestOffer
     const offers = await Offer.find({
       offerType: { $in: ['product', 'category'] },
       isActive: true,
@@ -236,7 +250,6 @@ const addProductOffer = async (req, res) => {
     res.status(500).json({ status: false, message: "Failed to add product offer" });
   }
 };
-
 const removeProductOffer = async (req, res) => {
   try {
     const { productId } = req.body;
@@ -478,36 +491,41 @@ const deleteSingleImage = async (req, res) => {
 }
 
 
-const applyBestOffer = async (product, offers) => {
+const applyBestOffer = async (product, offers, categoryId) => {
   try {
-    // Filter offers for this product or its category
-    const productOffers = offers.filter(
+    // Use categoryId if provided, otherwise use product.category._id
+    const catId = categoryId || (product.category && product.category._id ? product.category._id.toString() : null);
+
+    const productOffers = offers ? offers.filter(
       offer => offer.offerType === 'product' && 
       offer.applicableId.toString() === product._id.toString() &&
       offer.isActive &&
       offer.startDate <= new Date() &&
       offer.endDate >= new Date()
-    );
+    ) : [];
 
-    const categoryOffers = offers.filter(
+    const categoryOffers = offers ? offers.filter(
       offer => offer.offerType === 'category' && 
-      offer.applicableId.toString() === product.category.toString() &&
+      offer.applicableId.toString() === catId &&
       offer.isActive &&
       offer.startDate <= new Date() &&
       offer.endDate >= new Date()
-    );
+    ) : [];
 
     let bestDiscount = 0;
+    let bestOfferType = null;
     if (productOffers.length > 0 || categoryOffers.length > 0) {
       const allOffers = [...productOffers, ...categoryOffers];
-      bestDiscount = Math.max(...allOffers.map(o => o.discountPercentage), 0);
+      const maxDiscount = Math.max(...allOffers.map(o => o.discountPercentage), 0);
+      bestDiscount = maxDiscount;
+      bestOfferType = allOffers.find(o => o.discountPercentage === maxDiscount).offerType;
     }
 
     const discountedPrice = product.regularPrice * (1 - bestDiscount / 100);
-    return { discountedPrice, bestDiscount };
+    return { discountedPrice, bestDiscount, bestOfferType };
   } catch (error) {
     console.error("Error applying best offer:", error);
-    return { discountedPrice: product.regularPrice, bestDiscount: 0 };
+    return { discountedPrice: product.regularPrice, bestDiscount: 0, bestOfferType: null };
   }
 };
 

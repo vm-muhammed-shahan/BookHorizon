@@ -21,52 +21,59 @@
     <% } %>
 
     <!-- Order Summary -->
-    <div class="order-summary-grid">
-      <div class="summary-section">
-        <h3>Order Summary</h3>
-        <div class="summary-item">
-          <span class="label">Order ID:</span>
-          <span class="value"><%= order.orderId %></span>
-        </div>
-        <div class="summary-item">
-          <span class="label">Date:</span>
-          <span class="value"><%= order.createdOn ? new Date(order.createdOn).toLocaleString() : 'N/A' %></span>
-        </div>
-        <div class="summary-item">
-          <span class="label">Status:</span>
-          <span class="value" data-field="status"><%= order.status %></span>
-        </div>
-        <div class="summary-item">
-          <span class="label">Payment Status:</span>
-          <span class="value" data-field="paymentStatus"><%= order.paymentStatus %></span>
-        </div>
-        <div class="summary-item">
-          <span class="label">Payment Method:</span>
-          <span class="value"><%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment' %></span>
-        </div>
-        <div class="summary-item">
-          <span class="label">Total Price:</span>
-          <span class="value">₹<%= order.totalPrice ? order.totalPrice.toFixed(2) : '0.00' %></span>
-        </div>
-        <div class="summary-item">
-          <span class="label">Discount:</span>
-          <span class="value">₹<%= order.discount ? order.discount.toFixed(2) : '0.00' %></span>
-        </div>
-        <div class="summary-item">
-          <span class="label">Shipping Charge:</span>
-          <span class="value">₹<%= order.shippingCharge ? order.shippingCharge.toFixed(2) : '0.00' %></span>
-        </div>
-        <div class="summary-item highlight">
-          <span class="label">Final Amount:</span>
-          <span class="value">₹<%= order.finalAmount ? order.finalAmount.toFixed(2) : '0.00' %></span>
-        </div>
-        <% if (order.couponApplied) { %>
-          <div class="summary-item">
-            <span class="label">Coupon Applied:</span>
-            <span class="value">Yes</span>
-          </div>
-        <% } %>
-      </div>
+    <div class="summary-section">
+  <h3>Order Summary</h3>
+  <div class="summary-item">
+    <span class="label">Order ID:</span>
+    <span class="value"><%= order.orderId %></span>
+  </div>
+  <div class="summary-item">
+    <span class="label">Date:</span>
+    <span class="value"><%= order.createdOn ? new Date(order.createdOn).toLocaleString() : 'N/A' %></span>
+  </div>
+  <div class="summary-item">
+    <span class="label">Delivery Status:</span>
+    <span class="value" data-field="status"><%= order.status %></span>
+  </div>
+  <div class="summary-item">
+    <span class="label">Payment Status:</span>
+    <span class="value" data-field="paymentStatus"><%= order.paymentStatus %></span>
+  </div>
+  <div class="summary-item">
+    <span class="label">Payment Method:</span>
+    <span class="value">
+      <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : 
+          order.paymentMethod === 'wallet' ? 'Wallet Payment' : 
+          order.paymentMethod === 'wallet+razorpay' ? 'Wallet + Online Payment' : 'Online Payment' %>
+    </span>
+  </div>
+  <div class="summary-item">
+    <span class="label">Wallet Amount Used:</span>
+    <span class="value">₹<%= order.walletAmount ? order.walletAmount.toFixed(2) : '0.00' %></span>
+  </div>
+  <div class="summary-item">
+    <span class="label">Total Price:</span>
+    <span class="value">₹<%= order.totalPrice ? order.totalPrice.toFixed(2) : '0.00' %></span>
+  </div>
+  <div class="summary-item">
+    <span class="label">Coupon Discount:</span>
+    <span class="value">₹<%= order.discount ? order.discount.toFixed(2) : '0.00' %></span>
+  </div>
+  <div class="summary-item">
+    <span class="label">Shipping Charge:</span>
+    <span class="value">₹<%= order.shippingCharge ? order.shippingCharge.toFixed(2) : '0.00' %></span>
+  </div>
+  <div class="summary-item highlight">
+    <span class="label">Final Amount:</span>
+    <span class="value">₹<%= order.finalAmount ? order.finalAmount.toFixed(2) : '0.00' %></span>
+  </div>
+  <% if (order.couponApplied) { %>
+    <div class="summary-item">
+      <span class="label">Coupon Applied:</span>
+      <span class="value">Yes</span>
+    </div>
+  <% } %>
+</div>
 
       <div class="summary-section">
         <h3>Shipping Address</h3>
@@ -95,7 +102,7 @@
     <div class="items-section">
       <h3>Order Items</h3>
       <% order.orderedItems.forEach(item => { %>
-        <div class="order-item" data-product-id="<%= item.product._id %>">
+        <div class="order-item" data-product-id="<%= item.product ? item.product._id : '' %>">
           <div class="item-details">
             <h4 class="item-name"><%= item.product && item.product.productName ? item.product.productName : 'N/A' %></h4>
             
@@ -130,10 +137,10 @@
 
             <div class="item-actions">
               <% if (!item.cancelled && !item.returned && (order.status === 'Pending' || order.status === 'Processing' || order.status === 'Shipped')) { %>
-                <button onclick="openModal('cancel', '<%= order.orderId %>', '<%= item.product._id %>')" class="action-btn cancel-btn">Cancel Item</button>
+                <button onclick="openModal('cancel', '<%= order.orderId %>', '<%= item.product ? item.product._id : '' %>')" class="action-btn cancel-btn">Cancel Item</button>
               <% } %>
               <% if (!item.cancelled && !item.returned && order.status === 'Delivered') { %>
-                <button onclick="openModal('return', '<%= order.orderId %>', '<%= item.product._id %>')" class="action-btn return-btn">Return Item</button>
+                <button onclick="openModal('return', '<%= order.orderId %>', '<%= item.product ? item.product._id : '' %>')" class="action-btn return-btn">Return Item</button>
               <% } %>
             </div>
           </div>
@@ -739,7 +746,7 @@
       if (hasPendingReturns) {
         // Initialize previousItemStates with current state on page load
         <% order.orderedItems.forEach(item => { %>
-          previousItemStates['<%= item.product._id %>'] = {
+          previousItemStates['<%= item.product ? item.product._id : '' %>'] = {
             returnStatus: '<%= item.returnStatus || "" %>',
             returned: <%= item.returned ? 'true' : 'false' %>,
             cancelReason: '<%= item.cancelReason || "" %>',

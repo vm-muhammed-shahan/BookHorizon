@@ -6,14 +6,21 @@ const User = require('../../models/userSchema')
 
 
 const getwishlist = async (req, res) => {
-  if (!req.session.user) return res.redirect('/login');
+  if (!req.session.user) {
+    console.log('No user session, redirecting to login');
+    return res.redirect('/login');
+  }
 
   try {
     const userData = req.session.user ? await User.findById(req.session.user._id) : null;
     const wishlist = await Wishlist.findOne({ userId: req.session.user._id }).populate('products.productId');
-    res.render('wishlist', { user: userData, products: wishlist ? wishlist.products : [] });
+    console.log('Wishlist fetched:', JSON.stringify(wishlist, null, 2)); // Debug: Log the wishlist
+    res.render('wishlist', {
+      user: userData,
+      products: wishlist ? wishlist.products : []
+    });
   } catch (err) {
-    console.error(err);
+    console.error('Error fetching wishlist:', err);
     res.redirect('/');
   }
 };
@@ -45,8 +52,9 @@ const addToWishlist = async (req, res) => {
       wishlist &&
       wishlist.products.some((item) => item.productId.toString() === productId)
     ) {
+      // Instead of returning success, we'll let the client decide to remove it
       return res.status(400).json({
-        success: true,
+        success: false,
         message: 'Product is already in your wishlist'
       });
     }
@@ -149,10 +157,82 @@ const clearWishlist = async (req, res) => {
   }
 };
 
+
+const toggleWishlist = async (req, res) => {
+  try {
+    const userId = req.session.user._id;
+    const { productId, action } = req.body;
+
+    const product = await Product.findById(productId).select('isBlocked quantity');
+    if (!product || product.isBlocked) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found or unavailable'
+      });
+    }
+
+    const cart = await Cart.findOne({ userId }).select('items.productId');
+    if (action === 'add' && cart && cart.items.some((item) => item.productId.toString() === productId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot add to wishlist - product is already in your cart'
+      });
+    }
+
+    let wishlist = await Wishlist.findOne({ userId });
+
+    if (action === 'add') {
+      if (wishlist && wishlist.products.some((item) => item.productId.toString() === productId)) {
+        return res.status(200).json({
+          success: true,
+          message: 'Product is already in your wishlist'
+        });
+      }
+      await Wishlist.findOneAndUpdate(
+        { userId },
+        { $addToSet: { products: { productId } } },
+        { upsert: true, new: true }
+      );
+      return res.status(200).json({
+        success: true,
+        message: 'Product added to wishlist successfully'
+      });
+    } else if (action === 'remove') {
+      if (!wishlist || !wishlist.products.some((item) => item.productId.toString() === productId)) {
+        return res.status(200).json({
+          success: true,
+          message: 'Product not in wishlist'
+        });
+      }
+      await Wishlist.findOneAndUpdate(
+        { userId },
+        { $pull: { products: { productId } } }
+      );
+      return res.status(200).json({
+        success: true,
+        message: 'Product removed from wishlist successfully'
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid action specified'
+      });
+    }
+  } catch (error) {
+    console.error('Error toggling wishlist:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update wishlist. Please try again.'
+    });
+  }
+};
+
+
 module.exports = {
   addToWishlist,
   getwishlist,
   removeFromWishlist,
+  toggleWishlist,
   moveToCart,
   clearWishlist,
 };

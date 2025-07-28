@@ -154,7 +154,7 @@ const verifyReturnRequest = async (req, res) => {
       // Increment product stock atomically
       await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } });
       
-      // Refund to wallet
+      // Refund to wallet for both COD and non-COD orders (since payment was made for delivered COD orders)
       let wallet = await Wallet.findOne({ user: order.user });
       if (!wallet) {
         wallet = new Wallet({

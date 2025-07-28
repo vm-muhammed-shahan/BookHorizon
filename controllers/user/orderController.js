@@ -1,25 +1,23 @@
 const Order = require("../../models/orderSchema");
+const User = require("../../models/userSchema");
 const Product = require("../../models/productSchema");
 const Wallet = require("../../models/walletSchema");
 const PDFDocument = require("pdfkit");
-const path = require("path");
+const path = require("path"); 
 
 const getOrders = async (req, res) => {
   try {
     const userId = req.session.user._id;
     const search = req.query.search || "";
-
     let query = { user: userId };
     if (search) {
       query.orderId = { $regex: search, $options: "i" };
     }
-
     const orders = await Order.find(query)
       .sort({ createdOn: -1 })
       .populate("orderedItems.product")
       .populate("user", "name email");
-
-    // Handle missing users
+  
     orders.forEach(order => {
       if (!order.user) {
         console.warn(`User not found for order ${order.orderId}`);
@@ -27,10 +25,8 @@ const getOrders = async (req, res) => {
       }
     });
 
-    // Fetch the user's wallet
     let wallet = await Wallet.findOne({ user: userId });
     if (!wallet) {
-      // Create a new wallet if it doesn't exist
       wallet = new Wallet({
         user: userId,
         balance: 0,
@@ -39,40 +35,47 @@ const getOrders = async (req, res) => {
       await wallet.save();
     }
 
+    const userData = await User.findOne({ _id: userId }, 'name');
     console.log('User Orders:', orders);
-    res.render("orders", { orders, search, user: req.session.user, wallet });
+    res.render("orders", { orders, search, user: userData || req.session.user, wallet });
   } catch (error) {
     console.error("Error fetching orders:", error);
     res.status(500).render("error", { message: "Error fetching orders" });
   }
 };
 
-// Specific order detail
 const getOrderDetail = async (req, res) => {
   try {
     const { orderId } = req.params;
+    const userId = req.session.user._id;
     console.log('Order ID:', orderId);
-    const order = await Order.findOne({ orderId })
-      .populate("orderedItems.product")
+    const order = await Order.findOne({ orderId, user: userId })
+      .populate({
+        path: "orderedItems.product",
+        select: "productName" // Ensure only necessary fields are populated
+      })
       .populate("user", "name email");
     console.log('Order Details:', order);
     if (!order) {
-      req.session.message = { type: "error", text: "Order not found" };
+      req.session.message = { type: "error", text: "Order not found or you are not authorized to view it" };
       return res.redirect("/orders");
     }
-    // Check if user exists
     if (!order.user) {
       console.warn(`User not found for order ${orderId}`);
       order.user = { name: 'N/A', email: 'N/A' };
     }
-    // Pass the notification from the session to the template
+    order.orderedItems.forEach(item => {
+      if (!item.product) {
+        console.warn(`Product not found for item in order ${orderId}, item productId: ${item.product}`);
+      }
+    });
+    const userData = await User.findOne({ _id: userId });
     const notification = req.session.message || null;
-    // Clear the notification from the session after rendering
     req.session.message = null;
     res.render("order-Detail", { 
       order, 
-      user: req.session.user, 
-      notification // Pass notification to the template
+      user: userData, 
+      notification 
     });
   } catch (error) {
     console.error("Error in order listing", error);
@@ -81,16 +84,16 @@ const getOrderDetail = async (req, res) => {
   }
 };
 
-// Fetch order status dynamically
 const getOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const order = await Order.findOne({ orderId })
+    const userId = req.session.user._id;
+    const order = await Order.findOne({ orderId, user: userId })
       .populate("orderedItems.product")
       .populate("user", "name email");
 
     if (!order) {
-      return res.status(404).json({ error: "Order not found" });
+      return res.status(403).json({ error: "Order not found or you are not authorized to access it" });
     }
 
     res.status(200).json({
@@ -114,14 +117,12 @@ const getOrderStatus = async (req, res) => {
   }
 };
 
-// Get wallet details for the user
 const getWalletDetails = async (req, res) => {
   try {
     const userId = req.session.user._id;
     let wallet = await Wallet.findOne({ user: userId }).populate("user", "name email");
 
     if (!wallet) {
-      // Create a new wallet if it doesn't exist
       wallet = new Wallet({
         user: userId,
         balance: 0,
@@ -130,20 +131,21 @@ const getWalletDetails = async (req, res) => {
       await wallet.save();
     }
 
-    res.render("wallet", { wallet, user: req.session.user });
+    const userData = await User.findOne({ _id: userId }, 'name');
+    res.render("wallet", { wallet, user: userData || req.session.user });
   } catch (error) {
     console.error("Error fetching wallet details:", error);
     res.status(500).render("page-404", { message: "Error fetching wallet details" });
   }
 };
 
-// Cancel item or full order
 const cancelOrder = async (req, res) => {
   try {
     const { orderId, productId, reason } = req.body;
-    const order = await Order.findOne({ orderId }).populate('orderedItems.product');
+    const userId = req.session.user._id;
+    const order = await Order.findOne({ orderId, user: userId }).populate('orderedItems.product');
     if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
+      return res.status(403).json({ error: 'Order not found or you are not authorized to cancel it' });
     }
     if (order.status !== 'Pending' && order.status !== 'Processing' && order.status !== 'Shipped') {
       return res.status(400).json({ error: 'Cannot cancel order in this status' });
@@ -160,45 +162,51 @@ const cancelOrder = async (req, res) => {
       if (item.cancelled) {
         return res.status(400).json({ error: 'Item already cancelled' });
       }
-      // Increment product stock
+
+      const totalItemsPrice = order.orderedItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+      const itemPrice = item.price * item.quantity;
+      const itemProportion = totalItemsPrice > 0 ? itemPrice / totalItemsPrice : 0;
+      refundAmount = order.finalAmount * itemProportion;
+
       await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } });
-      // Mark item as cancelled and save reason
+
       item.cancelled = true;
       item.cancelReason = reason || 'No reason provided';
-      refundAmount = item.price * item.quantity;
-      order.totalPrice -= refundAmount;
-      order.finalAmount = order.totalPrice + order.shippingCharge - order.discount;
 
-      // Check if all items are cancelled
+      order.totalPrice -= itemPrice;
+      order.discount = totalItemsPrice > 0 ? order.discount * (order.totalPrice / totalItemsPrice) : 0;
+      order.shippingCharge = order.totalPrice * 0.05;
+      order.finalAmount = order.totalPrice + order.shippingCharge + (order.totalPrice * 0.05) - order.discount;
+
       const allCancelled = order.orderedItems.every(i => i.cancelled);
       if (allCancelled) {
         order.status = 'Cancelled';
         order.cancelReason = reason || 'No reason provided';
         order.paymentStatus = 'Failed';
+        order.finalAmount = 0;
       }
     } else {
-      // Cancel entire order
       if (order.status === 'Cancelled') {
         return res.status(400).json({ error: 'Order already cancelled' });
       }
 
-      // Increment stock for all items
+      refundAmount = order.finalAmount;
+
       for (const item of order.orderedItems) {
         if (!item.cancelled) {
           await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } });
           item.cancelled = true;
           item.cancelReason = reason || 'No reason provided';
-          refundAmount += item.price * item.quantity;
         }
       }
 
       order.status = 'Cancelled';
       order.cancelReason = reason || 'No reason provided';
       order.paymentStatus = 'Failed';
+      order.finalAmount = 0;
     }
 
-    // Refund to wallet
-    if (refundAmount > 0) {
+    if (refundAmount > 0 && order.paymentMethod !== 'cod') {
       let wallet = await Wallet.findOne({ user: order.user });
       if (!wallet) {
         wallet = new Wallet({
@@ -226,7 +234,7 @@ const cancelOrder = async (req, res) => {
     await order.save();
     return res.status(200).json({ 
       success: true, 
-      message: `Item${productId ? '' : 's'} cancelled successfully. Refund of ₹${refundAmount.toFixed(2)} credited to your wallet.` 
+      message: `Item${productId ? '' : 's'} cancelled successfully. ${order.paymentMethod !== 'cod' && refundAmount > 0 ? `Refund of ₹${refundAmount.toFixed(2)} credited to your wallet.` : 'No refund applicable for COD orders.'}` 
     });
   } catch (error) {
     console.error('Error cancelling order:', error);
@@ -234,14 +242,14 @@ const cancelOrder = async (req, res) => {
   }
 };
 
-// Return item
 const returnOrder = async (req, res) => {
   try {
     const { orderId, productId, reason } = req.body;
-    const order = await Order.findOne({ orderId }).populate('orderedItems.product');
+    const userId = req.session.user._id;
+    const order = await Order.findOne({ orderId, user: userId }).populate('orderedItems.product');
 
     if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
+      return res.status(403).json({ error: 'Order not found or you are not authorized to return it' });
     }
 
     if (order.status !== 'Delivered') {
@@ -262,52 +270,98 @@ const returnOrder = async (req, res) => {
       return res.status(400).json({ error: 'Return reason is mandatory' });
     }
 
-    // Mark item as return requested
     item.returned = true;
     item.returnReason = reason;
-    item.returnStatus = 'pending';
+    item.returnStatus = 'approved'; // Assuming automatic approval for simplicity
 
-    // Check if any items have a pending return request
-    const hasPendingReturns = order.orderedItems.some(i => i.returnStatus === 'pending');
-    if (hasPendingReturns) {
+    // Calculate refund amount for the item
+    const totalItemsPrice = order.orderedItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+    const itemPrice = item.price * item.quantity;
+    const itemProportion = totalItemsPrice > 0 ? itemPrice / totalItemsPrice : 0;
+    const refundAmount = order.finalAmount * itemProportion;
+
+    // Refund to wallet
+    let wallet = await Wallet.findOne({ user: order.user });
+    if (!wallet) {
+      wallet = new Wallet({
+        user: order.user,
+        balance: refundAmount,
+        transactions: [{
+          type: "credit",
+          amount: refundAmount,
+          description: `Refund for returned item in order ${order.orderId}`,
+          date: new Date(),
+        }],
+      });
+    } else {
+      wallet.balance += refundAmount;
+      wallet.transactions.push({
+        type: "credit",
+        amount: refundAmount,
+        description: `Refund for returned item in order ${order.orderId}`,
+        date: new Date(),
+      });
+    }
+    await wallet.save();
+
+    // Update product quantity
+    await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } });
+
+    // Check if all items are returned
+    const allReturned = order.orderedItems.every(i => i.returnStatus === 'approved');
+    if (allReturned) {
+      order.status = 'Returned';
+      order.paymentStatus = 'Completed'; // Assuming refund is processed
+    } else {
       order.status = 'Return Request';
       order.paymentStatus = 'Pending';
     }
 
+    // Recalculate order totals
+    const activeItems = order.orderedItems.filter(i => !i.cancelled && i.returnStatus !== 'approved');
+    order.totalPrice = activeItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+    const discountProportion = order.totalPrice > 0 ? order.totalPrice / totalItemsPrice : 0;
+    order.discount = order.discount * discountProportion;
+    order.shippingCharge = order.totalPrice * 0.05;
+    order.finalAmount = order.totalPrice + order.shippingCharge + (order.totalPrice * 0.05) - order.discount;
+
     await order.save();
-    return res.status(200).json({ success: true, message: 'Return request submitted successfully' });
+    return res.status(200).json({ 
+      success: true, 
+      message: `Return request processed successfully. Refund of ₹${refundAmount.toFixed(2)} credited to your wallet.` 
+    });
   } catch (error) {
     console.error('Error submitting return request:', error);
     return res.status(500).json({ error: 'Server error while submitting return request' });
   }
 };
 
-// Download invoice
 const downloadInvoice = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const order = await Order.findOne({ orderId }).populate("orderedItems.product");
+    const userId = req.session.user._id;
+    const order = await Order.findOne({ orderId, user: userId }).populate({
+      path: "orderedItems.product",
+      select: "productName" // Ensure only necessary fields are populated
+    });
 
     if (!order) {
-      return res.status(404).send("Order not found");
+      return res.status(403).send("Order not found or you are not authorized to access it");
     }
 
     const doc = new PDFDocument({ margin: 40, size: "A4" });
     
-    // Enhanced headers with proper encoding
     res.setHeader("Content-disposition", `attachment; filename=invoice-${order.orderId}.pdf`);
     res.setHeader("Content-type", "application/pdf; charset=utf-8");
     res.setHeader("Content-Transfer-Encoding", "binary");
 
     doc.pipe(res);
 
-    // Page configuration
     const margin = 40;
     const pageWidth = 595.28;
     const contentWidth = pageWidth - (margin * 2);
     let yPosition = margin;
 
-    // Helper functions
     const moveDown = (space = 15) => {
       yPosition += space;
     };
@@ -320,15 +374,8 @@ const downloadInvoice = async (req, res) => {
          .stroke();
     };
 
-    const addText = (text, x, y, options = {}) => {
-      return doc.text(text, x, y, options);
-    };
-
-    // Helper function to format currency with Indian Rupee symbol
     const formatCurrency = (amount) => `Rs ${amount.toFixed(2)}`;
-    
 
-    // Header
     doc.fontSize(28)
        .font('Helvetica-Bold')
        .fillColor('#2c3e50')
@@ -341,7 +388,6 @@ const downloadInvoice = async (req, res) => {
        .fillColor('#7f8c8d')
        .text('Premium Book Store', margin, yPosition);
 
-    // Invoice title - right aligned
     doc.fontSize(20)
        .font('Helvetica-Bold')
        .fillColor('#2c3e50')
@@ -356,7 +402,6 @@ const downloadInvoice = async (req, res) => {
     drawLine();
     moveDown(25);
 
-    // DATE SECTION - Two columns
     const leftColX = margin;
     const rightColX = margin + (contentWidth * 0.6);
 
@@ -387,10 +432,8 @@ const downloadInvoice = async (req, res) => {
 
     moveDown(30);
 
-    // ORDER DETAILS & ADDRESS SECTION
     const sectionY = yPosition;
 
-    // Left section - Order Details
     doc.fontSize(14)
        .font('Helvetica-Bold')
        .fillColor('#2c3e50')
@@ -400,8 +443,11 @@ const downloadInvoice = async (req, res) => {
 
     const detailsData = [
       ['Status:', order.status],
-      ['Payment:', order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment'],
-      ['Payment Status:', order.paymentStatus]
+      ['Payment:', order.paymentMethod === 'cod' ? 'Cash on Delivery' : 
+                  order.paymentMethod === 'wallet' ? 'Wallet Payment' : 
+                  order.paymentMethod === 'wallet+razorpay' ? 'Wallet + Online Payment' : 'Online Payment'],
+      ['Payment Status:', order.paymentStatus],
+      ['Wallet Amount Used:', formatCurrency(order.walletAmount || 0)],
     ];
 
     detailsData.forEach((detail, index) => {
@@ -416,7 +462,6 @@ const downloadInvoice = async (req, res) => {
          .text(detail[1], leftColX + 100, detailY);
     });
 
-    // Right section - Delivery Address
     doc.fontSize(14)
        .font('Helvetica-Bold')
        .fillColor('#2c3e50')
@@ -446,7 +491,6 @@ const downloadInvoice = async (req, res) => {
     drawLine();
     moveDown(25);
 
-    // ITEMS TABLE
     doc.fontSize(16)
        .font('Helvetica-Bold')
        .fillColor('#2c3e50')
@@ -454,7 +498,6 @@ const downloadInvoice = async (req, res) => {
 
     moveDown(20);
 
-    // Table header
     const tableHeaderY = yPosition;
     const colPositions = {
       product: margin,
@@ -469,12 +512,10 @@ const downloadInvoice = async (req, res) => {
       total: 80
     };
 
-    // Header background
     doc.rect(margin, tableHeaderY, contentWidth, 25)
        .fillColor('#ecf0f1')
        .fill();
 
-    // Header text
     doc.fontSize(12)
        .font('Helvetica-Bold')
        .fillColor('#2c3e50');
@@ -486,12 +527,12 @@ const downloadInvoice = async (req, res) => {
 
     moveDown(35);
 
-    // Table rows
+    const activeItems = order.orderedItems.filter(item => !item.cancelled);
+
     order.orderedItems.forEach((item, index) => {
       const rowY = yPosition;
       const rowHeight = 30;
 
-      // Alternate row background
       if (index % 2 === 0) {
         doc.rect(margin, rowY, contentWidth, rowHeight)
            .fillColor('#fafafa')
@@ -502,8 +543,7 @@ const downloadInvoice = async (req, res) => {
          .font('Helvetica')
          .fillColor('#2c3e50');
 
-      // Product name (truncate if needed)
-      let productName = item.product.productName;
+      let productName = item.product ? item.product.productName : 'N/A';
       if (productName.length > 40) {
         productName = productName.substring(0, 37) + '...';
       }
@@ -513,16 +553,19 @@ const downloadInvoice = async (req, res) => {
         width: colWidths.qty, 
         align: 'center' 
       });
-      doc.text(formatCurrency(item.price), colPositions.price, rowY + 8, { 
+
+      const itemPrice = item.cancelled ? 0 : item.price;
+      const itemTotal = item.cancelled ? 0 : item.price * item.quantity;
+
+      doc.text(formatCurrency(itemPrice), colPositions.price, rowY + 8, { 
         width: colWidths.price, 
         align: 'right' 
       });
-      doc.text(formatCurrency(item.price * item.quantity), colPositions.total, rowY + 8, { 
+      doc.text(formatCurrency(itemTotal), colPositions.total, rowY + 8, { 
         width: colWidths.total, 
         align: 'right' 
       });
 
-      // Status indicators
       if (item.cancelled) {
         doc.fontSize(9)
            .fillColor('#e74c3c')
@@ -547,17 +590,33 @@ const downloadInvoice = async (req, res) => {
     drawLine(yPosition, 1);
     moveDown(25);
 
-    // SUMMARY SECTION
     const summaryX = margin + contentWidth - 200;
     const summaryY = yPosition;
 
+    // Use order.finalAmount as the authoritative total
+    const finalTotal = order.finalAmount;
+    const subtotal = activeItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const tax = order.shippingCharge || (subtotal * 0.05); // Assuming shippingCharge includes tax
+    const shipping = order.shippingCharge || (subtotal * 0.05); // Adjust based on your schema
+    const walletAmount = order.walletAmount || 0;
+    const discount = order.discount || 0;
+
     const summaryItems = [
-      ['Subtotal:', formatCurrency(order.totalPrice)],
-      ['Shipping:', formatCurrency(order.shippingCharge)]
+      ['Subtotal:', formatCurrency(subtotal)],
+      ['Tax (5%):', formatCurrency(tax)],
+      ['Shipping:', formatCurrency(shipping)],
+      ['Wallet Amount Used:', formatCurrency(walletAmount)],
     ];
 
-    if (order.discount > 0) {
-      summaryItems.push(['Discount:', `-${formatCurrency(order.discount)}`]);
+    if (discount > 0) {
+      summaryItems.push(['Discount:', `-${formatCurrency(discount)}`]);
+    }
+
+    // Adjust totals to match finalAmount if needed
+    const calculatedTotal = subtotal + tax + shipping - discount - walletAmount;
+    let adjustment = finalTotal - calculatedTotal;
+    if (adjustment !== 0) {
+      summaryItems.push(['Adjustment:', formatCurrency(adjustment)]);
     }
 
     summaryItems.forEach((item, index) => {
@@ -572,25 +631,22 @@ const downloadInvoice = async (req, res) => {
 
     const totalY = summaryY + (summaryItems.length * 20) + 10;
     
-    // Total line
     doc.lineWidth(1)
        .strokeColor('#bdc3c7')
        .moveTo(summaryX, totalY)
        .lineTo(summaryX + 180, totalY)
        .stroke();
 
-    // Final total
     doc.fontSize(14)
        .font('Helvetica-Bold')
        .fillColor('#2c3e50')
        .text('Total:', summaryX, totalY + 15);
     
-    doc.text(formatCurrency(order.finalAmount), summaryX + 100, totalY + 15, { 
+    doc.text(formatCurrency(finalTotal), summaryX + 100, totalY + 15, { 
       width: 80, 
       align: 'right' 
     });
 
-    // FOOTER
     const footerY = pageWidth - 80;
     doc.fontSize(10)
        .font('Helvetica')
@@ -614,6 +670,7 @@ const downloadInvoice = async (req, res) => {
     res.status(500).send('Error generating invoice');
   }
 };
+
 
 module.exports = {
   downloadInvoice,
