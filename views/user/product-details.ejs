@@ -1052,7 +1052,7 @@
                         <% let imageArray; if (Array.isArray(product.productImage)) { imageArray = [...new Set(product.productImage)]; } else if (product.productImage) { imageArray = [product.productImage] } %>
                         <% imageArray.forEach(function(image, index) { %>
                           <div>
-                            <img src="/Uploads/<%= image %>"
+                            <img src="/uploads/<%= image %>"
                                  alt="<%= product.productName %> - Image <%= index + 1 %>"
                                  class="rounded product-img" data-index="<%= index %>">
                             <div class="magnify-icon" onclick="openZoom(<%= index %>)">
@@ -1064,7 +1064,7 @@
                       <div class="slider-nav-thumbnails" id="thumbnailSlider">
                         <% imageArray.forEach(function(image, index) { %>
                           <div>
-                            <img src="/Uploads/<%= image %>"
+                            <img src="/uploads/<%= image %>"
                                  alt="<%= product.productName %> - Thumbnail <%= index + 1 %>">
                           </div>
                         <% }); %>

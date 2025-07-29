@@ -19,7 +19,7 @@
           <div class="item-image">
             <% if (item.productId && item.productId.productImage && item.productId.productImage.length > 0) { %>
               <a href="/productDetails?id=<%= item.productId._id %>">
-                <img src="/Uploads/<%= item.productId.productImage[0] %>" alt="<%= item.productId.productName || 'Product' %>">
+                <img src="/uploads/<%= item.productId.productImage[0] %>" alt="<%= item.productId.productName || 'Product' %>">
               </a>
             <% } else { %>
               <img src="/images/placeholder.png" alt="No Image Available">
