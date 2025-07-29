@@ -242,9 +242,7 @@ const addProductOffer = async (req, res) => {
     const { discountedPrice } = await applyBestOffer(product, offers);
     product.salePrice = discountedPrice;
     product.productOffer = percentage;
-    product.categoryOffer = categoryOffer ? categoryOffer.discountPercentage : 0;
     await product.save();
-    console.log(`Updated product ${product.productName}: salePrice=${product.salePrice}, productOffer=${product.productOffer}, categoryOffer=${product.categoryOffer}`);
 
     res.json({ status: true, message: "Product offer added successfully" });
   } catch (error) {
@@ -252,8 +250,6 @@ const addProductOffer = async (req, res) => {
     res.status(500).json({ status: false, message: "Failed to add product offer" });
   }
 };
-
-
 const removeProductOffer = async (req, res) => {
   try {
     const { productId } = req.body;
@@ -497,49 +493,42 @@ const deleteSingleImage = async (req, res) => {
 
 const applyBestOffer = async (product, offers, categoryId) => {
   try {
+    // Use categoryId if provided, otherwise use product.category._id
     const catId = categoryId || (product.category && product.category._id ? product.category._id.toString() : null);
-    if (!catId) {
-      console.error("No category ID provided or found for product:", product._id);
-      return { discountedPrice: product.regularPrice, bestDiscount: 0, bestOfferType: null };
-    }
 
-    // Fetch offers if not provided
-    const fetchedOffers = offers || await Offer.find({
-      offerType: { $in: ['product', 'category'] },
-      isActive: true,
-      startDate: { $lte: new Date() },
-      endDate: { $gte: new Date() },
-    });
-
-    const productOffers = fetchedOffers.filter(
+    const productOffers = offers ? offers.filter(
       offer => offer.offerType === 'product' && 
-      offer.applicableId.toString() === product._id.toString()
-    );
+      offer.applicableId.toString() === product._id.toString() &&
+      offer.isActive &&
+      offer.startDate <= new Date() &&
+      offer.endDate >= new Date()
+    ) : [];
 
-    const categoryOffers = fetchedOffers.filter(
+    const categoryOffers = offers ? offers.filter(
       offer => offer.offerType === 'category' && 
-      offer.applicableId.toString() === catId
-    );
+      offer.applicableId.toString() === catId &&
+      offer.isActive &&
+      offer.startDate <= new Date() &&
+      offer.endDate >= new Date()
+    ) : [];
 
     let bestDiscount = 0;
     let bestOfferType = null;
-
     if (productOffers.length > 0 || categoryOffers.length > 0) {
       const allOffers = [...productOffers, ...categoryOffers];
       const maxDiscount = Math.max(...allOffers.map(o => o.discountPercentage), 0);
       bestDiscount = maxDiscount;
-      bestOfferType = allOffers.find(o => o.discountPercentage === maxDiscount)?.offerType || null;
+      bestOfferType = allOffers.find(o => o.discountPercentage === maxDiscount).offerType;
     }
 
-    const discountedPrice = Math.floor(product.regularPrice * (1 - bestDiscount / 100));
-    console.log(`Applied best offer for product ${product.productName}: discount=${bestDiscount}%, type=${bestOfferType}, discountedPrice=${discountedPrice}`);
-
+    const discountedPrice = product.regularPrice * (1 - bestDiscount / 100);
     return { discountedPrice, bestDiscount, bestOfferType };
   } catch (error) {
     console.error("Error applying best offer:", error);
     return { discountedPrice: product.regularPrice, bestDiscount: 0, bestOfferType: null };
   }
 };
+
 
 
 module.exports = {

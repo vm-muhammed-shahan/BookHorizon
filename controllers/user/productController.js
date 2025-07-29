@@ -88,10 +88,6 @@ const { applyBestOffer } = require("../admin/productController");
   }
 };
 
-
-
-
-
 module.exports = {
   productDetails,
 };

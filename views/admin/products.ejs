@@ -38,7 +38,7 @@
         <tr id="product-row-<%= data[i]._id %>">
           <td class="align-middle text-center">
             <% if (data[i].productImage && data[i].productImage.length > 0) { %>
-              <img src="/Uploads/<%= data[i].productImage[0] %>" alt="Product Image"
+              <img src="/uploads/<%= data[i].productImage[0] %>" alt="Product Image"
                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 5px;">
             <% } else { %>
               <img src="/path/to/default-image.jpg" alt="No Image" style="width: 60px; height: 60px;">
