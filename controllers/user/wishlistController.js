@@ -14,7 +14,7 @@ const getwishlist = async (req, res) => {
   try {
     const userData = req.session.user ? await User.findById(req.session.user._id) : null;
     const wishlist = await Wishlist.findOne({ userId: req.session.user._id }).populate('products.productId');
-    console.log('Wishlist fetched:', JSON.stringify(wishlist, null, 2)); // Debug: Log the wishlist
+    console.log('Wishlist fetched:', JSON.stringify(wishlist, null, 2)); 
     res.render('wishlist', {
       user: userData,
       products: wishlist ? wishlist.products : []

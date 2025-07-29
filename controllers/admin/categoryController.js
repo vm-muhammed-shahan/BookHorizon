@@ -109,10 +109,12 @@ const addCategoryOffer = async (req, res) => {
     await Category.updateOne({ _id: categoryId }, { $set: { categoryOffer: percentage } });
 
     for (const product of products) {
-      product.productOffer = 0;
+      const { discountedPrice } = await applyBestOffer(product, null, categoryId);
+      product.salePrice = discountedPrice;
       product.categoryOffer = percentage;
-      product.salePrice = product.regularPrice - Math.floor(product.regularPrice * (percentage / 100));
+      product.productOffer = 0; // Reset product-specific offer if any
       await product.save();
+      console.log(`Updated product ${product.productName}: salePrice=${product.salePrice}, categoryOffer=${product.categoryOffer}`);
     }
 
     res.json({ status: true, message: "Category offer added successfully", offer: offer });

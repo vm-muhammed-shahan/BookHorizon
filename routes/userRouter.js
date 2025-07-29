@@ -15,6 +15,7 @@ const user = require('../models/userSchema');
 const upload = multer({ dest: 'public/uploads/' });
 
 
+// user Management
 
 router.get("/pageNotFound", userController.pageNotFound);
 router.get("/signup", userController.loadSignup); 
@@ -27,9 +28,6 @@ router.get('/auth/google/callback', passport.authenticate('google', { failureRed
   console.log("Google Authenticated User:", req.session.user);
   res.redirect('/');
 });
-
-
-
 router.get("/login", userController.loadLogin);
 router.post("/login", userController.login);
 router.get("/", userController.loadHomepage);
@@ -111,12 +109,11 @@ router.get('/order/success/:orderID', userAuth, checkoutController.successPage);
 router.get('/order/failure/:orderID', userAuth, checkoutController.failurePage);
 router.get('/edit-address', userAuth, checkoutController.editCheckout);
 
-// Wallet Management
-router.get('/wallet', orderController.getWalletDetails);
-
+ //order Management
 router.get("/orders", userAuth, orderController.getOrders);
 router.get("/orders/:orderId", userAuth, orderController.getOrderDetail);
 router.post("/orders/cancel", userAuth, orderController.cancelOrder);
+router.get('/wallet', orderController.getWalletDetails);
 router.post("/orders/return", userAuth, orderController.returnOrder);
 router.get("/orders/invoice/:orderId", userAuth, orderController.downloadInvoice);
 router.get("/orders/status/:orderId", userAuth, orderController.getOrderStatus);
