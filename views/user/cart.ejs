@@ -110,11 +110,11 @@
     </div>
     
     <div class="cart-actions">
-      <a href="/shop" class="continue-shopping-btn">Continue Shopping</a>
-      <button class="checkout-btn <%= allOutOfStock ? 'checkout-disabled' : '' %>" <%= allOutOfStock ? 'disabled' : '' %> <%= allOutOfStock ? '' : 'onclick="window.location.href=\'/checkout\'"' %>>
-        <%= allOutOfStock ? 'Proceed to Checkout (All items out of stock)' : 'Proceed to Checkout (₹ ' + total.toFixed(2) + ')' %>
-      </button>
-    </div>
+  <a href="/shop" class="continue-shopping-btn">Continue Shopping</a>
+  <button class="checkout-btn <%= allOutOfStock ? 'checkout-disabled' : '' %>" <%= allOutOfStock ? 'disabled' : '' %>>
+    <%= allOutOfStock ? 'Proceed to Checkout (All items out of stock)' : 'Proceed to Checkout (₹ ' + total.toFixed(2) + ')' %>
+  </button>
+</div>
   <% } %>
 </div>
 
@@ -460,7 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const toast = (icon, title) => 
     Swal.fire({ toast: true, position: 'top-end', icon, title, showConfirmButton: false, timer: 2000 });
 
-  // Remove from cart handler
+  // Remove from cart handler (unchanged)
   document.querySelectorAll('.js-remove-cart').forEach(btn => {
     btn.addEventListener('click', async () => {
       const result = await Swal.fire({
@@ -519,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Quantity update handler
+  // Quantity update handler (unchanged)
   document.querySelectorAll('.js-quantity-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const action = btn.dataset.action;
@@ -548,18 +548,15 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error(data.error || 'Failed to update quantity');
         }
 
-        // Update quantity and UI
         quantityElement.textContent = data.quantity;
         const subtotal = (price * (data.quantity > 0 ? data.quantity : 0)).toFixed(2);
         subtotalElement.textContent = `Subtotal: ₹ ${subtotal}`;
 
-        // Update button states
         const decrementBtn = quantityForm.querySelector('[data-action="decrement"]');
         const incrementBtn = quantityForm.querySelector('[data-action="increment"]');
         decrementBtn.disabled = data.quantity <= 1 || data.quantity === 0;
         incrementBtn.disabled = data.quantity >= maxQuantity;
 
-        // Update stock info and warning
         if (currentStock === 0) {
           stockTextElement.textContent = 'Out of stock';
           cartItem.classList.add('out-of-stock');
@@ -588,9 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (stockWarningElement) stockWarningElement.remove();
         }
 
-        // Update cart summary
         updateCartSummary();
-
         btn.disabled = false;
       } catch (error) {
         console.error('Error:', error);
@@ -629,20 +624,19 @@ document.addEventListener('DOMContentLoaded', () => {
       if (note) note.remove();
     }
 
-    const hasValidItems = validItems.length > 0;
     const checkoutBtn = document.querySelector('.checkout-btn');
+    const hasValidItems = validItems.length > 0;
     if (hasValidItems) {
       checkoutBtn.classList.remove('checkout-disabled');
       checkoutBtn.removeAttribute('disabled');
-      checkoutBtn.setAttribute('onclick', 'window.location.href=\'/checkout\'');
+      checkoutBtn.onclick = () => window.location.href = '/checkout';
       checkoutBtn.innerHTML = `Proceed to Checkout (₹ ${total.toFixed(2)})`;
     } else {
       checkoutBtn.classList.add('checkout-disabled');
       checkoutBtn.setAttribute('disabled', 'true');
-      checkoutBtn.removeAttribute('onclick');
+      checkoutBtn.onclick = null;
       checkoutBtn.innerHTML = 'Proceed to Checkout (All items out of stock)';
     }
   }
-});
 </script>
 <%- include("../../views/partials/user/footer") %>
