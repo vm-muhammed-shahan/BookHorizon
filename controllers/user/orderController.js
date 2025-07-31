@@ -52,7 +52,7 @@ const getOrderDetail = async (req, res) => {
     const order = await Order.findOne({ orderId, user: userId })
       .populate({
         path: "orderedItems.product",
-        select: "productName" // Ensure only necessary fields are populated
+        select: "productName" 
       })
       .populate("user", "name email");
     console.log('Order Details:', order);
@@ -95,7 +95,6 @@ const getOrderStatus = async (req, res) => {
     if (!order) {
       return res.status(403).json({ error: "Order not found or you are not authorized to access it" });
     }
-
     res.status(200).json({
       success: true,
       order: {

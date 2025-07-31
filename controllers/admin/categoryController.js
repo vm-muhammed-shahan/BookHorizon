@@ -115,7 +115,20 @@ const addCategoryOffer = async (req, res) => {
       await product.save();
     }
 
-    res.json({ status: true, message: "Category offer added successfully", offer: offer });
+    res.json({ 
+      status: true, 
+      message: "Category offer added successfully", 
+      offer: {
+        discountPercentage: percentage,
+        startDate: startDate,
+        endDate: endDate,
+        isActive: true
+      },
+      category: {
+        _id: categoryId,
+        categoryOffer: percentage
+      }
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ status: false, message: "Internal Server Error" });

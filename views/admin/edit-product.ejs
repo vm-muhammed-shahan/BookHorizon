@@ -199,7 +199,7 @@
                         <div class="card position-relative image-upload-box" data-index="<%= i %>">
                           <div class="card-body p-2 text-center">
                             <% if(product.productImage && product.productImage[i]) { %>
-                              <img src="/Uploads/<%= product.productImage[i] %>" 
+                              <img src="/uploads/<%= product.productImage[i] %>" 
                                    class="img-preview img-fluid mb-2" alt="Product image <%= i+1 %>"
                                    style="width: 100%; height: 150px; object-fit: cover; border-radius: 5px;">
                               <input type="hidden" name="existingImages[<%= i %>]" value="<%= product.productImage[i] %>">

@@ -206,7 +206,6 @@ const removeCategoryOffer = async (req, res) => {
     addCategoryOffer,
     removeOffer,
     createReferralOffer,
-
     handleReferral,
     rewardReferrer,
    removeCategoryOffer, 

@@ -1,5 +1,5 @@
 <%- include("../../views/partials/admin/header") %>
-    
+
 <div class="container-fluid py-4">
   <!-- Header Section -->
   <div class="d-flex justify-content-between align-items-center mb-4">
@@ -92,11 +92,11 @@
               </thead>
               <tbody>
                 <% cat.forEach((category, index) => { %>
-                <tr class="<%= index % 2 === 0 ? 'bg-white' : 'bg-light' %>">
+                <tr class="<%= index % 2 === 0 ? 'bg-white' : 'bg-light' %>" id="category-row-<%= category._id %>">
                   <td class="px-3 py-3 text-center"><%= (currentPage - 1) * limit + index + 1 %></td>
                   <td class="px-3 py-3"><%= category.name %></td>
                   <td class="px-3 py-3"><%= category.description %></td>
-                  <td class="px-3 py-3">
+                  <td class="px-3 py-3" id="offer-percentage-<%= category._id %>">
                     <% 
                       const categoryOffer = offers.find(offer => 
                         offer.offerType === 'category' && 
@@ -106,7 +106,7 @@
                     %>
                     <%= categoryOffer ? categoryOffer.discountPercentage + '%' : '0%' %>
                   </td>
-                  <td class="px-3 py-3">
+                  <td class="px-3 py-3" id="offer-period-<%= category._id %>">
                     <% if (categoryOffer) { %>
                       <%= `${new Date(categoryOffer.startDate).toLocaleDateString()} - ${new Date(categoryOffer.endDate).toLocaleDateString()}` %>
                     <% } else { %>
@@ -137,7 +137,7 @@
                       Edit
                     </a>
                   </td>
-                  <td class="px-3 py-3">
+                  <td class="px-3 py-3" id="offer-btn-<%= category._id %>">
                     <% if (categoryOffer) { %>
                       <button 
                         class="btn btn-sm btn-danger" 
@@ -326,7 +326,7 @@
   }
 
   async function addOffer(categoryId) {
-    const today = new Date().toISOString().split('T')[0]; // Current date: 2025-07-14
+    const today = new Date().toISOString().split('T')[0];
     const { value: formValues } = await Swal.fire({
       title: "Add Category Offer",
       html:
@@ -410,9 +410,22 @@
             text: "The category offer has been added successfully",
             icon: "success",
             confirmButtonColor: '#212529',
-          }).then(() => {
-            location.href = `/admin/category?page=${currentPage}${search ? `&search=${search}` : ''}`;
           });
+
+          // Dynamically update the table row
+          const offerPercentageCell = document.getElementById(`offer-percentage-${categoryId}`);
+          const offerPeriodCell = document.getElementById(`offer-period-${categoryId}`);
+          const offerButtonCell = document.getElementById(`offer-btn-${categoryId}`);
+
+          offerPercentageCell.textContent = `${data.offer.discountPercentage}%`;
+          offerPeriodCell.textContent = `${new Date(data.offer.startDate).toLocaleDateString()} - ${new Date(data.offer.endDate).toLocaleDateString()}`;
+          offerButtonCell.innerHTML = `
+            <button 
+              class="btn btn-sm btn-danger" 
+              onclick="removeOffer('${categoryId}')">
+              Remove Offer
+            </button>
+          `;
         } else {
           Swal.fire({
             title: "Failed",
@@ -452,9 +465,22 @@
           text: "The category offer has been removed successfully",
           icon: "success",
           confirmButtonColor: '#212529',
-        }).then(() => {
-          location.reload();
         });
+
+        // Dynamically update the table row
+        const offerPercentageCell = document.getElementById(`offer-percentage-${categoryId}`);
+        const offerPeriodCell = document.getElementById(`offer-period-${categoryId}`);
+        const offerButtonCell = document.getElementById(`offer-btn-${categoryId}`);
+
+        offerPercentageCell.textContent = '0%';
+        offerPeriodCell.textContent = '-';
+        offerButtonCell.innerHTML = `
+          <button 
+            class="btn btn-sm btn-success" 
+            onclick="addOffer('${categoryId}')">
+            Add Offer
+          </button>
+        `;
       } else {
         Swal.fire({
           title: "Failed",
@@ -538,4 +564,4 @@
   }
 </script>
 
-  <%- include("../../views/partials/admin/footer") %>
+<%- include("../../views/partials/admin/footer") %>
