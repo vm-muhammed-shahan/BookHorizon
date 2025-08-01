@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %></title>
   <link href="/css/tailwind.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     .notification {
       margin-bottom: 24px;
@@ -12,10 +13,30 @@
       border-radius: 4px;
       font-size: 16px;
     }
-
     .notification-info {
       background-color: #dbeafe;
       color: #1e40af;
+    }
+    .action-btn {
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .accept-btn {
+      background-color: #10b981;
+      color: white;
+    }
+    .accept-btn:hover {
+      background-color: #059669;
+    }
+    .reject-btn {
+      background-color: #ef4444;
+      color: white;
+    }
+    .reject-btn:hover {
+      background-color: #dc2626;
     }
   </style>
 </head>
@@ -35,15 +56,22 @@
           <h2 class="text-lg font-semibold mb-2">Order Summary</h2>
           <p><strong>Order ID:</strong> <%= order.orderId %></p>
           <p><strong>Date:</strong> <%= order.createdOn ? new Date(order.createdOn).toLocaleString() : 'N/A' %></p>
-          <p><strong>Status:</strong> <%= order.status %></p>
+          <p><strong>Delivery Status:</strong> <%= order.status %></p>
           <p><strong>Payment Status:</strong> <%= order.paymentStatus %></p>
-          <p><strong>Payment Method:</strong> <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment' %></p>
+          <p><strong>Payment Method:</strong>
+            <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' :
+                order.paymentMethod === 'wallet' ? 'Wallet Payment' :
+                order.paymentMethod === 'wallet+razorpay' ? 'Wallet + Online Payment' : 'Online Payment' %>
+          </p>
           <p><strong>Total Price:</strong> ₹<%= order.totalPrice ? order.totalPrice.toFixed(2) : '0.00' %></p>
           <p><strong>Discount:</strong> ₹<%= order.discount ? order.discount.toFixed(2) : '0.00' %></p>
           <p><strong>Shipping Charge:</strong> ₹<%= order.shippingCharge ? order.shippingCharge.toFixed(2) : '0.00' %></p>
           <p><strong>Final Amount:</strong> ₹<%= order.finalAmount ? order.finalAmount.toFixed(2) : '0.00' %></p>
           <% if (order.couponApplied) { %>
-            <p><strong>Coupon Applied:</strong> Yes</p>
+            <p><strong>Coupon Applied:</strong> <%= order.couponCode || 'Yes' %></p>
+          <% } %>
+          <% if (order.cancelReason) { %>
+            <p><strong>Cancel Reason:</strong> <%= order.cancelReason %></p>
           <% } %>
         </div>
         <div>
@@ -65,13 +93,19 @@
         <h2 class="text-lg font-semibold mb-2">Update Order Status</h2>
         <form action="/admin/orders/<%= order.orderId %>/status" method="POST" class="flex gap-4">
           <select name="status" class="p-2 border rounded">
-            <option value="Pending" <%= order.status === 'Pending' ? 'selected' : '' %>>Pending</option>
-            <option value="Shipped" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
-            <option value="Out for Delivery" <%= order.status === 'Out for Delivery' ? 'selected' : '' %>>Out for Delivery</option>
-            <option value="Delivered" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
-            <option value="Cancelled" <%= order.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
-            <option value="Return Request" <%= order.status === 'Return Request' ? 'selected' : '' %>>Return Request</option>
-            <option value="Returned" <%= order.status === 'Returned' ? 'selected' : '' %>>Returned</option>
+            <% const allowedStatuses = {
+              'Pending': ['Processing', 'Cancelled'],
+              'Processing': ['Shipped', 'Cancelled'],
+              'Shipped': ['Out for Delivery'],
+              'Out for Delivery': ['Delivered'],
+              'Delivered': ['Return Request'],
+              'Return Request': ['Delivered', 'Returned'],
+              'Cancelled': [],
+              'Returned': []
+            }[order.status] || []; %>
+            <% ['Pending', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Return Request', 'Returned', 'Cancelled'].forEach(status => { %>
+              <option value="<%= status %>" <%= order.status === status ? 'selected' : '' %> <%= allowedStatuses.includes(status) ? '' : 'disabled' %>><%= status %></option>
+            <% }) %>
           </select>
           <button type="submit" class="bg-blue-500 text-black p-2 rounded hover:bg-blue-600">Update Status</button>
         </form>
@@ -112,12 +146,12 @@
                   <% } %>
                 </td>
                 <td class="p-2 border">
-                  <% if (item.returned && !item.cancelled && item.returnStatus === 'pending') { %>
+                  <% if (item.returned && item.returnStatus === 'pending' && !item.cancelled) { %>
                     <form action="/admin/orders/<%= order.orderId %>/return" method="POST" class="flex gap-2">
                       <input type="hidden" name="orderId" value="<%= order.orderId %>">
                       <input type="hidden" name="itemIndex" value="<%= index %>">
-                      <button type="submit" name="action" value="accept" class="bg-green-500 text-black px-2 py-1 rounded hover:bg-green-600">Accept Return</button>
-                      <button type="submit" name="action" value="reject" class="bg-red-500 text-black px-2 py-1 rounded hover:bg-red-600">Reject Return</button>
+                      <button type="submit" name="action" value="accept" class="action-btn accept-btn">Approve</button>
+                      <button type="submit" name="action" value="reject" class="action-btn reject-btn">Reject</button>
                     </form>
                   <% } %>
                 </td>
@@ -127,10 +161,11 @@
         </table>
       </div>
 
-      <!-- Back to Orders -->
-      <a href="/admin/orders" class="inline-block text-blue-500 hover:underline">Back to Orders</a>
+      <!-- Back Button -->
+      <div>
+        <a href="/admin/orders" class="bg-gray-500 text-white p-2 rounded hover:bg-gray-600">Back to Orders</a>
+      </div>
     </div>
   </div>
-  <%- include("../partials/admin/footer") %>
 </body>
 </html>

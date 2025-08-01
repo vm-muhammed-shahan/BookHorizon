@@ -97,6 +97,10 @@ const orderSchema = new Schema({
     default: Date.now,
     required: true,
   },
+deliveredOn: { 
+    type: Date,
+    default: null,
+  },
   couponApplied: {
     type: Boolean,
     default: false,

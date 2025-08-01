@@ -96,8 +96,7 @@ const updateOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
     const { status } = req.body;
-
-    const order = await Order.findOne({ orderId });
+    const order = await Order.findOne({ orderId }).populate("orderedItems.product");
     if (!order) {
       return res.status(404).render("admin-error", {
         title: "Error",
@@ -105,20 +104,79 @@ const updateOrderStatus = async (req, res) => {
       });
     }
 
-    order.status = status;
-    // Update payment status if necessary
-    if (status === 'Delivered') {
-      order.paymentStatus = 'Completed';
-    } else if (status === 'Cancelled') {
-      order.paymentStatus = 'Failed';
-    }
-    // No change to paymentStatus for "Out for Delivery" (remains as is, typically "Pending" until Delivered)
-    await order.save();
+    // Enforce irreversible state transitions
+    const validTransitions = {
+      Pending: ["Processing", "Cancelled"],
+      Processing: ["Shipped", "Cancelled"],
+      Shipped: ["Out for Delivery"],
+      "Out for Delivery": ["Delivered"],
+      Delivered: ["Return Request"],
+      "Return Request": ["Delivered", "Returned"],
+      Cancelled: [],
+      Returned: [],
+    };
 
-    req.session.notification = { type: 'info', text: `Order status updated to ${status}.` };
+    if (!validTransitions[order.status].includes(status)) {
+      return res.status(400).render("admin-error", {
+        title: "Error",
+        message: `Invalid status transition from ${order.status} to ${status}`,
+      });
+    }
+
+    order.status = status;
+    if (status === "Delivered") {
+      order.paymentStatus = "Completed";
+      order.deliveredOn = new Date(); // Set delivery date
+    } else if (status === "Cancelled") {
+      order.paymentStatus = "Failed";
+      let refundAmount = order.finalAmount;
+      for (const item of order.orderedItems) {
+        if (!item.cancelled && !item.returned) {
+          await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } });
+          item.cancelled = true;
+          item.cancelReason = "Order cancelled by admin";
+        }
+      }
+      if (refundAmount > 0 && order.paymentMethod !== "cod") {
+        let wallet = await Wallet.findOne({ user: order.user });
+        if (!wallet) {
+          wallet = new Wallet({
+            user: order.user,
+            balance: refundAmount,
+            transactions: [
+              {
+                type: "credit",
+                amount: refundAmount,
+                description: `Refund for order ${order.orderId} (Cancelled by admin)`,
+                date: new Date(),
+              },
+            ],
+          });
+        } else {
+          wallet.balance += refundAmount;
+          wallet.transactions.push({
+            type: "credit",
+            amount: refundAmount,
+            description: `Refund for order ${order.orderId} (Cancelled by admin)`,
+            date: new Date(),
+          });
+        }
+        await wallet.save();
+      }
+      order.finalAmount = 0;
+    } else if (status === "Returned") {
+      order.paymentStatus = "Completed";
+      const activeItems = order.orderedItems.filter(i => !i.cancelled && i.returnStatus !== "approved");
+      order.totalPrice = activeItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+      order.shippingCharge = order.totalPrice > 0 ? order.totalPrice * 0.05 : 0;
+      order.finalAmount = order.totalPrice + order.shippingCharge - order.discount;
+    }
+
+    await order.save();
+    req.session.notification = { type: "info", text: `Order status updated to ${status}.` };
     res.redirect(`/admin/orders/${orderId}`);
   } catch (error) {
-    console.error('Error in updateOrderStatus:', error);
+    console.error("Error in updateOrderStatus:", error);
     res.status(500).render("admin-error", {
       title: "Error",
       message: "Unable to update order status. Please try again later.",
@@ -130,7 +188,7 @@ const updateOrderStatus = async (req, res) => {
 const verifyReturnRequest = async (req, res) => {
   try {
     const { orderId, itemIndex, action } = req.body;
-    const order = await Order.findOne({ orderId }).populate('orderedItems.product');
+    const order = await Order.findOne({ orderId }).populate("orderedItems.product");
     if (!order) {
       return res.status(404).render("admin-error", {
         title: "Error",
@@ -139,33 +197,34 @@ const verifyReturnRequest = async (req, res) => {
     }
 
     const item = order.orderedItems[itemIndex];
-    if (!item || item.returnStatus !== 'pending' || item.cancelled) {
+    if (!item || item.returnStatus !== "pending" || item.cancelled) {
       return res.status(400).render("admin-error", {
         title: "Error",
         message: "Invalid return request",
       });
     }
 
-    let notificationMessage = '';
+    let notificationMessage = "";
     let refundAmount = item.price * item.quantity;
 
     if (action === "accept") {
-      item.returnStatus = 'approved';
-      // Increment product stock atomically
+      item.returnStatus = "approved";
       await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } });
-      
-      // Refund to wallet for both COD and non-COD orders (since payment was made for delivered COD orders)
+
+      // Refund to wallet for both COD and non-COD orders
       let wallet = await Wallet.findOne({ user: order.user });
       if (!wallet) {
         wallet = new Wallet({
           user: order.user,
           balance: refundAmount,
-          transactions: [{
-            type: "credit",
-            amount: refundAmount,
-            description: `Refund for item in order ${order.orderId} (Returned)`,
-            date: new Date()
-          }],
+          transactions: [
+            {
+              type: "credit",
+              amount: refundAmount,
+              description: `Refund for item in order ${order.orderId} (Returned)`,
+              date: new Date(),
+            },
+          ],
         });
       } else {
         wallet.balance += refundAmount;
@@ -173,40 +232,42 @@ const verifyReturnRequest = async (req, res) => {
           type: "credit",
           amount: refundAmount,
           description: `Refund for item in order ${order.orderId} (Returned)`,
-          date: new Date()
+          date: new Date(),
         });
       }
       await wallet.save();
-      
-      console.log(`Refunded ₹${refundAmount.toFixed(2)} to wallet for user ${order.user} for order ${order.orderId}`);
-      notificationMessage = `Your return request for an item in order ${order.orderId} has been approved, and a refund of ₹${refundAmount.toFixed(2)} has been credited to your wallet.`;
+
+      notificationMessage = `Return request for item in order ${order.orderId} has been approved, and a refund of ₹${refundAmount.toFixed(2)} has been credited to the user's wallet.`;
     } else if (action === "reject") {
-      item.returnStatus = 'rejected';
-      notificationMessage = `Your return request for an item in order ${order.orderId} has been rejected.`;
+      item.returnStatus = "rejected";
+      notificationMessage = `Return request for item in order ${order.orderId} has been rejected.`;
     }
 
-    // Update order status based on the items' return statuses
-    const allApproved = order.orderedItems.every(i => i.returnStatus === 'approved' || i.cancelled || !i.returned);
-    const hasPendingReturns = order.orderedItems.some(i => i.returnStatus === 'pending');
-    if (allApproved && order.orderedItems.every(i => i.returnStatus === 'approved' || i.cancelled)) {
-      order.status = 'Returned';
-      order.paymentStatus = 'Completed';
+    // Recalculate order totals
+    const activeItems = order.orderedItems.filter(i => !i.cancelled && i.returnStatus !== "approved");
+    order.totalPrice = activeItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    order.shippingCharge = order.totalPrice > 0 ? order.totalPrice * 0.05 : 0;
+    order.finalAmount = order.totalPrice + order.shippingCharge - order.discount;
+
+    // Update order status
+    const allApprovedOrCancelled = order.orderedItems.every(i => i.returnStatus === "approved" || i.cancelled);
+    const hasPendingReturns = order.orderedItems.some(i => i.returnStatus === "pending");
+    if (allApprovedOrCancelled) {
+      order.status = "Returned";
+      order.paymentStatus = "Completed";
     } else if (!hasPendingReturns) {
-      // If there are no pending returns, revert to the original status (e.g., Delivered)
-      order.status = 'Delivered'; // Assuming the order was delivered before the return request
-      order.paymentStatus = 'Completed';
+      order.status = "Delivered";
+      order.paymentStatus = "Completed";
     } else {
-      order.status = 'Return Request';
-      order.paymentStatus = 'Pending';
+      order.status = "Return Request";
+      order.paymentStatus = "Pending";
     }
 
     await order.save();
-
-    req.session.notification = { type: 'info', text: notificationMessage };
-
+    req.session.notification = { type: "info", text: notificationMessage };
     res.redirect(`/admin/orders/${orderId}`);
   } catch (error) {
-    console.error('Error in verifyReturnRequest:', error);
+    console.error("Error in verifyReturnRequest:", error);
     res.status(500).render("admin-error", {
       title: "Error",
       message: "Unable to process return request. Please try again later.",
