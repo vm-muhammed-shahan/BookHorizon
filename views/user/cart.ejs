@@ -110,11 +110,11 @@
     </div>
     
     <div class="cart-actions">
-      <a href="/shop" class="continue-shopping-btn">Continue Shopping</a>
-      <button class="checkout-btn <%= allOutOfStock ? 'checkout-disabled' : '' %>" <%= allOutOfStock ? 'disabled' : '' %> <%= allOutOfStock ? '' : 'onclick="window.location.href=\'/checkout\'"' %>>
-        <%= allOutOfStock ? 'Proceed to Checkout (All items out of stock)' : 'Proceed to Checkout (₹ ' + total.toFixed(2) + ')' %>
-      </button>
-    </div>
+  <a href="/shop" class="continue-shopping-btn">Continue Shopping</a>
+  <button id="checkout-btn" class="checkout-btn <%= allOutOfStock ? 'checkout-disabled' : '' %>" <%= allOutOfStock ? 'disabled' : '' %>>
+    <%= allOutOfStock ? 'Proceed to Checkout (All items out of stock)' : 'Proceed to Checkout (₹ ' + total.toFixed(2) + ')' %>
+  </button>
+</div>
   <% } %>
 </div>
 
@@ -460,7 +460,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const toast = (icon, title) => 
     Swal.fire({ toast: true, position: 'top-end', icon, title, showConfirmButton: false, timer: 2000 });
 
-  // Remove from cart handler
+  // Checkout button handler
+  const checkoutBtn = document.querySelector('#checkout-btn');
+  if (checkoutBtn) {
+    checkoutBtn.addEventListener('click', () => {
+      const validItems = Array.from(document.querySelectorAll('.cart-item')).filter(item => {
+        const stockText = item.querySelector('.stock-text')?.textContent || '';
+        const quantity = parseInt(item.querySelector('.quantity').textContent) || 0;
+        return !stockText.includes('Out of stock') && quantity > 0;
+      });
+
+      if (validItems.length === 0) {
+        toast('error', 'No valid items in cart to checkout.');
+        return;
+      }
+
+      // Optional: Add debug logging
+      console.log('Proceeding to checkout with', validItems.length, 'valid items');
+      window.location.href = '/checkout';
+    });
+  }
+
+  // Remove from cart handler (unchanged, included for context)
   document.querySelectorAll('.js-remove-cart').forEach(btn => {
     btn.addEventListener('click', async () => {
       const result = await Swal.fire({
@@ -511,7 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error(data.message || 'Failed to remove item');
         }
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error removing item:', error);
         btn.disabled = false;
         btn.innerHTML = 'Remove from Cart';
         toast('error', error.message || 'Something went wrong');
@@ -519,7 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Quantity update handler
+  // Quantity update handler (unchanged, included for context)
   document.querySelectorAll('.js-quantity-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const action = btn.dataset.action;
@@ -593,7 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         btn.disabled = false;
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error updating quantity:', error);
         btn.disabled = false;
         toast('error', error.message);
       }
@@ -613,36 +634,43 @@ document.addEventListener('DOMContentLoaded', () => {
       const itemQuantity = parseInt(item.querySelector('.quantity').textContent) || 1;
       total += itemPrice * itemQuantity;
     });
-    document.querySelector('.total-amount h3').textContent = `Total: ₹ ${total.toFixed(2)}`;
+    const totalElement = document.querySelector('.total-amount h3');
+    if (totalElement) {
+      totalElement.textContent = `Total: ₹ ${total.toFixed(2)}`;
+    }
 
     const allItems = document.querySelectorAll('.cart-item');
+    const noteElement = document.querySelector('.total-amount .note');
     if (validItems.length < allItems.length) {
-      let note = document.querySelector('.total-amount .note');
-      if (!note) {
-        note = document.createElement('p');
+      if (!noteElement) {
+        const note = document.createElement('p');
         note.className = 'note';
         note.textContent = 'Note: Out-of-stock items are not included in the total.';
         document.querySelector('.total-amount').appendChild(note);
       }
     } else {
-      const note = document.querySelector('.total-amount .note');
-      if (note) note.remove();
+      if (noteElement) noteElement.remove();
     }
 
     const hasValidItems = validItems.length > 0;
-    const checkoutBtn = document.querySelector('.checkout-btn');
-    if (hasValidItems) {
-      checkoutBtn.classList.remove('checkout-disabled');
-      checkoutBtn.removeAttribute('disabled');
-      checkoutBtn.setAttribute('onclick', 'window.location.href=\'/checkout\'');
-      checkoutBtn.innerHTML = `Proceed to Checkout (₹ ${total.toFixed(2)})`;
-    } else {
-      checkoutBtn.classList.add('checkout-disabled');
-      checkoutBtn.setAttribute('disabled', 'true');
-      checkoutBtn.removeAttribute('onclick');
-      checkoutBtn.innerHTML = 'Proceed to Checkout (All items out of stock)';
+    if (checkoutBtn) {
+      if (hasValidItems) {
+        checkoutBtn.classList.remove('checkout-disabled');
+        checkoutBtn.removeAttribute('disabled');
+        checkoutBtn.innerHTML = `Proceed to Checkout (₹ ${total.toFixed(2)})`;
+      } else {
+        checkoutBtn.classList.add('checkout-disabled');
+        checkoutBtn.setAttribute('disabled', 'true');
+        checkoutBtn.innerHTML = 'Proceed to Checkout (All items out of stock)';
+      }
     }
+
+    // Debug logging
+    console.log('Cart summary updated:', { validItems: validItems.length, total: total.toFixed(2), checkoutEnabled: hasValidItems });
   }
+
+  // Initial call to ensure correct state on page load
+  updateCartSummary();
 });
 </script>
 <%- include("../../views/partials/user/footer") %>

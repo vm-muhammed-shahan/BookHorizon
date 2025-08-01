@@ -157,6 +157,9 @@ const viewCart = async (req, res) => {
       return res.redirect('/login');
     }
 
+    // Clean cart before rendering
+    await cleanCartItems(userId);
+
     const cart = await Cart.findOne({ userId: userId }).populate({
       path: 'items.productId',
       select: 'productName regularPrice salePrice productImage quantity status isBlocked'
@@ -184,7 +187,8 @@ const viewCart = async (req, res) => {
     const validItems = [];
     for (const item of items) {
       if (!item.productId || item.productId.isBlocked || item.productId.status !== 'Available') {
-        continue; // Skip blocked or unavailable items but don't remove from cart
+        console.log(`Skipping invalid item: productId=${item.productId?._id}, isBlocked=${item.productId?.isBlocked}, status=${item.productId?.status}`);
+        continue; // Skip blocked or unavailable items
       }
       validItems.push({
         ...item.toObject(),
