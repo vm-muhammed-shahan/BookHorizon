@@ -107,12 +107,12 @@
                     <%= categoryOffer ? categoryOffer.discountPercentage + '%' : '0%' %>
                   </td>
                   <td class="px-3 py-3" id="offer-period-<%= category._id %>">
-                    <% if (categoryOffer) { %>
-                      <%= `${new Date(categoryOffer.startDate).toLocaleDateString()} - ${new Date(categoryOffer.endDate).toLocaleDateString()}` %>
-                    <% } else { %>
-                      -
-                    <% } %>
-                  </td>
+  <% if (categoryOffer) { %>
+    <%= `${new Date(categoryOffer.startDate).toLocaleDateString('en-GB')} - ${new Date(categoryOffer.endDate).toLocaleDateString('en-GB')}` %>
+  <% } else { %>
+    -
+  <% } %>
+</td>
                   <td class="px-3 py-3">
                     <span 
                       id="status-<%= category._id %>" 
