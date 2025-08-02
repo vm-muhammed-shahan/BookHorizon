@@ -147,7 +147,6 @@ const cancelOrder = async (req, res) => {
       return res.status(403).json({ error: "Order not found or you are not authorized to cancel it" });
     }
 
-    // Enforce irreversible state transitions
     if (!["Pending", "Processing"].includes(order.status)) {
       return res.status(400).json({ error: "Cannot cancel order in this status" });
     }
@@ -170,7 +169,7 @@ const cancelOrder = async (req, res) => {
       const totalItemsPrice = order.orderedItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
       const itemPrice = item.price * item.quantity;
       const itemProportion = totalItemsPrice > 0 ? itemPrice / totalItemsPrice : 0;
-      refundAmount = order.finalAmount * itemProportion;
+      refundAmount = (order.totalPrice + order.tax + order.shippingCharge - order.discount - order.walletAmount) * itemProportion;
 
       await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } });
 
@@ -178,9 +177,10 @@ const cancelOrder = async (req, res) => {
       item.cancelReason = reason || "No reason provided";
 
       order.totalPrice -= itemPrice;
+      order.tax = order.totalPrice > 0 ? order.totalPrice * 0.05 : 0;
+      order.shippingCharge = order.totalPrice > 0 ? 50 : 0;
       order.discount = totalItemsPrice > 0 ? order.discount * (order.totalPrice / totalItemsPrice) : 0;
-      order.shippingCharge = order.totalPrice > 0 ? order.totalPrice * 0.05 : 0;
-      order.finalAmount = order.totalPrice + order.shippingCharge - order.discount;
+      order.finalAmount = order.totalPrice + order.tax + order.shippingCharge - order.discount - order.walletAmount;
 
       const allCancelled = order.orderedItems.every(i => i.cancelled);
       if (allCancelled) {
@@ -188,6 +188,8 @@ const cancelOrder = async (req, res) => {
         order.cancelReason = reason || "No reason provided";
         order.paymentStatus = "Failed";
         order.finalAmount = 0;
+        order.tax = 0;
+        order.shippingCharge = 0;
       }
     } else {
       if (order.status === "Cancelled") {
@@ -211,6 +213,8 @@ const cancelOrder = async (req, res) => {
       order.cancelReason = reason || "No reason provided";
       order.paymentStatus = "Failed";
       order.finalAmount = 0;
+      order.tax = 0;
+      order.shippingCharge = 0;
     }
 
     if (refundAmount > 0 && order.paymentMethod !== "cod") {
@@ -265,11 +269,6 @@ const returnOrder = async (req, res) => {
       return res.status(403).json({ error: "Order not found or you are not authorized to return it" });
     }
 
-    if (order.status !== "Delivered") {
-      return res.status(400).json({ error: "Can only return delivered orders" });
-    }
-
-    // Check return window (7 days)
     const returnWindowDays = 7;
     const deliveredDate = order.deliveredOn;
     if (!deliveredDate || new Date() > new Date(deliveredDate.getTime() + returnWindowDays * 24 * 60 * 60 * 1000)) {
@@ -294,10 +293,12 @@ const returnOrder = async (req, res) => {
 
     item.returned = true;
     item.returnReason = reason;
-    item.returnStatus = "pending"; // Set to pending instead of approved
+    item.returnStatus = "pending";
 
-    // Update order status to Return Request if any item has a pending return
-    if (order.orderedItems.some(i => i.returnStatus === "pending")) {
+    // Update order status only if all non-cancelled items are returned or pending
+    const nonCancelledItems = order.orderedItems.filter(i => !i.cancelled);
+    const allNonCancelledReturnedOrPending = nonCancelledItems.every(i => i.returned);
+    if (allNonCancelledReturnedOrPending) {
       order.status = "Return Request";
       order.paymentStatus = "Pending";
     }
@@ -319,7 +320,7 @@ const downloadInvoice = async (req, res) => {
     const userId = req.session.user._id;
     const order = await Order.findOne({ orderId, user: userId }).populate({
       path: "orderedItems.product",
-      select: "productName" // Ensure only necessary fields are populated
+      select: "productName"
     });
 
     if (!order) {
@@ -327,7 +328,7 @@ const downloadInvoice = async (req, res) => {
     }
 
     const doc = new PDFDocument({ margin: 40, size: "A4" });
-    
+
     res.setHeader("Content-disposition", `attachment; filename=invoice-${order.orderId}.pdf`);
     res.setHeader("Content-type", "application/pdf; charset=utf-8");
     res.setHeader("Content-Transfer-Encoding", "binary");
@@ -357,9 +358,9 @@ const downloadInvoice = async (req, res) => {
        .font('Helvetica-Bold')
        .fillColor('#2c3e50')
        .text('BookHorizon', margin, yPosition);
-    
+
     moveDown(25);
-    
+
     doc.fontSize(12)
        .font('Helvetica')
        .fillColor('#7f8c8d')
@@ -389,10 +390,10 @@ const downloadInvoice = async (req, res) => {
 
     doc.font('Helvetica')
        .fillColor('#34495e')
-       .text(new Date().toLocaleDateString('en-US', { 
-         year: 'numeric', 
-         month: 'long', 
-         day: 'numeric' 
+       .text(new Date().toLocaleDateString('en-US', {
+         year: 'numeric',
+         month: 'long',
+         day: 'numeric'
        }), leftColX + 80, yPosition);
 
     doc.font('Helvetica-Bold')
@@ -401,10 +402,10 @@ const downloadInvoice = async (req, res) => {
 
     doc.font('Helvetica')
        .fillColor('#34495e')
-       .text(order.createdOn.toLocaleDateString('en-US', { 
-         year: 'numeric', 
-         month: 'long', 
-         day: 'numeric' 
+       .text(order.createdOn.toLocaleDateString('en-US', {
+         year: 'numeric',
+         month: 'long',
+         day: 'numeric'
        }), rightColX + 80, yPosition);
 
     moveDown(30);
@@ -420,8 +421,8 @@ const downloadInvoice = async (req, res) => {
 
     const detailsData = [
       ['Status:', order.status],
-      ['Payment:', order.paymentMethod === 'cod' ? 'Cash on Delivery' : 
-                  order.paymentMethod === 'wallet' ? 'Wallet Payment' : 
+      ['Payment:', order.paymentMethod === 'cod' ? 'Cash on Delivery' :
+                  order.paymentMethod === 'wallet' ? 'Wallet Payment' :
                   order.paymentMethod === 'wallet+razorpay' ? 'Wallet + Online Payment' : 'Online Payment'],
       ['Payment Status:', order.paymentStatus],
       ['Wallet Amount Used:', formatCurrency(order.walletAmount || 0)],
@@ -433,7 +434,7 @@ const downloadInvoice = async (req, res) => {
          .font('Helvetica')
          .fillColor('#7f8c8d')
          .text(detail[0], leftColX, detailY);
-      
+
       doc.font('Helvetica-Bold')
          .fillColor('#34495e')
          .text(detail[1], leftColX + 100, detailY);
@@ -504,7 +505,7 @@ const downloadInvoice = async (req, res) => {
 
     moveDown(35);
 
-    const activeItems = order.orderedItems.filter(item => !item.cancelled);
+    const activeItems = order.orderedItems.filter(item => !item.cancelled && item.returnStatus !== "approved");
 
     order.orderedItems.forEach((item, index) => {
       const rowY = yPosition;
@@ -526,21 +527,21 @@ const downloadInvoice = async (req, res) => {
       }
 
       doc.text(productName, colPositions.product + 5, rowY + 8);
-      doc.text(item.quantity.toString(), colPositions.qty, rowY + 8, { 
-        width: colWidths.qty, 
-        align: 'center' 
+      doc.text(item.quantity.toString(), colPositions.qty, rowY + 8, {
+        width: colWidths.qty,
+        align: 'center'
       });
 
-      const itemPrice = item.cancelled ? 0 : item.price;
-      const itemTotal = item.cancelled ? 0 : item.price * item.quantity;
+      const itemPrice = (item.cancelled || item.returnStatus === "approved") ? 0 : item.price;
+      const itemTotal = (item.cancelled || item.returnStatus === "approved") ? 0 : item.price * item.quantity;
 
-      doc.text(formatCurrency(itemPrice), colPositions.price, rowY + 8, { 
-        width: colWidths.price, 
-        align: 'right' 
+      doc.text(formatCurrency(itemPrice), colPositions.price, rowY + 8, {
+        width: colWidths.price,
+        align: 'right'
       });
-      doc.text(formatCurrency(itemTotal), colPositions.total, rowY + 8, { 
-        width: colWidths.total, 
-        align: 'right' 
+      doc.text(formatCurrency(itemTotal), colPositions.total, rowY + 8, {
+        width: colWidths.total,
+        align: 'right'
       });
 
       if (item.cancelled) {
@@ -570,11 +571,10 @@ const downloadInvoice = async (req, res) => {
     const summaryX = margin + contentWidth - 200;
     const summaryY = yPosition;
 
-    // Use order.finalAmount as the authoritative total
     const finalTotal = order.finalAmount;
     const subtotal = activeItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const tax = order.shippingCharge || (subtotal * 0.05); // Assuming shippingCharge includes tax
-    const shipping = order.shippingCharge || (subtotal * 0.05); // Adjust based on your schema
+    const tax = order.tax || (subtotal * 0.05);
+    const shipping = order.shippingCharge || (subtotal > 0 ? 50 : 0);
     const walletAmount = order.walletAmount || 0;
     const discount = order.discount || 0;
 
@@ -589,7 +589,6 @@ const downloadInvoice = async (req, res) => {
       summaryItems.push(['Discount:', `-${formatCurrency(discount)}`]);
     }
 
-    // Adjust totals to match finalAmount if needed
     const calculatedTotal = subtotal + tax + shipping - discount - walletAmount;
     let adjustment = finalTotal - calculatedTotal;
     if (adjustment !== 0) {
@@ -602,12 +601,12 @@ const downloadInvoice = async (req, res) => {
          .font('Helvetica')
          .fillColor('#7f8c8d')
          .text(item[0], summaryX, itemY);
-      
+
       doc.text(item[1], summaryX + 100, itemY, { width: 80, align: 'right' });
     });
 
     const totalY = summaryY + (summaryItems.length * 20) + 10;
-    
+
     doc.lineWidth(1)
        .strokeColor('#bdc3c7')
        .moveTo(summaryX, totalY)
@@ -618,10 +617,10 @@ const downloadInvoice = async (req, res) => {
        .font('Helvetica-Bold')
        .fillColor('#2c3e50')
        .text('Total:', summaryX, totalY + 15);
-    
-    doc.text(formatCurrency(finalTotal), summaryX + 100, totalY + 15, { 
-      width: 80, 
-      align: 'right' 
+
+    doc.text(formatCurrency(finalTotal), summaryX + 100, totalY + 15, {
+      width: 80,
+      align: 'right'
     });
 
     const footerY = pageWidth - 80;

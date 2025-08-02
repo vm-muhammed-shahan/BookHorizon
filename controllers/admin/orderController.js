@@ -104,7 +104,6 @@ const updateOrderStatus = async (req, res) => {
       });
     }
 
-    // Enforce irreversible state transitions
     const validTransitions = {
       Pending: ["Processing", "Cancelled"],
       Processing: ["Shipped", "Cancelled"],
@@ -126,7 +125,7 @@ const updateOrderStatus = async (req, res) => {
     order.status = status;
     if (status === "Delivered") {
       order.paymentStatus = "Completed";
-      order.deliveredOn = new Date(); // Set delivery date
+      order.deliveredOn = new Date();
     } else if (status === "Cancelled") {
       order.paymentStatus = "Failed";
       let refundAmount = order.finalAmount;
@@ -164,12 +163,15 @@ const updateOrderStatus = async (req, res) => {
         await wallet.save();
       }
       order.finalAmount = 0;
+      order.tax = 0;
+      order.shippingCharge = 0;
     } else if (status === "Returned") {
       order.paymentStatus = "Completed";
       const activeItems = order.orderedItems.filter(i => !i.cancelled && i.returnStatus !== "approved");
       order.totalPrice = activeItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-      order.shippingCharge = order.totalPrice > 0 ? order.totalPrice * 0.05 : 0;
-      order.finalAmount = order.totalPrice + order.shippingCharge - order.discount;
+      order.tax = order.totalPrice > 0 ? order.totalPrice * 0.05 : 0;
+      order.shippingCharge = order.totalPrice > 0 ? 50 : 0;
+      order.finalAmount = order.totalPrice + order.tax + order.shippingCharge - order.discount - order.walletAmount;
     }
 
     await order.save();
@@ -190,18 +192,12 @@ const verifyReturnRequest = async (req, res) => {
     const { orderId, itemIndex, action } = req.body;
     const order = await Order.findOne({ orderId }).populate("orderedItems.product");
     if (!order) {
-      return res.status(404).render("admin-error", {
-        title: "Error",
-        message: `Order ${orderId} not found`,
-      });
+      return res.status(404).json({ success: false, error: `Order ${orderId} not found` });
     }
 
     const item = order.orderedItems[itemIndex];
     if (!item || item.returnStatus !== "pending" || item.cancelled) {
-      return res.status(400).render("admin-error", {
-        title: "Error",
-        message: "Invalid return request",
-      });
+      return res.status(400).json({ success: false, error: "Invalid return request" });
     }
 
     let notificationMessage = "";
@@ -211,7 +207,6 @@ const verifyReturnRequest = async (req, res) => {
       item.returnStatus = "approved";
       await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } });
 
-      // Refund to wallet for both COD and non-COD orders
       let wallet = await Wallet.findOne({ user: order.user });
       if (!wallet) {
         wallet = new Wallet({
@@ -243,38 +238,33 @@ const verifyReturnRequest = async (req, res) => {
       notificationMessage = `Return request for item in order ${order.orderId} has been rejected.`;
     }
 
-    // Recalculate order totals
+    // Recalculate order financials
     const activeItems = order.orderedItems.filter(i => !i.cancelled && i.returnStatus !== "approved");
     order.totalPrice = activeItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-    order.shippingCharge = order.totalPrice > 0 ? order.totalPrice * 0.05 : 0;
-    order.finalAmount = order.totalPrice + order.shippingCharge - order.discount;
+    order.tax = order.totalPrice > 0 ? order.totalPrice * 0.05 : 0;
+    order.shippingCharge = order.totalPrice > 0 ? 50 : 0;
+    order.finalAmount = order.totalPrice + order.tax + order.shippingCharge - order.discount - order.walletAmount;
 
     // Update order status
-    const allApprovedOrCancelled = order.orderedItems.every(i => i.returnStatus === "approved" || i.cancelled);
+    const nonCancelledItems = order.orderedItems.filter(i => !i.cancelled);
+    const allNonCancelledApprovedOrCancelled = nonCancelledItems.every(i => i.returnStatus === "approved" || i.cancelled);
     const hasPendingReturns = order.orderedItems.some(i => i.returnStatus === "pending");
-    if (allApprovedOrCancelled) {
+
+    if (allNonCancelledApprovedOrCancelled) {
       order.status = "Returned";
       order.paymentStatus = "Completed";
-    } else if (!hasPendingReturns) {
-      order.status = "Delivered";
-      order.paymentStatus = "Completed";
     } else {
-      order.status = "Return Request";
-      order.paymentStatus = "Pending";
+      order.status = hasPendingReturns ? "Return Request" : "Delivered";
+      order.paymentStatus = hasPendingReturns ? "Pending" : "Completed";
     }
 
     await order.save();
-    req.session.notification = { type: "info", text: notificationMessage };
-    res.redirect(`/admin/orders/${orderId}`);
+    res.status(200).json({ success: true, message: notificationMessage });
   } catch (error) {
     console.error("Error in verifyReturnRequest:", error);
-    res.status(500).render("admin-error", {
-      title: "Error",
-      message: "Unable to process return request. Please try again later.",
-    });
+    res.status(500).json({ success: false, error: "Unable to process return request. Please try again later." });
   }
 };
-
 
 const clearFilters = async (req, res) => {
   res.redirect("/admin/orders");

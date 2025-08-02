@@ -17,6 +17,14 @@
       background-color: #dbeafe;
       color: #1e40af;
     }
+    .notification-success {
+      background-color: #d1fae5;
+      color: #065f46;
+    }
+    .notification-error {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
     .action-btn {
       padding: 8px 16px;
       border-radius: 4px;
@@ -38,61 +46,81 @@
     .reject-btn:hover {
       background-color: #dc2626;
     }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border: 1px solid #e5e7eb;
+    }
+    th {
+      background-color: #f3f4f6;
+      font-weight: 600;
+    }
+    tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
   </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 font-sans">
   <%- include("../partials/admin/header") %>
-  <div class="container mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4"><%= title %></h1>
+  <div class="container mx-auto p-6">
+    <h1 class="text-2xl font-bold mb-6 text-gray-800"><%= title %></h1>
+
     <% if (notification) { %>
-      <div class="notification notification-info">
+      <div class="notification <%= notification.type === 'success' ? 'notification-success' : notification.type === 'error' ? 'notification-error' : 'notification-info' %>">
         <%= notification.text %>
       </div>
     <% } %>
-    <div class="bg-white p-6 shadow-md rounded">
+
+    <div class="bg-white p-6 shadow-md rounded-lg">
       <!-- Order Summary -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div>
-          <h2 class="text-lg font-semibold mb-2">Order Summary</h2>
-          <p><strong>Order ID:</strong> <%= order.orderId %></p>
-          <p><strong>Date:</strong> <%= order.createdOn ? new Date(order.createdOn).toLocaleString() : 'N/A' %></p>
-          <p><strong>Delivery Status:</strong> <%= order.status %></p>
-          <p><strong>Payment Status:</strong> <%= order.paymentStatus %></p>
-          <p><strong>Payment Method:</strong>
+          <h2 class="text-lg font-semibold mb-3 text-gray-700">Order Summary</h2>
+          <p class="mb-2"><strong>Order ID:</strong> <%= order.orderId %></p>
+          <p class="mb-2"><strong>Date:</strong> <%= order.createdOn ? new Date(order.createdOn).toLocaleString() : 'N/A' %></p>
+          <p class="mb-2"><strong>Delivery Status:</strong> <%= order.status %></p>
+          <p class="mb-2"><strong>Payment Status:</strong> <%= order.paymentStatus %></p>
+          <p class="mb-2"><strong>Payment Method:</strong>
             <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' :
                 order.paymentMethod === 'wallet' ? 'Wallet Payment' :
                 order.paymentMethod === 'wallet+razorpay' ? 'Wallet + Online Payment' : 'Online Payment' %>
           </p>
-          <p><strong>Total Price:</strong> ₹<%= order.totalPrice ? order.totalPrice.toFixed(2) : '0.00' %></p>
-          <p><strong>Discount:</strong> ₹<%= order.discount ? order.discount.toFixed(2) : '0.00' %></p>
-          <p><strong>Shipping Charge:</strong> ₹<%= order.shippingCharge ? order.shippingCharge.toFixed(2) : '0.00' %></p>
-          <p><strong>Final Amount:</strong> ₹<%= order.finalAmount ? order.finalAmount.toFixed(2) : '0.00' %></p>
+          <p class="mb-2"><strong>Wallet Amount Used:</strong> ₹<%= order.walletAmount ? order.walletAmount.toFixed(2) : '0.00' %></p>
+          <p class="mb-2"><strong>Total Price:</strong> ₹<%= order.totalPrice ? order.totalPrice.toFixed(2) : '0.00' %></p>
+          <p class="mb-2"><strong>Tax (5%):</strong> ₹<%= order.tax ? order.tax.toFixed(2) : (order.totalPrice * 0.05).toFixed(2) %></p>
+          <p class="mb-2"><strong>Discount:</strong> ₹<%= order.discount ? order.discount.toFixed(2) : '0.00' %></p>
+          <p class="mb-2"><strong>Shipping Charge:</strong> ₹<%= order.shippingCharge ? order.shippingCharge.toFixed(2) : '0.00' %></p>
+          <p class="mb-2"><strong>Final Amount:</strong> ₹<%= order.finalAmount ? order.finalAmount.toFixed(2) : '0.00' %></p>
           <% if (order.couponApplied) { %>
-            <p><strong>Coupon Applied:</strong> <%= order.couponCode || 'Yes' %></p>
+            <p class="mb-2"><strong>Coupon Applied:</strong> <%= order.couponCode || 'Yes' %></p>
           <% } %>
           <% if (order.cancelReason) { %>
-            <p><strong>Cancel Reason:</strong> <%= order.cancelReason %></p>
+            <p class="mb-2"><strong>Cancel Reason:</strong> <%= order.cancelReason %></p>
           <% } %>
         </div>
         <div>
-          <h2 class="text-lg font-semibold mb-2">Customer Details</h2>
-          <p><strong>Name:</strong> <%= order.user && order.user.name ? order.user.name : 'N/A' %></p>
-          <p><strong>Email:</strong> <%= order.user && order.user.email ? order.user.email : 'N/A' %></p>
-          <h2 class="text-lg font-semibold mt-4 mb-2">Shipping Address</h2>
-          <p><strong>Name:</strong> <%= order.address.name %></p>
-          <p><strong>Address:</strong> <%= order.address.landMark %>, <%= order.address.city %>, <%= order.address.state %>, <%= order.address.pincode %></p>
-          <p><strong>Phone:</strong> <%= order.address.phone %></p>
+          <h2 class="text-lg font-semibold mb-3 text-gray-700">Customer Details</h2>
+          <p class="mb-2"><strong>Name:</strong> <%= order.user && order.user.name ? order.user.name : 'N/A' %></p>
+          <p class="mb-2"><strong>Email:</strong> <%= order.user && order.user.email ? order.user.email : 'N/A' %></p>
+          <h2 class="text-lg font-semibold mt-4 mb-3 text-gray-700">Shipping Address</h2>
+          <p class="mb-2"><strong>Name:</strong> <%= order.address.name %></p>
+          <p class="mb-2"><strong>Address:</strong> <%= order.address.landMark %>, <%= order.address.city %>, <%= order.address.state %>, <%= order.address.pincode %></p>
+          <p class="mb-2"><strong>Phone:</strong> <%= order.address.phone %></p>
           <% if (order.address.altPhone) { %>
-            <p><strong>Alt Phone:</strong> <%= order.address.altPhone %></p>
+            <p class="mb-2"><strong>Alt Phone:</strong> <%= order.address.altPhone %></p>
           <% } %>
         </div>
       </div>
 
       <!-- Update Order Status -->
-      <div class="mb-6">
-        <h2 class="text-lg font-semibold mb-2">Update Order Status</h2>
-        <form action="/admin/orders/<%= order.orderId %>/status" method="POST" class="flex gap-4">
-          <select name="status" class="p-2 border rounded">
+      <div class="mb-8">
+        <h2 class="text-lg font-semibold mb-3 text-gray-700">Update Order Status</h2>
+        <form action="/admin/orders/<%= order.orderId %>/status" method="POST" class="flex gap-4 items-center">
+          <select name="status" class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
             <% const allowedStatuses = {
               'Pending': ['Processing', 'Cancelled'],
               'Processing': ['Shipped', 'Cancelled'],
@@ -107,36 +135,36 @@
               <option value="<%= status %>" <%= order.status === status ? 'selected' : '' %> <%= allowedStatuses.includes(status) ? '' : 'disabled' %>><%= status %></option>
             <% }) %>
           </select>
-          <button type="submit" class="bg-blue-500 text-black p-2 rounded hover:bg-blue-600">Update Status</button>
+          <button type="submit" class="bg-blue-500 text-black p-2 rounded hover:bg-blue-600 action-btn">Update Status</button>
         </form>
       </div>
 
       <!-- Items Table -->
-      <div class="mb-6">
-        <h2 class="text-lg font-semibold mb-2">Items</h2>
-        <table class="w-full border-collapse bg-white shadow-md">
+      <div class="mb-8">
+        <h2 class="text-lg font-semibold mb-3 text-gray-700">Items</h2>
+        <table class="w-full border-collapse bg-white shadow-md rounded">
           <thead>
             <tr class="bg-gray-200">
-              <th class="p-2 text-left">Product</th>
-              <th class="p-2 text-left">Quantity</th>
-              <th class="p-2 text-left">Price</th>
-              <th class="p-2 text-left">Total</th>
-              <th class="p-2 text-left">Status</th>
-              <th class="p-2 text-left">Actions</th>
+              <th class="p-3 text-left">Product</th>
+              <th class="p-3 text-left">Quantity</th>
+              <th class="p-3 text-left">Price</th>
+              <th class="p-3 text-left">Total</th>
+              <th class="p-3 text-left">Status</th>
+              <th class="p-3 text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
             <% order.orderedItems.forEach((item, index) => { %>
               <tr>
-                <td class="p-2 border"><%= item.product && item.product.productName ? item.product.productName : 'N/A' %></td>
-                <td class="p-2 border"><%= item.quantity %></td>
-                <td class="p-2 border">₹<%= item.price ? item.price.toFixed(2) : '0.00' %></td>
-                <td class="p-2 border">₹<%= (item.price * item.quantity).toFixed(2) %></td>
-                <td class="p-2 border">
+                <td class="p-3 border"><%= item.product && item.product.productName ? item.product.productName : 'N/A' %></td>
+                <td class="p-3 border"><%= item.quantity %></td>
+                <td class="p-3 border">₹<%= item.price ? item.price.toFixed(2) : '0.00' %></td>
+                <td class="p-3 border">₹<%= item.price ? (item.price * item.quantity).toFixed(2) : '0.00' %></td>
+                <td class="p-3 border">
                   <% if (item.cancelled) { %>
                     Cancelled: <%= item.cancelReason || 'No reason provided' %>
                   <% } else if (item.returned && item.returnStatus === 'pending') { %>
-                    Return Requested: <%= item.returnReason || 'No reason provided' %>
+                    Return Pending: <%= item.returnReason || 'No reason provided' %>
                   <% } else if (item.returned && item.returnStatus === 'approved') { %>
                     Returned: <%= item.returnReason || 'No reason provided' %>
                   <% } else if (item.returned && item.returnStatus === 'rejected') { %>
@@ -145,14 +173,10 @@
                     Active
                   <% } %>
                 </td>
-                <td class="p-2 border">
-                  <% if (item.returned && item.returnStatus === 'pending' && !item.cancelled) { %>
-                    <form action="/admin/orders/<%= order.orderId %>/return" method="POST" class="flex gap-2">
-                      <input type="hidden" name="orderId" value="<%= order.orderId %>">
-                      <input type="hidden" name="itemIndex" value="<%= index %>">
-                      <button type="submit" name="action" value="accept" class="action-btn accept-btn">Approve</button>
-                      <button type="submit" name="action" value="reject" class="action-btn reject-btn">Reject</button>
-                    </form>
+                <td class="p-3 border">
+                  <% if (item.returned && item.returnStatus === 'pending') { %>
+                    <button onclick="verifyReturn('<%= order.orderId %>', <%= index %>, 'accept')" class="action-btn accept-btn mr-2">Accept</button>
+                    <button onclick="verifyReturn('<%= order.orderId %>', <%= index %>, 'reject')" class="action-btn reject-btn">Reject</button>
                   <% } %>
                 </td>
               </tr>
@@ -162,10 +186,56 @@
       </div>
 
       <!-- Back Button -->
-      <div>
-        <a href="/admin/orders" class="bg-gray-500 text-white p-2 rounded hover:bg-gray-600">Back to Orders</a>
+      <div class="flex justify-end">
+        <a href="/admin/orders" class="bg-gray-500 text-white p-2 rounded hover:bg-gray-600 action-btn">Back to Orders</a>
       </div>
     </div>
   </div>
+
+  <script>
+  async function verifyReturn(orderId, itemIndex, action) {
+    try {
+      const response = await fetch(`/admin/orders/${orderId}/return`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, itemIndex, action })
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const result = await response.json(); // Expect JSON response from server
+      if (result.success) {
+        await Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: result.message || `Return request ${action}ed successfully.`,
+          confirmButtonText: 'Okay',
+          confirmButtonColor: '#10b981'
+        });
+      } else {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: result.error || 'Failed to process return request.',
+          confirmButtonText: 'Okay',
+          confirmButtonColor: '#ef4444'
+        });
+      }
+      location.reload();
+    } catch (error) {
+      console.error('Error verifying return:', error);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'An unexpected error occurred while processing the return request.',
+        confirmButtonText: 'Okay',
+        confirmButtonColor: '#ef4444'
+      });
+      location.reload();
+    }
+  }
+</script>
 </body>
 </html>

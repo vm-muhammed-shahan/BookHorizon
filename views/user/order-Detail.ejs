@@ -58,7 +58,7 @@
       </div>
       <div class="summary-item">
         <span class="label">Tax (5%):</span>
-        <span class="value">₹<%= order.shippingCharge ? order.shippingCharge.toFixed(2) : (order.totalPrice * 0.05).toFixed(2) %></span>
+        <span class="value">₹<%= order.tax ? order.tax.toFixed(2) : (order.totalPrice * 0.05).toFixed(2) %></span>
       </div>
       <div class="summary-item">
         <span class="label">Shipping Charge:</span>
@@ -138,7 +138,7 @@
               <% if (!item.cancelled && !item.returned && (order.status === 'Pending' || order.status === 'Processing')) { %>
                 <button onclick="openModal('cancel', '<%= order.orderId %>', '<%= item.product ? item.product._id : '' %>')" class="action-btn cancel-btn">Cancel Item</button>
               <% } %>
-              <% if (!item.cancelled && !item.returned && order.status === 'Delivered') { %>
+              <% if (!item.cancelled && !item.returned && order.deliveredOn && (new Date() <= new Date(new Date(order.deliveredOn).getTime() + 7 * 24 * 60 * 60 * 1000))) { %>
                 <button onclick="openModal('return', '<%= order.orderId %>', '<%= item.product ? item.product._id : '' %>')" class="action-btn return-btn">Return Item</button>
               <% } %>
             </div>
@@ -170,7 +170,6 @@
   </div>
 
   <style>
-    /* Existing styles unchanged */
     .order-container {
       max-width: 900px;
       margin: 20px auto;
@@ -203,6 +202,7 @@
       padding: 25px;
       border-radius: 8px;
       border: 1px solid #eee;
+      margin-bottom: 20px;
     }
     .summary-section h3 {
       font-size: 18px;
@@ -496,200 +496,240 @@
   </style>
 
   <script>
-    let currentOrderId = null;
-    let currentProductId = null;
-    let currentAction = null;
-    let pollingInterval = null;
-    let previousItemStates = {};
+let currentOrderId = null;
+let currentProductId = null;
+let currentAction = null;
+let pollingInterval = null;
+let previousItemStates = {};
 
-    function openModal(action, orderId, productId = null) {
-      currentAction = action;
-      currentOrderId = orderId;
-      currentProductId = productId;
-      document.getElementById("modalTitle").textContent =
-        action === "cancel"
-          ? productId
-            ? "Cancel Item"
-            : "Cancel Entire Order"
-          : "Return Item";
-      document.getElementById("reasonInput").value = "";
-      document.getElementById("reasonModal").style.display = "flex";
-    }
+function openModal(action, orderId, productId = null) {
+  currentAction = action;
+  currentOrderId = orderId;
+  currentProductId = productId;
+  document.getElementById("modalTitle").textContent =
+    action === "cancel"
+      ? productId
+        ? "Cancel Item"
+        : "Cancel Entire Order"
+      : "Return Item";
+  document.getElementById("reasonInput").value = "";
+  document.getElementById("reasonModal").style.display = "flex";
+}
 
-    function closeModal() {
-      document.getElementById("reasonModal").style.display = "none";
-      currentOrderId = null;
-      currentProductId = null;
-      currentAction = null;
-    }
+function closeModal() {
+  document.getElementById("reasonModal").style.display = "none";
+  currentOrderId = null;
+  currentProductId = null;
+  currentAction = null;
+}
 
-    async function submitReason() {
-      const reason = document.getElementById("reasonInput").value.trim();
-      if (!reason) {
-        await Swal.fire({
-          icon: "warning",
-          title: "Validation Error",
-          text: "Reason is mandatory.",
-          confirmButtonText: "Okay",
-          confirmButtonColor: "#3b82f6",
-        });
-        return;
+// Helper function to check if an item is eligible for return
+function isEligibleForReturn(item, order) {
+  // Item must not be cancelled or returned
+  if (item.cancelled || item.returned) {
+    return false;
+  }
+  
+  // Must be within return window (7 days)
+  if (!order.deliveredOn) {
+    return false;
+  }
+  
+  const returnWindowDays = 7;
+  const deliveredDate = new Date(order.deliveredOn);
+  const currentDate = new Date();
+  const returnDeadline = new Date(deliveredDate.getTime() + returnWindowDays * 24 * 60 * 60 * 1000);
+  
+  return currentDate <= returnDeadline;
+}
+
+// Helper function to check if an item is eligible for cancellation
+function isEligibleForCancellation(item, order) {
+  // Item must not be cancelled or returned
+  if (item.cancelled || item.returned) {
+    return false;
+  }
+  
+  // Order must be in Pending or Processing status
+  return order.status === 'Pending' || order.status === 'Processing';
+}
+
+async function submitReason() {
+  const reason = document.getElementById("reasonInput").value.trim();
+  if (!reason) {
+    await Swal.fire({
+      icon: "warning",
+      title: "Validation Error",
+      text: "Reason is mandatory.",
+      confirmButtonText: "Okay",
+      confirmButtonColor: "#3b82f6",
+    });
+    return;
+  }
+
+  try {
+    const url = currentAction === "cancel" ? "/orders/cancel" : "/orders/return";
+    const body = {
+      orderId: currentOrderId,
+      productId: currentProductId,
+      reason,
+    };
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      await Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: result.message,
+        confirmButtonText: "Okay",
+        confirmButtonColor: "#3b82f6",
+      });
+      if (currentAction === "return") {
+        setTimeout(()=>{
+           window.location.reload()
+        },2000)
+        // startPolling(currentOrderId);
+      } else {
+        location.reload();
       }
-
-      try {
-        const url = currentAction === "cancel" ? "/orders/cancel" : "/orders/return";
-        const body = {
-          orderId: currentOrderId,
-          productId: currentProductId,
-          reason,
-        };
-
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-
-        const result = await response.json();
-        if (result.success) {
-          await Swal.fire({
-            icon: "success",
-            title: "Success",
-            text: result.message,
-            confirmButtonText: "Okay",
-            confirmButtonColor: "#3b82f6",
-          });
-          if (currentAction === "return") {
-            startPolling(currentOrderId);
-          } else {
-            location.reload();
-          }
-        } else {
-          await Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: result.error,
-            confirmButtonText: "Okay",
-            confirmButtonColor: "#3b82f6",
-          });
-        }
-      } catch (error) {
-        console.error("Error submitting action:", error);
-        await Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "An error occurred. Please try again.",
-          confirmButtonText: "Okay",
-          confirmButtonColor: "#3b82f6",
-        });
-      }
-
-      closeModal();
+    } else {
+      await Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: result.error,
+        confirmButtonText: "Okay",
+        confirmButtonColor: "#3b82f6",
+      });
     }
+  } catch (error) {
+    console.error("Error submitting action:", error);
+    await Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "An error occurred. Please try again.",
+      confirmButtonText: "Okay",
+      confirmButtonColor: "#3b82f6",
+    });
+  }
 
-    function startPolling(orderId) {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-      }
+  closeModal();
+}
 
-      pollingInterval = setInterval(async () => {
-        try {
-          const response = await fetch(`/orders/status/${orderId}`);
-          const result = await response.json();
+// function startPolling(orderId) {
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+  }
 
-          if (result.success) {
-            const order = result.order;
-            document.querySelector('[data-field="status"]').textContent = order.status;
-            document.querySelector('[data-field="paymentStatus"]').textContent = order.paymentStatus;
+  pollingInterval = setInterval(async () => {
+    try {
+      const response = await fetch(`/orders/status/${orderId}`);
+      const result = await response.json();
 
-            order.orderedItems.forEach(item => {
-              const orderItem = document.querySelector(`[data-product-id="${item.productId}"]`);
-              if (orderItem) {
-                const statusText = orderItem.querySelector(".status-text");
-                const actionsDiv = orderItem.querySelector(".item-actions");
-                const previousState = previousItemStates[item.productId] || {};
+      if (result.success) {
+        const order = result.order;
+        document.querySelector('[data-field="status"]').textContent = order.status;
+        document.querySelector('[data-field="paymentStatus"]').textContent = order.paymentStatus;
 
-                // Notify user of return status changes
-                if (previousState.returnStatus === "pending" && item.returnStatus === "approved") {
-                  Swal.fire({
-                    icon: "success",
-                    title: "Return Approved",
-                    text: `Your return request for an item in order ${orderId} has been approved.`,
-                    confirmButtonText: "Okay",
-                    confirmButtonColor: "#3b82f6",
-                  });
-                } else if (previousState.returnStatus === "pending" && item.returnStatus === "rejected") {
-                  Swal.fire({
-                    icon: "error",
-                    title: "Return Rejected",
-                    text: `Your return request for an item in order ${orderId} has been rejected.`,
-                    confirmButtonText: "Okay",
-                    confirmButtonColor: "#3b82f6",
-                  });
-                }
+        order.orderedItems.forEach(item => {
+          const orderItem = document.querySelector(`[data-product-id="${item.productId}"]`);
+          if (orderItem) {
+            const statusText = orderItem.querySelector(".status-text");
+            const actionsDiv = orderItem.querySelector(".item-actions");
+            const previousState = previousItemStates[item.productId] || {};
 
-                previousItemStates[item.productId] = {
-                  returnStatus: item.returnStatus,
-                  returned: item.returned,
-                  cancelReason: item.cancelReason,
-                  returnReason: item.returnReason,
-                  cancelled: item.cancelled,
-                };
+            previousItemStates[item.productId] = {
+              returnStatus: item.returnStatus,
+              returned: item.returned,
+              cancelReason: item.cancelReason,
+              returnReason: item.returnReason,
+              cancelled: item.cancelled,
+            };
 
-                if (item.cancelled) {
-                  statusText.textContent = `Cancelled: ${item.cancelReason || "No reason provided"}`;
-                  actionsDiv.innerHTML = "";
-                } else if (item.returned && item.returnStatus === "pending") {
-                  statusText.textContent = `Return Requested: ${item.returnReason || "No reason provided"}`;
-                  actionsDiv.innerHTML = "";
-                } else if (item.returned && item.returnStatus === "approved") {
-                  statusText.textContent = `Returned: ${item.returnReason || "No reason provided"}`;
-                  actionsDiv.innerHTML = "";
-                } else if (item.returned && item.returnStatus === "rejected") {
-                  statusText.textContent = `Return Rejected: ${item.returnReason || "No reason provided"}`;
-                  actionsDiv.innerHTML =
-                    order.status === "Delivered" && !item.cancelled && !item.returned
-                      ? `<button onclick="openModal('return', '${orderId}', '${item.productId}')" class="action-btn return-btn">Return Item</button>`
-                      : "";
-                } else {
-                  statusText.textContent = "Active";
-                  actionsDiv.innerHTML = "";
-                  if (!item.cancelled && !item.returned && (order.status === "Pending" || order.status === "Processing")) {
-                    actionsDiv.innerHTML = `<button onclick="openModal('cancel', '${orderId}', '${item.productId}')" class="action-btn cancel-btn">Cancel Item</button>`;
-                  } else if (!item.cancelled && !item.returned && order.status === "Delivered") {
-                    actionsDiv.innerHTML = `<button onclick="openModal('return', '${orderId}', '${item.productId}')" class="action-btn return-btn">Return Item</button>`;
-                  }
-                }
+            // Update status text
+            if (statusText) {
+              if (item.cancelled) {
+                statusText.textContent = `Cancelled: ${item.cancelReason || "No reason provided"}`;
+              } else if (item.returned && item.returnStatus === "pending") {
+                statusText.textContent = `Return Requested: ${item.returnReason || "No reason provided"}`;
+              } else if (item.returned && item.returnStatus === "approved") {
+                statusText.textContent = `Returned: ${item.returnReason || "No reason provided"}`;
+              } else if (item.returned && item.returnStatus === "rejected") {
+                statusText.textContent = `Return Rejected: ${item.returnReason || "No reason provided"}`;
+              } else {
+                statusText.textContent = "Active";
               }
-            });
+            }
 
-            const hasPendingReturns = order.orderedItems.some(item => item.returnStatus === "pending");
-            if (!hasPendingReturns) {
-              clearInterval(pollingInterval);
-              pollingInterval = null;
+            // Update action buttons based on individual item eligibility
+            actionsDiv.innerHTML = "";
+            
+            if (isEligibleForReturn(item, order)) {
+              actionsDiv.innerHTML += `
+                <button onclick="openModal('return', '${orderId}', '${item.productId}')" class="action-btn return-btn">Return Item</button>
+              `;
+            }
+            
+            if (isEligibleForCancellation(item, order)) {
+              actionsDiv.innerHTML += `
+                <button onclick="openModal('cancel', '${orderId}', '${item.productId}')" class="action-btn cancel-btn">Cancel Item</button>
+              `;
             }
           }
-        } catch (error) {
-          console.error("Error polling order status:", error);
-        }
-      }, 5000);
-    }
+        });
 
-    window.onload = function () {
-      const hasPendingReturns = Array.from(document.querySelectorAll(".status-text")).some(el => el.textContent.includes("Return Requested"));
-      if (hasPendingReturns) {
-        <% order.orderedItems.forEach(item => { %>
-          previousItemStates["<%= item.product ? item.product._id : '' %>"] = {
-            returnStatus: "<%= item.returnStatus || '' %>",
-            returned: <%= item.returned ? "true" : "false" %>,
-            cancelReason: "<%= item.cancelReason || '' %>",
-            returnReason: "<%= item.returnReason || '' %>",
-            cancelled: <%= item.cancelled ? "true" : "false" %>,
-          };
-        <% }) %>
-        startPolling("<%= order.orderId %>");
+        // Stop polling when there are no pending returns
+        const hasPendingReturns = order.orderedItems.some(item => item.returnStatus === "pending");
+        if (!hasPendingReturns) {
+          clearInterval(pollingInterval);
+          pollingInterval = null;
+        }
       }
+    } catch (error) {
+      console.error("Error polling order status:", error);
+    }
+  }, 5000);
+}
+
+window.onload = function () {
+  // Initialize previous states for server-side rendered items
+  <% order.orderedItems.forEach(item => { %>
+    previousItemStates["<%= item.product ? item.product._id : '' %>"] = {
+      returnStatus: "<%= item.returnStatus || '' %>",
+      returned: <%= item.returned ? "true" : "false" %>,
+      cancelReason: "<%= item.cancelReason || '' %>",
+      returnReason: "<%= item.returnReason || '' %>",
+      cancelled: <%= item.cancelled ? "true" : "false" %>,
     };
-  </script>
+  <% }) %>
+  
+  // Start polling if there are pending returns
+  const hasPendingReturns = Array.from(document.querySelectorAll(".status-text")).some(el => el.textContent.includes("Return Requested"));
+  if (hasPendingReturns) {
+    // startPolling("<%= order.orderId %>");
+  }
+  
+  // Set up initial order state for client-side functions
+  window.orderData = {
+    status: "<%= order.status %>",
+    deliveredOn: "<%= order.deliveredOn || '' %>",
+    orderedItems: [
+      <% order.orderedItems.forEach((item, index) => { %>
+        {
+          productId: "<%= item.product ? item.product._id : '' %>",
+          cancelled: <%= item.cancelled ? "true" : "false" %>,
+          returned: <%= item.returned ? "true" : "false" %>,
+          returnStatus: "<%= item.returnStatus || '' %>"
+        }<%= index < order.orderedItems.length - 1 ? ',' : '' %>
+      <% }) %>
+    ]
+  };
+};
+</script>
 </body>
 </html>
