@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <%- include("../../views/partials/user/header") %>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Order #<%= order.orderId %></title>
@@ -136,10 +137,10 @@
             </div>
             <div class="item-actions">
               <% if (!item.cancelled && !item.returned && (order.status === 'Pending' || order.status === 'Processing')) { %>
-                <button onclick="openModal('cancel', '<%= order.orderId %>', '<%= item.product ? item.product._id : '' %>')" class="action-btn cancel-btn">Cancel Item</button>
+                <button class="action-btn cancel-btn" data-action="cancel" data-order-id="<%= order.orderId %>" data-product-id="<%= item.product ? item.product._id : '' %>">Cancel Item</button>
               <% } %>
               <% if (!item.cancelled && !item.returned && order.deliveredOn && (new Date() <= new Date(new Date(order.deliveredOn).getTime() + 7 * 24 * 60 * 60 * 1000))) { %>
-                <button onclick="openModal('return', '<%= order.orderId %>', '<%= item.product ? item.product._id : '' %>')" class="action-btn return-btn">Return Item</button>
+                <button class="action-btn return-btn" data-action="return" data-order-id="<%= order.orderId %>" data-product-id="<%= item.product ? item.product._id : '' %>">Return Item</button>
               <% } %>
             </div>
           </div>
@@ -152,7 +153,7 @@
       <a href="/orders" class="continue-shopping-btn">Back to Orders</a>
       <div class="action-buttons">
         <% if (order.status === 'Pending' || order.status === 'Processing') { %>
-          <button onclick="openModal('cancel', '<%= order.orderId %>')" class="clear-wishlist-btn">Cancel Entire Order</button>
+          <button class="clear-wishlist-btn" data-action="cancel" data-order-id="<%= order.orderId %>" data-product-id="">Cancel Entire Order</button>
         <% } %>
         <a href="/orders/invoice/<%= order.orderId %>" class="action-btn invoice-btn">Download Invoice</a>
       </div>
@@ -496,240 +497,217 @@
   </style>
 
   <script>
-let currentOrderId = null;
-let currentProductId = null;
-let currentAction = null;
-let pollingInterval = null;
-let previousItemStates = {};
+    let pollingInterval = null;
+    let previousItemStates = {};
 
-function openModal(action, orderId, productId = null) {
-  currentAction = action;
-  currentOrderId = orderId;
-  currentProductId = productId;
-  document.getElementById("modalTitle").textContent =
-    action === "cancel"
-      ? productId
-        ? "Cancel Item"
-        : "Cancel Entire Order"
-      : "Return Item";
-  document.getElementById("reasonInput").value = "";
-  document.getElementById("reasonModal").style.display = "flex";
-}
-
-function closeModal() {
-  document.getElementById("reasonModal").style.display = "none";
-  currentOrderId = null;
-  currentProductId = null;
-  currentAction = null;
-}
-
-// Helper function to check if an item is eligible for return
-function isEligibleForReturn(item, order) {
-  // Item must not be cancelled or returned
-  if (item.cancelled || item.returned) {
-    return false;
-  }
-  
-  // Must be within return window (7 days)
-  if (!order.deliveredOn) {
-    return false;
-  }
-  
-  const returnWindowDays = 7;
-  const deliveredDate = new Date(order.deliveredOn);
-  const currentDate = new Date();
-  const returnDeadline = new Date(deliveredDate.getTime() + returnWindowDays * 24 * 60 * 60 * 1000);
-  
-  return currentDate <= returnDeadline;
-}
-
-// Helper function to check if an item is eligible for cancellation
-function isEligibleForCancellation(item, order) {
-  // Item must not be cancelled or returned
-  if (item.cancelled || item.returned) {
-    return false;
-  }
-  
-  // Order must be in Pending or Processing status
-  return order.status === 'Pending' || order.status === 'Processing';
-}
-
-async function submitReason() {
-  const reason = document.getElementById("reasonInput").value.trim();
-  if (!reason) {
-    await Swal.fire({
-      icon: "warning",
-      title: "Validation Error",
-      text: "Reason is mandatory.",
-      confirmButtonText: "Okay",
-      confirmButtonColor: "#3b82f6",
-    });
-    return;
-  }
-
-  try {
-    const url = currentAction === "cancel" ? "/orders/cancel" : "/orders/return";
-    const body = {
-      orderId: currentOrderId,
-      productId: currentProductId,
-      reason,
-    };
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-
-    const result = await response.json();
-    if (result.success) {
-      await Swal.fire({
-        icon: "success",
-        title: "Success",
-        text: result.message,
-        confirmButtonText: "Okay",
-        confirmButtonColor: "#3b82f6",
-      });
-      if (currentAction === "return") {
-        setTimeout(()=>{
-           window.location.reload()
-        },2000)
-        // startPolling(currentOrderId);
-      } else {
-        location.reload();
-      }
-    } else {
-      await Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: result.error,
-        confirmButtonText: "Okay",
-        confirmButtonColor: "#3b82f6",
-      });
-    }
-  } catch (error) {
-    console.error("Error submitting action:", error);
-    await Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: "An error occurred. Please try again.",
-      confirmButtonText: "Okay",
-      confirmButtonColor: "#3b82f6",
-    });
-  }
-
-  closeModal();
-}
-
-// function startPolling(orderId) {
-  if (pollingInterval) {
-    clearInterval(pollingInterval);
-  }
-
-  pollingInterval = setInterval(async () => {
-    try {
-      const response = await fetch(`/orders/status/${orderId}`);
-      const result = await response.json();
-
-      if (result.success) {
-        const order = result.order;
-        document.querySelector('[data-field="status"]').textContent = order.status;
-        document.querySelector('[data-field="paymentStatus"]').textContent = order.paymentStatus;
-
-        order.orderedItems.forEach(item => {
-          const orderItem = document.querySelector(`[data-product-id="${item.productId}"]`);
-          if (orderItem) {
-            const statusText = orderItem.querySelector(".status-text");
-            const actionsDiv = orderItem.querySelector(".item-actions");
-            const previousState = previousItemStates[item.productId] || {};
-
-            previousItemStates[item.productId] = {
-              returnStatus: item.returnStatus,
-              returned: item.returned,
-              cancelReason: item.cancelReason,
-              returnReason: item.returnReason,
-              cancelled: item.cancelled,
-            };
-
-            // Update status text
-            if (statusText) {
-              if (item.cancelled) {
-                statusText.textContent = `Cancelled: ${item.cancelReason || "No reason provided"}`;
-              } else if (item.returned && item.returnStatus === "pending") {
-                statusText.textContent = `Return Requested: ${item.returnReason || "No reason provided"}`;
-              } else if (item.returned && item.returnStatus === "approved") {
-                statusText.textContent = `Returned: ${item.returnReason || "No reason provided"}`;
-              } else if (item.returned && item.returnStatus === "rejected") {
-                statusText.textContent = `Return Rejected: ${item.returnReason || "No reason provided"}`;
-              } else {
-                statusText.textContent = "Active";
-              }
-            }
-
-            // Update action buttons based on individual item eligibility
-            actionsDiv.innerHTML = "";
-            
-            if (isEligibleForReturn(item, order)) {
-              actionsDiv.innerHTML += `
-                <button onclick="openModal('return', '${orderId}', '${item.productId}')" class="action-btn return-btn">Return Item</button>
-              `;
-            }
-            
-            if (isEligibleForCancellation(item, order)) {
-              actionsDiv.innerHTML += `
-                <button onclick="openModal('cancel', '${orderId}', '${item.productId}')" class="action-btn cancel-btn">Cancel Item</button>
-              `;
-            }
-          }
-        });
-
-        // Stop polling when there are no pending returns
-        const hasPendingReturns = order.orderedItems.some(item => item.returnStatus === "pending");
-        if (!hasPendingReturns) {
-          clearInterval(pollingInterval);
-          pollingInterval = null;
+    // Event delegation for button clicks
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('action-btn')) {
+        const action = e.target.getAttribute('data-action');
+        const orderId = e.target.getAttribute('data-order-id');
+        const productId = e.target.getAttribute('data-product-id') || null;
+        if (action === 'cancel' || action === 'return') {
+          openModal(action, orderId, productId);
         }
       }
-    } catch (error) {
-      console.error("Error polling order status:", error);
-    }
-  }, 5000);
-}
+    });
 
-window.onload = function () {
-  // Initialize previous states for server-side rendered items
-  <% order.orderedItems.forEach(item => { %>
-    previousItemStates["<%= item.product ? item.product._id : '' %>"] = {
-      returnStatus: "<%= item.returnStatus || '' %>",
-      returned: <%= item.returned ? "true" : "false" %>,
-      cancelReason: "<%= item.cancelReason || '' %>",
-      returnReason: "<%= item.returnReason || '' %>",
-      cancelled: <%= item.cancelled ? "true" : "false" %>,
-    };
-  <% }) %>
-  
-  // Start polling if there are pending returns
-  const hasPendingReturns = Array.from(document.querySelectorAll(".status-text")).some(el => el.textContent.includes("Return Requested"));
-  if (hasPendingReturns) {
-    // startPolling("<%= order.orderId %>");
-  }
-  
-  // Set up initial order state for client-side functions
-  window.orderData = {
-    status: "<%= order.status %>",
-    deliveredOn: "<%= order.deliveredOn || '' %>",
-    orderedItems: [
-      <% order.orderedItems.forEach((item, index) => { %>
-        {
-          productId: "<%= item.product ? item.product._id : '' %>",
-          cancelled: <%= item.cancelled ? "true" : "false" %>,
-          returned: <%= item.returned ? "true" : "false" %>,
-          returnStatus: "<%= item.returnStatus || '' %>"
-        }<%= index < order.orderedItems.length - 1 ? ',' : '' %>
+    function openModal(action, orderId, productId = null) {
+      currentAction = action;
+      currentOrderId = orderId;
+      currentProductId = productId;
+      document.getElementById('modalTitle').textContent =
+        action === 'cancel'
+          ? productId
+            ? 'Cancel Item'
+            : 'Cancel Entire Order'
+          : 'Return Item';
+      document.getElementById('reasonInput').value = '';
+      document.getElementById('reasonModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('reasonModal').style.display = 'none';
+      currentOrderId = null;
+      currentProductId = null;
+      currentAction = null;
+    }
+
+    function isEligibleForReturn(item, order) {
+      if (item.cancelled || item.returned) return false;
+      if (!order.deliveredOn) return false;
+      const returnWindowDays = 7;
+      const deliveredDate = new Date(order.deliveredOn);
+      const currentDate = new Date();
+      const returnDeadline = new Date(deliveredDate.getTime() + returnWindowDays * 24 * 60 * 60 * 1000);
+      return currentDate <= returnDeadline;
+    }
+
+    function isEligibleForCancellation(item, order) {
+      if (item.cancelled || item.returned) return false;
+      return order.status === 'Pending' || order.status === 'Processing';
+    }
+
+    async function submitReason() {
+      const reason = document.getElementById('reasonInput').value.trim();
+      if (!reason) {
+        await Swal.fire({
+          icon: 'warning',
+          title: 'Validation Error',
+          text: 'Reason is mandatory.',
+          confirmButtonText: 'Okay',
+          confirmButtonColor: '#3b82f6',
+        });
+        return;
+      }
+
+      try {
+        const url = currentAction === 'cancel' ? '/orders/cancel' : '/orders/return';
+        const body = {
+          orderId: currentOrderId,
+          productId: currentProductId,
+          reason,
+        };
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          await Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: result.message,
+            confirmButtonText: 'Okay',
+            confirmButtonColor: '#3b82f6',
+          });
+          // Reload only after successful response
+          setTimeout(() => location.reload(), 500);
+        } else {
+          await Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: result.error,
+            confirmButtonText: 'Okay',
+            confirmButtonColor: '#3b82f6',
+          });
+        }
+      } catch (error) {
+        console.error('Error submitting action:', error);
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'An error occurred. Please try again.',
+          confirmButtonText: 'Okay',
+          confirmButtonColor: '#3b82f6',
+        });
+      }
+
+      closeModal();
+    }
+
+    if (pollingInterval) clearInterval(pollingInterval);
+
+    pollingInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/orders/status/${orderId}`);
+        const result = await response.json();
+
+        if (result.success) {
+          const order = result.order;
+          document.querySelector('[data-field="status"]').textContent = order.status;
+          document.querySelector('[data-field="paymentStatus"]').textContent = order.paymentStatus;
+
+          order.orderedItems.forEach(item => {
+            const orderItem = document.querySelector(`[data-product-id="${item.productId}"]`);
+            if (orderItem) {
+              const statusText = orderItem.querySelector('.status-text');
+              const actionsDiv = orderItem.querySelector('.item-actions');
+              const previousState = previousItemStates[item.productId] || {};
+
+              previousItemStates[item.productId] = {
+                returnStatus: item.returnStatus,
+                returned: item.returned,
+                cancelReason: item.cancelReason,
+                returnReason: item.returnReason,
+                cancelled: item.cancelled,
+              };
+
+              if (statusText) {
+                if (item.cancelled) {
+                  statusText.textContent = `Cancelled: ${item.cancelReason || 'No reason provided'}`;
+                } else if (item.returned && item.returnStatus === 'pending') {
+                  statusText.textContent = `Return Requested: ${item.returnReason || 'No reason provided'}`;
+                } else if (item.returned && item.returnStatus === 'approved') {
+                  statusText.textContent = `Returned: ${item.returnReason || 'No reason provided'}`;
+                } else if (item.returned && item.returnStatus === 'rejected') {
+                  statusText.textContent = `Return Rejected: ${item.returnReason || 'No reason provided'}`;
+                } else {
+                  statusText.textContent = 'Active';
+                }
+              }
+
+              // Update actions with event delegation in mind
+              actionsDiv.innerHTML = '';
+              if (isEligibleForReturn(item, order)) {
+                actionsDiv.innerHTML += `
+                  <button class="action-btn return-btn" data-action="return" data-order-id="${orderId}" data-product-id="${item.productId}">Return Item</button>
+                `;
+              }
+              if (isEligibleForCancellation(item, order)) {
+                actionsDiv.innerHTML += `
+                  <button class="action-btn cancel-btn" data-action="cancel" data-order-id="${orderId}" data-product-id="${item.productId}">Cancel Item</button>
+                `;
+              }
+            }
+          });
+
+          const hasPendingReturns = order.orderedItems.some(item => item.returnStatus === 'pending');
+          if (!hasPendingReturns) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+          }
+        }
+      } catch (error) {
+        console.error('Error polling order status:', error);
+      }
+    }, 5000);
+
+    window.onload = function () {
+      <% order.orderedItems.forEach(item => { %>
+        previousItemStates["<%= item.product ? item.product._id : '' %>"] = {
+          returnStatus: "<%= item.returnStatus || '' %>",
+          returned: <%= item.returned ? 'true' : 'false' %>,
+          cancelReason: "<%= item.cancelReason || '' %>",
+          returnReason: "<%= item.returnReason || '' %>",
+          cancelled: <%= item.cancelled ? 'true' : 'false' %>,
+        };
       <% }) %>
-    ]
-  };
-};
-</script>
+
+      const hasPendingReturns = Array.from(document.querySelectorAll('.status-text')).some(el => el.textContent.includes('Return Requested'));
+      if (hasPendingReturns) {
+        // Polling will start above if needed
+      }
+
+      window.orderData = {
+        status: "<%= order.status %>",
+        deliveredOn: "<%= order.deliveredOn || '' %>",
+        orderedItems: [
+          <% order.orderedItems.forEach((item, index) => { %>
+            {
+              productId: "<%= item.product ? item.product._id : '' %>",
+              cancelled: <%= item.cancelled ? 'true' : 'false' %>,
+              returned: <%= item.returned ? 'true' : 'false' %>,
+              returnStatus: "<%= item.returnStatus || '' %>"
+            }<%= index < order.orderedItems.length - 1 ? ',' : '' %>
+          <% }) %>
+        ]
+      };
+    };
+  </script>
+  <%- include("../../views/partials/user/footer") %>
 </body>
 </html>

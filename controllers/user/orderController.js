@@ -1,9 +1,13 @@
+
 const Order = require("../../models/orderSchema");
 const User = require("../../models/userSchema");
 const Product = require("../../models/productSchema");
 const Wallet = require("../../models/walletSchema");
+const Coupon = require("../../models/couponSchema");
 const PDFDocument = require("pdfkit");
 const path = require("path"); 
+
+
 
 const getOrders = async (req, res) => {
   try {
@@ -43,6 +47,7 @@ const getOrders = async (req, res) => {
     res.status(500).render("error", { message: "Error fetching orders" });
   }
 };
+
 
 const getOrderDetail = async (req, res) => {
   try {
@@ -84,6 +89,7 @@ const getOrderDetail = async (req, res) => {
   }
 };
 
+
 const getOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -116,6 +122,7 @@ const getOrderStatus = async (req, res) => {
   }
 };
 
+
 const getWalletDetails = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -138,6 +145,7 @@ const getWalletDetails = async (req, res) => {
   }
 };
 
+
 const cancelOrder = async (req, res) => {
   try {
     const { orderId, productId, reason } = req.body;
@@ -152,6 +160,8 @@ const cancelOrder = async (req, res) => {
     }
 
     let refundAmount = 0;
+    const originalTotalItemsPrice = order.orderedItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+    const coupon = order.couponId ? await Coupon.findById(order.couponId) : null;
 
     if (productId) {
       const itemIndex = order.orderedItems.findIndex(i => i.product._id.toString() === productId);
@@ -166,21 +176,48 @@ const cancelOrder = async (req, res) => {
         return res.status(400).json({ error: "Item has a return request and cannot be cancelled" });
       }
 
-      const totalItemsPrice = order.orderedItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
       const itemPrice = item.price * item.quantity;
-      const itemProportion = totalItemsPrice > 0 ? itemPrice / totalItemsPrice : 0;
-      refundAmount = (order.totalPrice + order.tax + order.shippingCharge - order.discount - order.walletAmount) * itemProportion;
+      const itemProportion = originalTotalItemsPrice > 0 ? itemPrice / originalTotalItemsPrice : 0;
 
-      await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } });
+      // Ensure required fields exist
+      order.tax = order.tax || 0;
+      order.shippingCharge = order.shippingCharge || 0;
+      order.discount = order.discount || 0;
+      order.couponApplied = order.couponApplied || false;
+      order.couponId = order.couponId || null;
+
+      // Calculate original item contribution to total before discount
+      const originalItemTotal = itemPrice + (itemProportion * order.tax) + (itemProportion * order.shippingCharge);
+      let proratedDiscount = order.discount * itemProportion;
+
+      await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } })
+        .catch(err => { throw new Error(`Failed to update product quantity: ${err.message}`); });
 
       item.cancelled = true;
       item.cancelReason = reason || "No reason provided";
 
-      order.totalPrice -= itemPrice;
-      order.tax = order.totalPrice > 0 ? order.totalPrice * 0.05 : 0;
-      order.shippingCharge = order.totalPrice > 0 ? 50 : 0;
-      order.discount = totalItemsPrice > 0 ? order.discount * (order.totalPrice / totalItemsPrice) : 0;
-      order.finalAmount = order.totalPrice + order.tax + order.shippingCharge - order.discount - order.walletAmount;
+      // Check if cancellation drops subTotal below coupon minimum
+      const remainingSubTotal = originalTotalItemsPrice - itemPrice;
+      if (coupon && remainingSubTotal < coupon.minimumPrice) {
+        order.discount = 0;
+        order.couponApplied = false;
+        order.couponId = null;
+        proratedDiscount = 0; // Remove discount from refund if coupon becomes invalid
+      }
+
+      refundAmount = originalItemTotal - proratedDiscount;
+
+      order.totalPrice = remainingSubTotal;
+      order.tax = remainingSubTotal > 0 ? remainingSubTotal * 0.05 : 0;
+      order.shippingCharge = remainingSubTotal > 0 ? 50 : 0;
+      if (remainingSubTotal > 0 && order.couponApplied) {
+        const newTotalBeforeDiscount = remainingSubTotal + order.tax + order.shippingCharge;
+        order.discount = coupon ? (newTotalBeforeDiscount * coupon.discountPercentage) / 100 : 0;
+        if (order.discount > newTotalBeforeDiscount) order.discount = newTotalBeforeDiscount;
+      } else {
+        order.discount = 0;
+      }
+      order.finalAmount = order.totalPrice + order.tax + order.shippingCharge - order.discount - (order.walletAmount || 0);
 
       const allCancelled = order.orderedItems.every(i => i.cancelled);
       if (allCancelled) {
@@ -190,6 +227,7 @@ const cancelOrder = async (req, res) => {
         order.finalAmount = 0;
         order.tax = 0;
         order.shippingCharge = 0;
+        order.discount = 0;
       }
     } else {
       if (order.status === "Cancelled") {
@@ -203,7 +241,8 @@ const cancelOrder = async (req, res) => {
 
       for (const item of order.orderedItems) {
         if (!item.cancelled) {
-          await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } });
+          await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } })
+            .catch(err => { throw new Error(`Failed to update product quantity: ${err.message}`); });
           item.cancelled = true;
           item.cancelReason = reason || "No reason provided";
         }
@@ -215,6 +254,7 @@ const cancelOrder = async (req, res) => {
       order.finalAmount = 0;
       order.tax = 0;
       order.shippingCharge = 0;
+      order.discount = 0;
     }
 
     if (refundAmount > 0 && order.paymentMethod !== "cod") {
@@ -241,10 +281,10 @@ const cancelOrder = async (req, res) => {
           date: new Date(),
         });
       }
-      await wallet.save();
+      await wallet.save().catch(err => { throw new Error(`Failed to save wallet: ${err.message}`); });
     }
 
-    await order.save();
+    await order.save().catch(err => { throw new Error(`Failed to save order: ${err.message}`); });
     return res.status(200).json({
       success: true,
       message: `Item${productId ? "" : "s"} cancelled successfully. ${
@@ -254,10 +294,11 @@ const cancelOrder = async (req, res) => {
       }`,
     });
   } catch (error) {
-    console.error("Error cancelling order:", error);
+    console.error("Error cancelling order:", error.stack); // Log full stack trace
     return res.status(500).json({ error: "Server error while cancelling order" });
   }
 };
+
 
 const returnOrder = async (req, res) => {
   try {
@@ -313,6 +354,7 @@ const returnOrder = async (req, res) => {
     return res.status(500).json({ error: "Server error while submitting return request" });
   }
 };
+
 
 const downloadInvoice = async (req, res) => {
   try {

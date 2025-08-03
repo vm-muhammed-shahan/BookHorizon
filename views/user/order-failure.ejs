@@ -100,16 +100,62 @@
 </head>
 <body>
   <div class="container">
-    <img src="/images/failure-illustration.png" alt="Failure" class="failure-illustration">
-    <h2>Order Failed</h2>
-    <p>Sorry, the payment for order #<%= order.orderId %> could not be processed.</p>
-    <div>
-      <button onclick="retryPayment('<%= order.orderId %>')" class="btn btn-primary">Retry Payment</button>
-      <a href="/orders/<%= order.orderId %>" class="btn btn-secondary">View Order Details</a>
-    </div>
+  <svg class="failure-illustration" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="45" fill="#dc3545" stroke="#a71d2a" stroke-width="3"/>
+    <line x1="35" y1="35" x2="65" y2="65" stroke="white" stroke-width="6" stroke-linecap="round"/>
+    <line x1="65" y1="35" x2="35" y2="65" stroke="white" stroke-width="6" stroke-linecap="round"/>
+  </svg>
+  <h2>Order Failed</h2>
+  <p>Sorry, the payment for order #<%= order.orderId %> could not be processed. Your payment was declined. This could be due to insufficient funds, network issues, or bank restrictions.</p>
+  <div>
+    <button onclick="retryPayment('<%= order.orderId %>')" class="btn btn-primary">Retry Payment</button>
+    <button onclick="cancelOrder('<%= order.orderId %>')" class="btn btn-secondary">Cancel Order</button>
   </div>
+</div>
+
   
   <script>
+
+async function cancelOrder(orderId) {
+    try {
+      const response = await fetch('/checkout/cancel-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Order Cancelled',
+          text: 'Your order has been cancelled successfully.',
+          confirmButtonColor: '#333'
+        }).then(() => {
+          window.location.href = '/shop';
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: result.error || 'Failed to cancel order.',
+          confirmButtonColor: '#333'
+        });
+      }
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Something went wrong. Please try again.',
+        confirmButtonColor: '#333'
+      });
+    }
+  }
+
+
+
+
+
     async function retryPayment(orderId) {
       try {
         const response = await fetch('/checkout/retry-payment', {

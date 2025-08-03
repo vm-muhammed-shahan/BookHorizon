@@ -27,7 +27,7 @@ const login = async (req, res) => {
 
       if (passwordMatch) {
         req.session.admin = admin;
-        return res.redirect("/admin");
+        return res.redirect("/admin/dashboard");
       } else {
         return res.render("admin-login", { message: "Invalid email or password" });
       }

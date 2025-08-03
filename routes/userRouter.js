@@ -108,6 +108,7 @@ router.post('/checkout/payment-failed', userAuth, checkoutController.paymentFail
 router.get('/order/success/:orderID', userAuth, checkoutController.successPage);
 router.get('/order/failure/:orderID', userAuth, checkoutController.failurePage);
 router.get('/edit-address', userAuth, checkoutController.editCheckout);
+router.post('/checkout/cancel-order', userAuth, checkoutController.cancelOrder);
 
  //order Management
 router.get("/orders", userAuth, orderController.getOrders);

@@ -25,7 +25,7 @@ const checkoutPage = async (req, res) => {
         user: userData,
         message: "Your cart is empty.",
         subtotal: 0,
-        walletBalance: 0, // Pass default wallet balance
+        walletBalance: 0,
       });
     }
 
@@ -45,7 +45,7 @@ const checkoutPage = async (req, res) => {
         message: "All items in your cart are out of stock or have zero quantity.",
         items: [],
         subtotal: 0,
-        walletBalance: 0, // Pass default wallet balance
+        walletBalance: 0,
       });
     }
 
@@ -65,13 +65,18 @@ const checkoutPage = async (req, res) => {
     if (cart.coupon?.couponId) {
       const coupon = await Coupon.findById(cart.coupon.couponId);
       if (coupon) {
-        discount = (subTotal * coupon.discountPercentage) / 100;
-        if (discount > subTotal) discount = subTotal;
+        const preTaxTotal = subTotal;
+        const tax = preTaxTotal * 0.05;
+        const shipping = 50;
+        const totalBeforeDiscount = preTaxTotal + tax + shipping;
+        discount = (totalBeforeDiscount * coupon.discountPercentage) / 100;
+        if (discount > totalBeforeDiscount) discount = totalBeforeDiscount;
       }
     }
     const shipping = 50;
     const tax = subTotal * 0.05;
-    const finalAmount = subTotal - discount + tax + shipping;
+    const totalBeforeDiscount = subTotal + tax + shipping;
+    const finalAmount = totalBeforeDiscount - discount;
 
     const currentDate = new Date();
     const availableCoupons = await Coupon.find({
@@ -99,7 +104,7 @@ const checkoutPage = async (req, res) => {
       availableCoupons: availableCoupons,
       razorpayKeyId: process.env.RAZORPAY_KEY_ID,
       subtotal: subTotal,
-      walletBalance: wallet.balance, // Pass wallet balance to EJS
+      walletBalance: wallet.balance,
     });
   } catch (error) {
     console.error("Checkout page error:", error);
@@ -148,14 +153,16 @@ const applyCoupon = async (req, res) => {
       return res.status(400).json({ error: "Coupon already used by you" });
     }
 
-    const discount = (subTotal * coupon.discountPercentage) / 100;
-    if (discount >= subTotal) {
+    const preTaxTotal = subTotal;
+    const tax = preTaxTotal * 0.05;
+    const shipping = 50;
+    const totalBeforeDiscount = preTaxTotal + tax + shipping;
+    const discount = (totalBeforeDiscount * coupon.discountPercentage) / 100;
+    if (discount >= totalBeforeDiscount) {
       return res.status(400).json({ error: "Discount cannot exceed or equal the cart total" });
     }
 
-    const tax = subTotal * 0.05;
-    const shipping = 50;
-    const finalAmount = subTotal - discount + tax + shipping;
+    const finalAmount = totalBeforeDiscount - discount;
 
     cart.coupon = {
       couponId: coupon._id,
@@ -703,6 +710,81 @@ const editCheckout = async (req, res) => {
 };
 
 
+const cancelOrder = async (req, res) => {
+  try {
+    const { orderId } = req.body;
+    const userId = req.session.user._id;
+
+    const order = await Order.findOne({ orderId, user: userId });
+    if (!order) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    if (order.paymentStatus !== "Failed" && order.paymentStatus !== "Pending") {
+      return res.status(400).json({ error: "Order cannot be cancelled at this stage" });
+    }
+
+    if (order.walletAmount > 0) {
+      let wallet = await Wallet.findOne({ user: userId });
+      if (!wallet) {
+        wallet = new Wallet({
+          user: userId,
+          balance: order.walletAmount,
+          transactions: [{
+            type: "credit",
+            amount: order.walletAmount,
+            description: `Refund for cancelled order ${order.orderId}`,
+            date: new Date(),
+          }],
+        });
+      } else {
+        wallet.balance += order.walletAmount;
+        wallet.transactions.push({
+          type: "credit",
+          amount: order.walletAmount,
+          description: `Refund for cancelled order ${order.orderId}`,
+          date: new Date(),
+        });
+      }
+      await wallet.save().catch(walletErr => {
+        console.error("Wallet save error:", walletErr);
+        throw new Error("Failed to update wallet balance");
+      });
+    }
+
+    order.status = "Cancelled";
+    order.paymentStatus = "Cancelled";
+    order.cancelReason = "Cancelled by user due to payment failure";
+    await order.save().catch(orderErr => {
+      console.error("Order save error:", orderErr);
+      throw new Error("Failed to update order status");
+    });
+
+    const cart = await Cart.findOne({ userId });
+    if (cart && cart.coupon?.couponId && order.couponApplied) {
+      const coupon = await Coupon.findById(order.couponId);
+      if (coupon && coupon.userId.includes(userId)) {
+        coupon.userId = coupon.userId.filter(id => id.toString() !== userId.toString());
+        await coupon.save().catch(couponErr => {
+          console.error("Coupon save error:", couponErr);
+          throw new Error("Failed to update coupon");
+        });
+      }
+      cart.coupon = { couponId: null, discount: 0, couponName: "" };
+      await cart.save().catch(cartErr => {
+        console.error("Cart save error:", cartErr);
+        throw new Error("Failed to update cart");
+      });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error cancelling order:", error);
+    res.status(500).json({ error: error.message || "Error cancelling order" });
+  }
+};
+
+
 
 
 
@@ -717,4 +799,5 @@ module.exports = {
   successPage,
   failurePage,
   editCheckout,
+  cancelOrder
 };

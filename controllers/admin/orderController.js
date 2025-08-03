@@ -73,9 +73,9 @@ const getOrderDetails = async (req, res) => {
         message: `Order ${req.params.orderId} not found`,
       });
     }
-    // Pass the notification from the session to the template
+    
     const notification = req.session.notification || null;
-    // Clear the notification from the session after rendering
+    
     req.session.notification = null;
     res.render("orderDetails", {
       title: `Order ${order.orderId}`,
@@ -201,36 +201,78 @@ const verifyReturnRequest = async (req, res) => {
     }
 
     let notificationMessage = "";
-    let refundAmount = item.price * item.quantity;
+    let refundAmount = 0;
 
     if (action === "accept") {
       item.returnStatus = "approved";
-      await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } });
+      await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } })
+        .catch(err => { throw new Error(`Failed to update product quantity: ${err.message}`); });
 
-      let wallet = await Wallet.findOne({ user: order.user });
-      if (!wallet) {
-        wallet = new Wallet({
-          user: order.user,
-          balance: refundAmount,
-          transactions: [
-            {
-              type: "credit",
-              amount: refundAmount,
-              description: `Refund for item in order ${order.orderId} (Returned)`,
-              date: new Date(),
-            },
-          ],
-        });
-      } else {
-        wallet.balance += refundAmount;
-        wallet.transactions.push({
-          type: "credit",
-          amount: refundAmount,
-          description: `Refund for item in order ${order.orderId} (Returned)`,
-          date: new Date(),
-        });
+      
+      const originalTotalItemsPrice = order.orderedItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+      const itemPrice = item.price * item.quantity;
+      const itemProportion = originalTotalItemsPrice > 0 ? itemPrice / originalTotalItemsPrice : 0;
+
+      
+      order.tax = order.tax || 0;
+      order.shippingCharge = order.shippingCharge || 0;
+      order.discount = order.discount || 0;
+
+      const originalItemTotal = itemPrice + (itemProportion * order.tax) + (itemProportion * order.shippingCharge);
+      let proratedDiscount = order.discount * itemProportion;
+
+      
+      const remainingSubTotal = originalTotalItemsPrice - itemPrice;
+      const coupon = order.couponId ? await Coupon.findById(order.couponId) : null;
+      if (coupon && remainingSubTotal < coupon.minimumPrice) {
+        order.discount = 0;
+        order.couponApplied = false;
+        order.couponId = null;
+        proratedDiscount = 0; 
       }
-      await wallet.save();
+
+      refundAmount = originalItemTotal - proratedDiscount;
+
+      // Update order financials
+      order.totalPrice = remainingSubTotal;
+      order.tax = order.tax || (order.totalPrice > 0 ? order.totalPrice * 0.05 : 0);
+      order.shippingCharge = remainingSubTotal > 0 ? 50 : 0;
+      if (remainingSubTotal > 0 && order.couponApplied) {
+        const newTotalBeforeDiscount = remainingSubTotal + order.tax + order.shippingCharge;
+        order.discount = coupon ? (newTotalBeforeDiscount * coupon.discountPercentage) / 100 : 0;
+        if (order.discount > newTotalBeforeDiscount) order.discount = newTotalBeforeDiscount;
+      } else {
+        order.discount = 0;
+      }
+      order.finalAmount = order.totalPrice + order.tax + order.shippingCharge - order.discount - (order.walletAmount || 0);
+
+      
+      if (refundAmount > 0 && order.paymentMethod !== "cod") {
+        let wallet = await Wallet.findOne({ user: order.user });
+        if (!wallet) {
+          wallet = new Wallet({
+            user: order.user,
+            balance: refundAmount,
+            transactions: [
+              {
+                type: "credit",
+                amount: refundAmount,
+                description: `Refund for item in order ${order.orderId} (Returned)`,
+                date: new Date(),
+              },
+            ],
+          });
+        } else {
+          wallet.balance += refundAmount;
+          wallet.transactions.push({
+            type: "credit",
+            amount: refundAmount,
+            description: `Refund for item in order ${order.orderId} (Returned)`,
+            date: new Date(),
+          });
+        }
+        await wallet.save().catch(err => { throw new Error(`Failed to save wallet: ${err.message}`); });
+      }
 
       notificationMessage = `Return request for item in order ${order.orderId} has been approved, and a refund of ₹${refundAmount.toFixed(2)} has been credited to the user's wallet.`;
     } else if (action === "reject") {
@@ -238,14 +280,7 @@ const verifyReturnRequest = async (req, res) => {
       notificationMessage = `Return request for item in order ${order.orderId} has been rejected.`;
     }
 
-    // Recalculate order financials
-    const activeItems = order.orderedItems.filter(i => !i.cancelled && i.returnStatus !== "approved");
-    order.totalPrice = activeItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-    order.tax = order.totalPrice > 0 ? order.totalPrice * 0.05 : 0;
-    order.shippingCharge = order.totalPrice > 0 ? 50 : 0;
-    order.finalAmount = order.totalPrice + order.tax + order.shippingCharge - order.discount - order.walletAmount;
-
-    // Update order status
+    
     const nonCancelledItems = order.orderedItems.filter(i => !i.cancelled);
     const allNonCancelledApprovedOrCancelled = nonCancelledItems.every(i => i.returnStatus === "approved" || i.cancelled);
     const hasPendingReturns = order.orderedItems.some(i => i.returnStatus === "pending");
@@ -258,7 +293,7 @@ const verifyReturnRequest = async (req, res) => {
       order.paymentStatus = hasPendingReturns ? "Pending" : "Completed";
     }
 
-    await order.save();
+    await order.save().catch(err => { throw new Error(`Failed to save order: ${err.message}`); });
     res.status(200).json({ success: true, message: notificationMessage });
   } catch (error) {
     console.error("Error in verifyReturnRequest:", error);
