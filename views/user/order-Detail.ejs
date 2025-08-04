@@ -10,7 +10,7 @@
 </head>
 <body>
   <div class="order-container">
-    <h2 class="order-title">Order #<%= order.orderId %></h2>
+    <h2 class="order-title">Order #<%= order.orderId.substring(0, 8)  %></h2>
     
     <% if (notification) { %>
       <div class="notification notification-info">
@@ -23,7 +23,7 @@
       <h3>Order Summary</h3>
       <div class="summary-item">
         <span class="label">Order ID:</span>
-        <span class="value"><%= order.orderId %></span>
+        <span class="value"><%= order.orderId.substring(0, 8)  %></span>
       </div>
       <div class="summary-item">
         <span class="label">Date:</span>

@@ -5,7 +5,7 @@ const Product = require("../../models/productSchema");
 const Wallet = require("../../models/walletSchema");
 const Coupon = require("../../models/couponSchema");
 const PDFDocument = require("pdfkit");
-const path = require("path"); 
+const path = require("path");
 
 
 
@@ -21,7 +21,7 @@ const getOrders = async (req, res) => {
       .sort({ createdOn: -1 })
       .populate("orderedItems.product")
       .populate("user", "name email");
-  
+
     orders.forEach(order => {
       if (!order.user) {
         console.warn(`User not found for order ${order.orderId}`);
@@ -57,7 +57,7 @@ const getOrderDetail = async (req, res) => {
     const order = await Order.findOne({ orderId, user: userId })
       .populate({
         path: "orderedItems.product",
-        select: "productName" 
+        select: "productName"
       })
       .populate("user", "name email");
     console.log('Order Details:', order);
@@ -77,10 +77,10 @@ const getOrderDetail = async (req, res) => {
     const userData = await User.findOne({ _id: userId });
     const notification = req.session.message || null;
     req.session.message = null;
-    res.render("order-Detail", { 
-      order, 
-      user: userData, 
-      notification 
+    res.render("order-Detail", {
+      order,
+      user: userData,
+      notification
     });
   } catch (error) {
     console.error("Error in order listing", error);
@@ -299,7 +299,6 @@ const cancelOrder = async (req, res) => {
   }
 };
 
-
 const returnOrder = async (req, res) => {
   try {
     const { orderId, productId, reason } = req.body;
@@ -336,13 +335,12 @@ const returnOrder = async (req, res) => {
     item.returnReason = reason;
     item.returnStatus = "pending";
 
-    // Update order status only if all non-cancelled items are returned or pending
-    const nonCancelledItems = order.orderedItems.filter(i => !i.cancelled);
-    const allNonCancelledReturnedOrPending = nonCancelledItems.every(i => i.returned);
-    if (allNonCancelledReturnedOrPending) {
-      order.status = "Return Request";
-      order.paymentStatus = "Pending";
-    }
+   
+    const hasPendingReturns = order.orderedItems.some(i => i.returnStatus === "pending");
+if (hasPendingReturns) {
+  order.status = "Return Request";
+  order.paymentStatus = "Pending";
+}
 
     await order.save();
     return res.status(200).json({
@@ -388,35 +386,35 @@ const downloadInvoice = async (req, res) => {
 
     const drawLine = (y = yPosition, thickness = 0.5) => {
       doc.lineWidth(thickness)
-         .strokeColor('#cccccc')
-         .moveTo(margin, y)
-         .lineTo(pageWidth - margin, y)
-         .stroke();
+        .strokeColor('#cccccc')
+        .moveTo(margin, y)
+        .lineTo(pageWidth - margin, y)
+        .stroke();
     };
 
     const formatCurrency = (amount) => `Rs ${amount.toFixed(2)}`;
 
     doc.fontSize(28)
-       .font('Helvetica-Bold')
-       .fillColor('#2c3e50')
-       .text('BookHorizon', margin, yPosition);
+      .font('Helvetica-Bold')
+      .fillColor('#2c3e50')
+      .text('BookHorizon', margin, yPosition);
 
     moveDown(25);
 
     doc.fontSize(12)
-       .font('Helvetica')
-       .fillColor('#7f8c8d')
-       .text('Premium Book Store', margin, yPosition);
+      .font('Helvetica')
+      .fillColor('#7f8c8d')
+      .text('Premium Book Store', margin, yPosition);
 
     doc.fontSize(20)
-       .font('Helvetica-Bold')
-       .fillColor('#2c3e50')
-       .text('INVOICE', margin, margin, { align: 'right', width: contentWidth });
+      .font('Helvetica-Bold')
+      .fillColor('#2c3e50')
+      .text('INVOICE', margin, margin, { align: 'right', width: contentWidth });
 
     doc.fontSize(12)
-       .font('Helvetica')
-       .fillColor('#7f8c8d')
-       .text(`#${order.orderId}`, margin, margin + 25, { align: 'right', width: contentWidth });
+      .font('Helvetica')
+      .fillColor('#7f8c8d')
+      .text(`#${order.orderId}`, margin, margin + 25, { align: 'right', width: contentWidth });
 
     moveDown(40);
     drawLine();
@@ -426,46 +424,46 @@ const downloadInvoice = async (req, res) => {
     const rightColX = margin + (contentWidth * 0.6);
 
     doc.fontSize(12)
-       .font('Helvetica-Bold')
-       .fillColor('#2c3e50')
-       .text('Invoice Date:', leftColX, yPosition);
+      .font('Helvetica-Bold')
+      .fillColor('#2c3e50')
+      .text('Invoice Date:', leftColX, yPosition);
 
     doc.font('Helvetica')
-       .fillColor('#34495e')
-       .text(new Date().toLocaleDateString('en-US', {
-         year: 'numeric',
-         month: 'long',
-         day: 'numeric'
-       }), leftColX + 80, yPosition);
+      .fillColor('#34495e')
+      .text(new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }), leftColX + 80, yPosition);
 
     doc.font('Helvetica-Bold')
-       .fillColor('#2c3e50')
-       .text('Order Date:', rightColX, yPosition);
+      .fillColor('#2c3e50')
+      .text('Order Date:', rightColX, yPosition);
 
     doc.font('Helvetica')
-       .fillColor('#34495e')
-       .text(order.createdOn.toLocaleDateString('en-US', {
-         year: 'numeric',
-         month: 'long',
-         day: 'numeric'
-       }), rightColX + 80, yPosition);
+      .fillColor('#34495e')
+      .text(order.createdOn.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }), rightColX + 80, yPosition);
 
     moveDown(30);
 
     const sectionY = yPosition;
 
     doc.fontSize(14)
-       .font('Helvetica-Bold')
-       .fillColor('#2c3e50')
-       .text('Order Details', leftColX, sectionY);
+      .font('Helvetica-Bold')
+      .fillColor('#2c3e50')
+      .text('Order Details', leftColX, sectionY);
 
     moveDown(20);
 
     const detailsData = [
       ['Status:', order.status],
       ['Payment:', order.paymentMethod === 'cod' ? 'Cash on Delivery' :
-                  order.paymentMethod === 'wallet' ? 'Wallet Payment' :
-                  order.paymentMethod === 'wallet+razorpay' ? 'Wallet + Online Payment' : 'Online Payment'],
+        order.paymentMethod === 'wallet' ? 'Wallet Payment' :
+          order.paymentMethod === 'wallet+razorpay' ? 'Wallet + Online Payment' : 'Online Payment'],
       ['Payment Status:', order.paymentStatus],
       ['Wallet Amount Used:', formatCurrency(order.walletAmount || 0)],
     ];
@@ -473,19 +471,19 @@ const downloadInvoice = async (req, res) => {
     detailsData.forEach((detail, index) => {
       const detailY = sectionY + 20 + (index * 18);
       doc.fontSize(11)
-         .font('Helvetica')
-         .fillColor('#7f8c8d')
-         .text(detail[0], leftColX, detailY);
+        .font('Helvetica')
+        .fillColor('#7f8c8d')
+        .text(detail[0], leftColX, detailY);
 
       doc.font('Helvetica-Bold')
-         .fillColor('#34495e')
-         .text(detail[1], leftColX + 100, detailY);
+        .fillColor('#34495e')
+        .text(detail[1], leftColX + 100, detailY);
     });
 
     doc.fontSize(14)
-       .font('Helvetica-Bold')
-       .fillColor('#2c3e50')
-       .text('Delivery Address', rightColX, sectionY);
+      .font('Helvetica-Bold')
+      .fillColor('#2c3e50')
+      .text('Delivery Address', rightColX, sectionY);
 
     const addressLines = [
       order.address.name,
@@ -502,9 +500,9 @@ const downloadInvoice = async (req, res) => {
     addressLines.forEach((line, index) => {
       const lineY = sectionY + 20 + (index * 15);
       doc.fontSize(11)
-         .font(index === 0 ? 'Helvetica-Bold' : 'Helvetica')
-         .fillColor(index === 0 ? '#2c3e50' : '#7f8c8d')
-         .text(line, rightColX, lineY);
+        .font(index === 0 ? 'Helvetica-Bold' : 'Helvetica')
+        .fillColor(index === 0 ? '#2c3e50' : '#7f8c8d')
+        .text(line, rightColX, lineY);
     });
 
     moveDown(120);
@@ -512,9 +510,9 @@ const downloadInvoice = async (req, res) => {
     moveDown(25);
 
     doc.fontSize(16)
-       .font('Helvetica-Bold')
-       .fillColor('#2c3e50')
-       .text('Items Ordered', margin, yPosition);
+      .font('Helvetica-Bold')
+      .fillColor('#2c3e50')
+      .text('Items Ordered', margin, yPosition);
 
     moveDown(20);
 
@@ -533,12 +531,12 @@ const downloadInvoice = async (req, res) => {
     };
 
     doc.rect(margin, tableHeaderY, contentWidth, 25)
-       .fillColor('#ecf0f1')
-       .fill();
+      .fillColor('#ecf0f1')
+      .fill();
 
     doc.fontSize(12)
-       .font('Helvetica-Bold')
-       .fillColor('#2c3e50');
+      .font('Helvetica-Bold')
+      .fillColor('#2c3e50');
 
     doc.text('Product', colPositions.product + 5, tableHeaderY + 8);
     doc.text('Qty', colPositions.qty, tableHeaderY + 8, { width: colWidths.qty, align: 'center' });
@@ -555,13 +553,13 @@ const downloadInvoice = async (req, res) => {
 
       if (index % 2 === 0) {
         doc.rect(margin, rowY, contentWidth, rowHeight)
-           .fillColor('#fafafa')
-           .fill();
+          .fillColor('#fafafa')
+          .fill();
       }
 
       doc.fontSize(11)
-         .font('Helvetica')
-         .fillColor('#2c3e50');
+        .font('Helvetica')
+        .fillColor('#2c3e50');
 
       let productName = item.product ? item.product.productName : 'N/A';
       if (productName.length > 40) {
@@ -588,11 +586,11 @@ const downloadInvoice = async (req, res) => {
 
       if (item.cancelled) {
         doc.fontSize(9)
-           .fillColor('#e74c3c')
-           .text(`Cancelled${item.cancelReason ? ': ' + item.cancelReason : ''}`, colPositions.product + 5, rowY + 20);
+          .fillColor('#e74c3c')
+          .text(`Cancelled${item.cancelReason ? ': ' + item.cancelReason : ''}`, colPositions.product + 5, rowY + 20);
       } else if (item.returned) {
         doc.fontSize(9)
-           .fillColor('#e74c3c');
+          .fillColor('#e74c3c');
         let statusText = '';
         if (item.returnStatus === 'pending') {
           statusText = `Return Requested: ${item.returnReason}`;
@@ -640,9 +638,9 @@ const downloadInvoice = async (req, res) => {
     summaryItems.forEach((item, index) => {
       const itemY = summaryY + (index * 20);
       doc.fontSize(12)
-         .font('Helvetica')
-         .fillColor('#7f8c8d')
-         .text(item[0], summaryX, itemY);
+        .font('Helvetica')
+        .fillColor('#7f8c8d')
+        .text(item[0], summaryX, itemY);
 
       doc.text(item[1], summaryX + 100, itemY, { width: 80, align: 'right' });
     });
@@ -650,15 +648,15 @@ const downloadInvoice = async (req, res) => {
     const totalY = summaryY + (summaryItems.length * 20) + 10;
 
     doc.lineWidth(1)
-       .strokeColor('#bdc3c7')
-       .moveTo(summaryX, totalY)
-       .lineTo(summaryX + 180, totalY)
-       .stroke();
+      .strokeColor('#bdc3c7')
+      .moveTo(summaryX, totalY)
+      .lineTo(summaryX + 180, totalY)
+      .stroke();
 
     doc.fontSize(14)
-       .font('Helvetica-Bold')
-       .fillColor('#2c3e50')
-       .text('Total:', summaryX, totalY + 15);
+      .font('Helvetica-Bold')
+      .fillColor('#2c3e50')
+      .text('Total:', summaryX, totalY + 15);
 
     doc.text(formatCurrency(finalTotal), summaryX + 100, totalY + 15, {
       width: 80,
@@ -667,21 +665,21 @@ const downloadInvoice = async (req, res) => {
 
     const footerY = pageWidth - 80;
     doc.fontSize(10)
-       .font('Helvetica')
-       .fillColor('#95a5a6')
-       .text(
-         'Thank you for choosing BookHorizon! We appreciate your business.',
-         margin,
-         footerY,
-         { align: 'center', width: contentWidth }
-       );
+      .font('Helvetica')
+      .fillColor('#95a5a6')
+      .text(
+        'Thank you for choosing BookHorizon! We appreciate your business.',
+        margin,
+        footerY,
+        { align: 'center', width: contentWidth }
+      );
     doc.fontSize(9)
-       .text(
-         'For support queries, please contact our customer service team.',
-         margin,
-         footerY + 15,
-         { align: 'center', width: contentWidth }
-       );
+      .text(
+        'For support queries, please contact our customer service team.',
+        margin,
+        footerY + 15,
+        { align: 'center', width: contentWidth }
+      );
     doc.end();
   } catch (error) {
     console.error('Error generating invoice:', error);

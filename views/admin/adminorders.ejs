@@ -5,24 +5,57 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %></title>
   <link href="/css/tailwind.css" rel="stylesheet">
+  <style>
+    .status-pending { color: #dc2626; font-weight: 600; }
+    .status-processing { color: #ea580c; font-weight: 600; }
+    .status-shipped { color: #ca8a04; font-weight: 600; }
+    .status-delivered { color: #16a34a; font-weight: 600; }
+    .status-cancelled { color: #dc2626; font-weight: 600; }
+    .status-return-request { color: #2563eb; font-weight: 600; }
+    .status-returned { color: #7c3aed; font-weight: 600; }
+    
+    .payment-pending { color: #dc2626; font-weight: 600; }
+    .payment-completed { color: #16a34a; font-weight: 600; }
+    .payment-failed { color: #dc2626; font-weight: 600; }
+    
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      display: inline-block;
+    }
+    
+    .badge-pending { background-color: #fef2f2; color: #dc2626; }
+    .badge-processing { background-color: #fff7ed; color: #ea580c; }
+    .badge-shipped { background-color: #fefce8; color: #ca8a04; }
+    .badge-delivered { background-color: #f0fdf4; color: #16a34a; }
+    .badge-cancelled { background-color: #fef2f2; color: #dc2626; }
+    .badge-return-request { background-color: #eff6ff; color: #2563eb; }
+    .badge-returned { background-color: #f3e8ff; color: #7c3aed; }
+    
+    .payment-badge-pending { background-color: #fef2f2; color: #dc2626; }
+    .payment-badge-completed { background-color: #f0fdf4; color: #16a34a; }
+    .payment-badge-failed { background-color: #fef2f2; color: #dc2626; }
+  </style>
 </head>
 <body class="bg-gray-100">
   <%- include("../partials/admin/header") %>
-
-  <div class="container mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4"><%= title %></h1>
-
+  <h1 class="text-2xl font-bold mb-4"><%= title %></h1>
+  
+  <div class="container p-4" style="margin-left: 10%;">
     <!-- Search, Sort, and Filter -->
     <form method="GET" action="/admin/orders" class="mb-4 flex flex-wrap gap-4">
       <input type="text" name="search" value="<%= search %>" placeholder="Search by Order ID" class="p-2 border rounded">
       <select name="status" class="p-2 border rounded">
         <option value="">All Statuses</option>
-        <option value="Pending" <%= statusFilter === 'Pending' ? 'selected' : '' %>>Pending</option>
-        <option value="Processing" <%= statusFilter === 'Processing' ? 'selected' : '' %>>Processing</option>
-        <option value="Shipped" <%= statusFilter === 'Shipped' ? 'selected' : '' %>>Shipped</option>
-        <option value="Delivered" <%= statusFilter === 'Delivered' ? 'selected' : '' %>>Delivered</option>
-        <option value="Cancelled" <%= statusFilter === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
-        <option value="Return Request" <%= statusFilter === 'Return Request' ? 'selected' : '' %>>Return Request</option>
+        <option style="color: red;" value="Pending" <%= statusFilter === 'Pending' ? 'selected' : '' %>>Pending</option>
+        <option style="color: orange" value="Processing" <%= statusFilter === 'Processing' ? 'selected' : '' %>>Processing</option>
+        <option style="color: rgb(99, 99, 27);" value="Shipped" <%= statusFilter === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+        <option style="color: green;" value="Delivered" <%= statusFilter === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+        <option style="color: red" value="Cancelled" <%= statusFilter === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+        <option style="color: blue" value="Return Request" <%= statusFilter === 'Return Request' ? 'selected' : '' %>>Return Request</option>
         <option value="Returned" <%= statusFilter === 'Returned' ? 'selected' : '' %>>Returned</option>
       </select>
       <select name="payment" class="p-2 border rounded">
@@ -45,30 +78,58 @@
     <table class="w-full border-collapse bg-white shadow-md">
       <thead>
         <tr class="bg-gray-200">
-          <th class="p-2">Order ID</th>
-          <th class="p-2">User</th>
-          <th class="p-2">Date</th>
-          <th class="p-2">Status</th>
-          <th class="p-2">Payment Status</th>
-          <th class="p-2">Total</th>
-          <th class="p-2">Actions</th>
+          <th class="p-4 w-1/6">Order ID</th>
+          <th class="p-4 w-1/6">User</th>
+          <th class="p-4 w-1/6">Date</th>
+          <th class="p-4 w-1/6">Status</th>
+          <th class="p-4 w-1/6">Payment Status</th>
+          <th class="p-4 w-1/6">Total</th>
+          <th class="p-4 w-1/6">Actions</th>
         </tr>
       </thead>
       <tbody>
         <% if (orders.length === 0) { %>
           <tr>
-            <td colspan="7" class="p-2 border text-center text-gray-500">No orders found</td>
+            <td colspan="7" class="p-4 border text-center text-gray-500">No orders found</td>
           </tr>
         <% } else { %>
           <% orders.forEach(order => { %>
             <tr>
-              <td class="p-2 border"><%= order.orderId || 'N/A' %></td>
-              <td class="p-2 border"><%= order.user && order.user.name ? order.user.name : 'N/A' %></td>
-              <td class="p-2 border"><%= order.createdOn ? new Date(order.createdOn).toLocaleDateString() : 'N/A' %></td>
-              <td class="p-2 border"><%= order.status || 'N/A' %></td>
-              <td class="p-2 border"><%= order.paymentStatus || 'N/A' %></td>
-              <td class="p-2 border">₹<%= order.finalAmount ? order.finalAmount.toFixed(2) : '0.00' %></td>
-              <td class="p-2 border">
+              <td class="p-4 border"><%= order.orderId ? order.orderId.substring(0, 8) : 'N/A' %></td>
+              <td class="p-4 border"><%= order.user && order.user.name ? order.user.name : 'N/A' %></td>
+              <td class="p-4 border"><%= order.createdOn ? new Date(order.createdOn).toLocaleDateString() : 'N/A' %></td>
+              <td class="p-4 border">
+                <% if (order.status) { %>
+                  <span class="status-badge 
+                    <% if (order.status === 'Pending') { %>badge-pending<% } %>
+                    <% if (order.status === 'Processing') { %>badge-processing<% } %>
+                    <% if (order.status === 'Shipped') { %>badge-shipped<% } %>
+                    <% if (order.status === 'Delivered') { %>badge-delivered<% } %>
+                    <% if (order.status === 'Cancelled') { %>badge-cancelled<% } %>
+                    <% if (order.status === 'Return Request') { %>badge-return-request<% } %>
+                    <% if (order.status === 'Returned') { %>badge-returned<% } %>
+                  ">
+                    <%= order.status %>
+                  </span>
+                <% } else { %>
+                  N/A
+                <% } %>
+              </td>
+              <td class="p-4 border">
+                <% if (order.paymentStatus) { %>
+                  <span class="status-badge 
+                    <% if (order.paymentStatus === 'Pending') { %>payment-badge-pending<% } %>
+                    <% if (order.paymentStatus === 'Completed') { %>payment-badge-completed<% } %>
+                    <% if (order.paymentStatus === 'Failed') { %>payment-badge-failed<% } %>
+                  ">
+                    <%= order.paymentStatus %>
+                  </span>
+                <% } else { %>
+                  N/A
+                <% } %>
+              </td>
+              <td class="p-4 border">₹<%= order.finalAmount ? order.finalAmount.toFixed(2) : '0.00' %></td>
+              <td class="p-4 border">
                 <a href="/admin/orders/<%= order.orderId %>" class="text-blue-500 hover:underline">View</a>
               </td>
             </tr>
@@ -76,21 +137,8 @@
         <% } %>
       </tbody>
     </table>
-
-    <!-- Pagination -->
-    <div class="mt-4 flex justify-center">
-      <% if (currentPage > 1) { %>
-        <a href="/admin/orders?page=<%= currentPage - 1 %>&limit=<%= limit %>&search=<%= search %>&status=<%= statusFilter %>&payment=<%= paymentFilter %>&sort=<%= sort %>" class="p-2 bg-blue-500 text-white rounded mx-1 hover:bg-blue-600">Previous</a>
-      <% } %>
-      <% for (let i = 1; i <= totalPages; i++) { %>
-        <a href="/admin/orders?page=<%= i %>&limit=<%= limit %>&search=<%= search %>&status=<%= statusFilter %>&payment=<%= paymentFilter %>&sort=<%= sort %>" class="p-2 <%= currentPage === i ? 'bg-blue-700' : 'bg-blue-500' %> text-white rounded mx-1 hover:bg-blue-600"><%= i %></a>
-      <% } %>
-      <% if (currentPage < totalPages) { %>
-        <a href="/admin/orders?page=<%= currentPage + 1 %>&limit=<%= limit %>&search=<%= search %>&status=<%= statusFilter %>&payment=<%= paymentFilter %>&sort=<%= sort %>" class="p-2 bg-blue-500 text-white rounded mx-1 hover:bg-blue-600">Next</a>
-      <% } %>
-    </div>
+    
+    <%- include("../partials/admin/footer") %>
   </div>
-
-  <%- include("../partials/admin/footer") %>
 </body>
 </html>

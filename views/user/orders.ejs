@@ -399,7 +399,7 @@
           <% } else { %>
             <% orders.forEach(order => { %>
               <tr>
-                <td data-label="Order ID:"><%= order.orderId || 'N/A' %></td>
+                <td data-label="Order ID:"><%= order.orderId.substring(0, 8)  || 'N/A' %></td>
                 <td data-label="Date:"><%= order.createdOn ? new Date(order.createdOn).toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata' }) : 'N/A' %></td>
                 <td data-label="Status:"><span class="status-badge"><%= order.status || 'N/A' %></span></td>
                 <td data-label="Payment Status:"><span class="status-badge"><%= order.paymentStatus || 'N/A' %></span></td>

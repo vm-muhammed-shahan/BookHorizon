@@ -109,7 +109,7 @@
   <p>Sorry, the payment for order #<%= order.orderId %> could not be processed. Your payment was declined. This could be due to insufficient funds, network issues, or bank restrictions.</p>
   <div>
     <button onclick="retryPayment('<%= order.orderId %>')" class="btn btn-primary">Retry Payment</button>
-    <button onclick="cancelOrder('<%= order.orderId %>')" class="btn btn-secondary">Cancel Order</button>
+    <button onclick="cancelOrder('<%= order.orderId %>')" class="btn btn-primary">Cancel Order</button>
   </div>
 </div>
 

@@ -9,9 +9,6 @@ const getOrders = async (req, res) => {
     console.log('Session:', req.session);
     console.log('Query Parameters:', req.query);
 
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
     const search = req.query.search || "";
     const sort = req.query.sort || "-createdOn";
     const statusFilter = req.query.status || "";
@@ -35,18 +32,16 @@ const getOrders = async (req, res) => {
     const orders = await Order.find(query)
       .populate("user", "name email")
       .populate("orderedItems.product", "productName")
-      .sort(sort)
-      .skip(skip)
-      .limit(limit);
+      .sort(sort);
 
     console.log('Orders:', orders);
 
     res.render("adminorders", {
       title: "Order Management",
       orders: orders || [],
-      currentPage: page,
-      totalPages: Math.ceil(totalOrders / limit) || 1,
-      limit,
+      currentPage: 1,
+      totalPages: 1,
+      limit: 0,
       search,
       sort,
       statusFilter,
@@ -61,7 +56,6 @@ const getOrders = async (req, res) => {
   }
 };
 
-
 const getOrderDetails = async (req, res) => {
   try {
     const order = await Order.findOne({ orderId: req.params.orderId })
@@ -73,9 +67,9 @@ const getOrderDetails = async (req, res) => {
         message: `Order ${req.params.orderId} not found`,
       });
     }
-    
+
     const notification = req.session.notification || null;
-    
+
     req.session.notification = null;
     res.render("orderDetails", {
       title: `Order ${order.orderId}`,
@@ -186,7 +180,6 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-
 const verifyReturnRequest = async (req, res) => {
   try {
     const { orderId, itemIndex, action } = req.body;
@@ -208,12 +201,12 @@ const verifyReturnRequest = async (req, res) => {
       await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } })
         .catch(err => { throw new Error(`Failed to update product quantity: ${err.message}`); });
 
-      
+
       const originalTotalItemsPrice = order.orderedItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
       const itemPrice = item.price * item.quantity;
       const itemProportion = originalTotalItemsPrice > 0 ? itemPrice / originalTotalItemsPrice : 0;
 
-      
+
       order.tax = order.tax || 0;
       order.shippingCharge = order.shippingCharge || 0;
       order.discount = order.discount || 0;
@@ -221,14 +214,14 @@ const verifyReturnRequest = async (req, res) => {
       const originalItemTotal = itemPrice + (itemProportion * order.tax) + (itemProportion * order.shippingCharge);
       let proratedDiscount = order.discount * itemProportion;
 
-      
+
       const remainingSubTotal = originalTotalItemsPrice - itemPrice;
       const coupon = order.couponId ? await Coupon.findById(order.couponId) : null;
       if (coupon && remainingSubTotal < coupon.minimumPrice) {
         order.discount = 0;
         order.couponApplied = false;
         order.couponId = null;
-        proratedDiscount = 0; 
+        proratedDiscount = 0;
       }
 
       refundAmount = originalItemTotal - proratedDiscount;
@@ -246,7 +239,7 @@ const verifyReturnRequest = async (req, res) => {
       }
       order.finalAmount = order.totalPrice + order.tax + order.shippingCharge - order.discount - (order.walletAmount || 0);
 
-      
+
       if (refundAmount > 0 && order.paymentMethod !== "cod") {
         let wallet = await Wallet.findOne({ user: order.user });
         if (!wallet) {
@@ -274,24 +267,24 @@ const verifyReturnRequest = async (req, res) => {
         await wallet.save().catch(err => { throw new Error(`Failed to save wallet: ${err.message}`); });
       }
 
-      notificationMessage = `Return request for item in order ${order.orderId} has been approved, and a refund of ₹${refundAmount.toFixed(2)} has been credited to the user's wallet.`;
+      notificationMessage = `Return request for item in order ${order.orderId.substring(0, 8)} has been approved, and a refund of ₹${refundAmount.toFixed(2)} has been credited to the user's wallet.`;
     } else if (action === "reject") {
       item.returnStatus = "rejected";
-      notificationMessage = `Return request for item in order ${order.orderId} has been rejected.`;
+      notificationMessage = `Return request for item in order ${order.orderId.substring(0, 8)} has been rejected.`;
     }
 
-    
+
     const nonCancelledItems = order.orderedItems.filter(i => !i.cancelled);
-    const allNonCancelledApprovedOrCancelled = nonCancelledItems.every(i => i.returnStatus === "approved" || i.cancelled);
-    const hasPendingReturns = order.orderedItems.some(i => i.returnStatus === "pending");
+const allNonCancelledApprovedOrCancelled = nonCancelledItems.every(i => i.returnStatus === "approved" || i.cancelled);
+const hasPendingReturns = order.orderedItems.some(i => i.returnStatus === "pending");
 
-    if (allNonCancelledApprovedOrCancelled) {
-      order.status = "Returned";
-      order.paymentStatus = "Completed";
-    } else {
-      order.status = hasPendingReturns ? "Return Request" : "Delivered";
-      order.paymentStatus = hasPendingReturns ? "Pending" : "Completed";
-    }
+if (allNonCancelledApprovedOrCancelled) {
+  order.status = "Returned";
+  order.paymentStatus = "Completed";
+} else {
+  order.status = hasPendingReturns ? "Return Request" : "Delivered";
+  order.paymentStatus = hasPendingReturns ? "Pending" : "Completed";
+}
 
     await order.save().catch(err => { throw new Error(`Failed to save order: ${err.message}`); });
     res.status(200).json({ success: true, message: notificationMessage });
