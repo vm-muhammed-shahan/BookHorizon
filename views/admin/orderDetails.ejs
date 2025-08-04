@@ -84,7 +84,6 @@
 <body class="bg-gray-100 font-sans">
   <%- include("../partials/admin/header") %>
     <div class="container mx-auto p-6">
-      <!-- <h1 class="text-2xl font-bold mb-6 text-gray-800"><%= title %></h1> -->
 
       <% if (notification) { %>
         <div
@@ -98,7 +97,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div>
                 <h2 class="text-lg font-semibold mb-3 text-gray-700">Order Summary</h2>
-                <!-- <p class="mb-2"><strong>Order ID:</strong> <%= order.orderId %></p> -->
+              
                 <p class="mb-2"><strong>Date:</strong>
                   <%= order.createdOn ? new Date(order.createdOn).toLocaleString() : 'N/A' %>
                 </p>
@@ -173,23 +172,27 @@
               <h2 class="text-lg font-semibold mb-3 text-gray-700">Update Order Status</h2>
               <form action="/admin/orders/<%= order.orderId %>/status" method="POST" class="flex gap-4 items-center">
                 <select name="status"
-                  class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 <%= order.status === 'Delivered' ? 'opacity-50 cursor-not-allowed' : '' %>"
-                  <%=order.status==='Delivered' ? 'disabled' : '' %>>
-                  <% const allowedStatuses={ 'Pending' : ['Processing', 'Cancelled' ], 'Processing' :
-                    ['Shipped', 'Cancelled' ], 'Shipped' : ['Out for Delivery'], 'Out for Delivery' :
-                    ['Delivered'], 'Delivered' : ['Return Request'], 'Return Request' : ['Delivered', 'Returned'
-                    ], 'Cancelled' : [], 'Returned' : [] }[order.status] || []; %>
-                    <% ['Pending', 'Processing' , 'Shipped' , 'Out for Delivery' , 'Delivered' ].forEach(status=> { %>
-                      <% if (status !=='Return Request' && status !=='Returned' && status !=='Cancelled' ) { %>
-                        <option value="<%= status %>" <%=order.status===status ? 'selected' : '' %>
-                          <%= allowedStatuses.includes(status) ? '' : 'disabled' %>><%= status %>
-                        </option>
-                        <% } %>
-                          <% }) %>
+                  class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 <%= (order.status === 'Delivered' || order.status === 'Return Request') ? 'opacity-50 cursor-not-allowed' : '' %>"
+                  <%= (order.status === 'Delivered' || order.status === 'Return Request') ? 'disabled' : '' %>>
+                  <% const allowedStatuses = {
+                    'Pending': ['Processing', 'Cancelled'],
+                    'Processing': ['Shipped', 'Cancelled'],
+                    'Shipped': ['Out for Delivery'],
+                    'Out for Delivery': ['Delivered'],
+                    'Delivered': ['Return Request'],
+                    'Return Request': ['Delivered', 'Returned'],
+                    'Cancelled': [],
+                    'Returned': []
+                  }[order.status] || []; %>
+                  <% ['Pending', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered'].forEach(status => { %>
+                    <% if (status !== 'Return Request' && status !== 'Returned' && status !== 'Cancelled') { %>
+                      <option value="<%= status %>" <%= order.status === status ? 'selected' : '' %> <%= allowedStatuses.includes(status) ? '' : 'disabled' %>><%= status %></option>
+                    <% } %>
+                  <% }) %>
                 </select>
                 <button type="submit"
-                  class="bg-blue-500 text-black p-2 rounded hover:bg-blue-600 action-btn <%= order.status === 'Delivered' ? 'opacity-50 cursor-not-allowed' : '' %>"
-                  <%=order.status==='Delivered' ? 'disabled' : '' %>>Update Status</button>
+                  class="bg-blue-500 text-black p-2 rounded hover:bg-blue-600 action-btn <%= (order.status === 'Delivered' || order.status === 'Return Request') ? 'opacity-50 cursor-not-allowed' : '' %>"
+                  <%= (order.status === 'Delivered' || order.status === 'Return Request') ? 'disabled' : '' %>>Update Status</button>
               </form>
             </div>
 

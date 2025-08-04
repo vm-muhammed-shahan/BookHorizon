@@ -44,6 +44,8 @@ router.get("/editCategory", adminAuth, categoryController.getEditCategory);
 router.post("/editCategory/:id", adminAuth, categoryController.editCategory);
 
 
+
+
 router.get("/addProducts", adminAuth, productController.getProductAddPage);
 router.post("/addProducts", uploads.array('productImages', 3), adminAuth, productController.addProducts);
 router.get("/products", adminAuth, productController.getAllProducts);
@@ -63,6 +65,8 @@ router.post("/editProduct/:id", adminAuth,
 router.post("/deleteImage", adminAuth, productController.deleteSingleImage);
 
 
+
+
 // Order Management
 router.get("/orders", adminAuth, orderController.getOrders);
 router.get("/orders/clear", adminAuth, orderController.clearFilters);
@@ -71,16 +75,17 @@ router.post("/orders/:orderId/status", adminAuth, orderController.updateOrderSta
 router.post("/orders/:orderId/return", adminAuth, orderController.verifyReturnRequest);
 
 
+
 // Sales Report
 router.get("/salesReport", adminAuth, salesController.getSalesReportPage);
 router.get("/sales-report/download", adminAuth, salesController.downloadSalesReport);
+
 
 
 // Coupon Management
 router.get('/coupons', adminAuth, couponController.getCouponPage);
 router.post('/coupons/create', adminAuth, couponController.createCoupon);
 router.post('/coupons/delete/:couponId', adminAuth, couponController.deleteCoupon);
-
 
 
 
