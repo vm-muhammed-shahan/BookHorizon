@@ -38,6 +38,16 @@
     .payment-badge-pending { background-color: #fef2f2; color: #dc2626; }
     .payment-badge-completed { background-color: #f0fdf4; color: #16a34a; }
     .payment-badge-failed { background-color: #fef2f2; color: #dc2626; }
+
+    .pending-return-indicator {
+  background-color: #2563eb;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
   </style>
 </head>
 <body class="bg-gray-100">
@@ -95,7 +105,12 @@
         <% } else { %>
           <% orders.forEach(order => { %>
             <tr>
-              <td class="p-4 border"><%= order.orderId ? order.orderId.substring(0, 8) : 'N/A' %></td>
+              <td class="p-4 border">
+  <%= order.orderId ? order.orderId.substring(0, 8) : 'N/A' %>
+  <% if (order.hasPendingReturn) { %>
+    <span class="pending-return-indicator">Pending Return</span>
+  <% } %>
+</td>
               <td class="p-4 border"><%= order.user && order.user.name ? order.user.name : 'N/A' %></td>
               <td class="p-4 border"><%= order.createdOn ? new Date(order.createdOn).toLocaleDateString() : 'N/A' %></td>
               <td class="p-4 border">

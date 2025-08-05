@@ -14,25 +14,66 @@ const getOrders = async (req, res) => {
     const statusFilter = req.query.status || "";
     const paymentFilter = req.query.payment || "";
 
-    let query = {};
+    let matchQuery = {};
     if (search) {
-      query.orderId = { $regex: search, $options: "i" };
+      matchQuery.orderId = { $regex: search, $options: "i" };
     }
     if (statusFilter) {
-      query.status = statusFilter;
+      matchQuery.status = statusFilter;
     }
     if (paymentFilter) {
-      query.paymentStatus = paymentFilter;
+      matchQuery.paymentStatus = paymentFilter;
     }
 
-    const totalOrders = await Order.countDocuments(query);
-    console.log('Query:', query);
-    console.log('Total Orders:', totalOrders);
-
-    const orders = await Order.find(query)
-      .populate("user", "name email")
-      .populate("orderedItems.product", "productName")
-      .sort(sort);
+    // Aggregation pipeline to prioritize orders with pending return requests
+    const orders = await Order.aggregate([
+      // Apply filters
+      { $match: matchQuery },
+      // Populate user and product data
+      {
+        $lookup: {
+          from: "users",
+          localField: "user",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "products",
+          localField: "orderedItems.product",
+          foreignField: "_id",
+          as: "orderedItemsProduct",
+        },
+      },
+      // Add a field to indicate if the order has pending return requests
+      {
+        $addFields: {
+          hasPendingReturn: {
+            $gt: [
+              {
+                $size: {
+                  $filter: {
+                    input: "$orderedItems",
+                    as: "item",
+                    cond: { $eq: ["$$item.returnStatus", "pending"] },
+                  },
+                },
+              },
+              0,
+            ],
+          },
+        },
+      },
+      // Sort: prioritize hasPendingReturn, then apply user-selected sort
+      {
+        $sort: {
+          hasPendingReturn: -1, // Orders with pending returns first (true before false)
+          [sort.startsWith("-") ? sort.slice(1) : sort]: sort.startsWith("-") ? -1 : 1, // Apply user sort
+        },
+      },
+    ]);
 
     console.log('Orders:', orders);
 
