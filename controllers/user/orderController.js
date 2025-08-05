@@ -355,338 +355,348 @@ const returnOrder = async (req, res) => {
 
 const downloadInvoice = async (req, res) => {
   try {
-    const { orderId } = req.params;
-    const userId = req.session.user._id;
+    const { orderId } = req.params
+    const userId = req.session.user._id
+
     const order = await Order.findOne({ orderId, user: userId }).populate({
       path: "orderedItems.product",
-      select: "productName"
-    });
+      select: "productName",
+    })
 
     if (!order) {
-      return res.status(403).send("Order not found or you are not authorized to access it");
+      return res.status(403).send("Order not found or you are not authorized to access it")
     }
 
-    const doc = new PDFDocument({ margin: 40, size: "A4" });
+    const doc = new PDFDocument({ margin: 40, size: "A4" })
+    res.setHeader("Content-disposition", `attachment; filename=invoice-${order.orderId}.pdf`)
+    res.setHeader("Content-type", "application/pdf; charset=utf-8")
+    res.setHeader("Content-Transfer-Encoding", "binary")
+    doc.pipe(res)
 
-    res.setHeader("Content-disposition", `attachment; filename=invoice-${order.orderId}.pdf`);
-    res.setHeader("Content-type", "application/pdf; charset=utf-8");
-    res.setHeader("Content-Transfer-Encoding", "binary");
-
-    doc.pipe(res);
-
-    const margin = 40;
-    const pageWidth = 595.28;
-    const contentWidth = pageWidth - (margin * 2);
-    let yPosition = margin;
+    const margin = 40
+    const pageWidth = 595.28 // A4 width in points
+    const pageHeight = 841.89 // A4 height in points
+    const contentWidth = pageWidth - margin * 2
+    let yPosition = margin
 
     const moveDown = (space = 15) => {
-      yPosition += space;
-    };
+      yPosition += space
+      if (yPosition > pageHeight - margin - 100) {
+        // Increased buffer for footer
+        doc.addPage()
+        yPosition = margin
+      }
+    }
 
     const drawLine = (y = yPosition, thickness = 0.5) => {
-      doc.lineWidth(thickness)
-        .strokeColor('#cccccc')
+      doc
+        .lineWidth(thickness)
+        .strokeColor("#cccccc")
         .moveTo(margin, y)
         .lineTo(pageWidth - margin, y)
-        .stroke();
-    };
+        .stroke()
+    }
 
-    const formatCurrency = (amount) => `Rs ${amount.toFixed(2)}`;
+    const formatCurrency = (amount) => `Rs ${amount.toFixed(2)}`
 
-    doc.fontSize(28)
-      .font('Helvetica-Bold')
-      .fillColor('#2c3e50')
-      .text('BookHorizon', margin, yPosition);
+    // Header section
+    doc.fontSize(28).font("Helvetica-Bold").fillColor("#2c3e50").text("BookHorizon", margin, yPosition)
 
-    moveDown(25);
+    moveDown(25)
 
-    doc.fontSize(12)
-      .font('Helvetica')
-      .fillColor('#7f8c8d')
-      .text('Premium Book Store', margin, yPosition);
+    doc.fontSize(12).font("Helvetica").fillColor("#7f8c8d").text("Premium Book Store", margin, yPosition)
 
-    doc.fontSize(20)
-      .font('Helvetica-Bold')
-      .fillColor('#2c3e50')
-      .text('INVOICE', margin, margin, { align: 'right', width: contentWidth });
+    doc
+      .fontSize(20)
+      .font("Helvetica-Bold")
+      .fillColor("#2c3e50")
+      .text("INVOICE", margin, margin, { align: "right", width: contentWidth })
 
-    doc.fontSize(12)
-      .font('Helvetica')
-      .fillColor('#7f8c8d')
-      .text(`#${order.orderId}`, margin, margin + 25, { align: 'right', width: contentWidth });
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .fillColor("#7f8c8d")
+      .text(`#${order.orderId}`, margin, margin + 25, { align: "right", width: contentWidth })
 
-    moveDown(40);
-    drawLine();
-    moveDown(25);
+    moveDown(40)
+    drawLine()
+    moveDown(25)
 
-    const leftColX = margin;
-    const rightColX = margin + (contentWidth * 0.6);
+    // Invoice details section
+    const leftColX = margin
+    const rightColX = margin + contentWidth * 0.6
 
-    doc.fontSize(12)
-      .font('Helvetica-Bold')
-      .fillColor('#2c3e50')
-      .text('Invoice Date:', leftColX, yPosition);
+    doc.fontSize(12).font("Helvetica-Bold").fillColor("#2c3e50").text("Invoice Date:", leftColX, yPosition)
 
-    doc.font('Helvetica')
-      .fillColor('#34495e')
-      .text(new Date().toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      }), leftColX + 80, yPosition);
+    doc
+      .font("Helvetica")
+      .fillColor("#34495e")
+      .text(
+        new Date().toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+        leftColX + 80,
+        yPosition,
+      )
 
-    doc.font('Helvetica-Bold')
-      .fillColor('#2c3e50')
-      .text('Order Date:', rightColX, yPosition);
+    doc.font("Helvetica-Bold").fillColor("#2c3e50").text("Order Date:", rightColX, yPosition)
 
-    doc.font('Helvetica')
-      .fillColor('#34495e')
-      .text(order.createdOn.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      }), rightColX + 80, yPosition);
+    doc
+      .font("Helvetica")
+      .fillColor("#34495e")
+      .text(
+        order.createdOn.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+        rightColX + 80,
+        yPosition,
+      )
 
-    moveDown(30);
+    moveDown(30)
 
-    const sectionY = yPosition;
+    // Order details and address section
+    const sectionY = yPosition
 
-    doc.fontSize(14)
-      .font('Helvetica-Bold')
-      .fillColor('#2c3e50')
-      .text('Order Details', leftColX, sectionY);
+    doc.fontSize(14).font("Helvetica-Bold").fillColor("#2c3e50").text("Order Details", leftColX, sectionY)
 
-    moveDown(20);
+    moveDown(20)
 
     const detailsData = [
-      ['Status:', order.status],
-      ['Payment:', order.paymentMethod === 'cod' ? 'Cash on Delivery' :
-        order.paymentMethod === 'wallet' ? 'Wallet Payment' :
-          order.paymentMethod === 'wallet+razorpay' ? 'Wallet + Online Payment' : 'Online Payment'],
-      ['Payment Status:', order.paymentStatus],
-      ['Wallet Amount Used:', formatCurrency(order.walletAmount || 0)],
-    ];
+      ["Status:", order.status],
+      [
+        "Payment:",
+        order.paymentMethod === "cod"
+          ? "Cash on Delivery"
+          : order.paymentMethod === "wallet"
+            ? "Wallet Payment"
+            : order.paymentMethod === "wallet+razorpay"
+              ? "Wallet + Online Payment"
+              : "Online Payment",
+      ],
+      ["Payment Status:", order.paymentStatus],
+      ["Wallet Amount Used:", formatCurrency(order.walletAmount || 0)],
+    ]
 
     detailsData.forEach((detail, index) => {
-      const detailY = sectionY + 20 + (index * 18);
-      doc.fontSize(11)
-        .font('Helvetica')
-        .fillColor('#7f8c8d')
-        .text(detail[0], leftColX, detailY);
+      const detailY = sectionY + 20 + index * 18
+      doc.fontSize(11).font("Helvetica").fillColor("#7f8c8d").text(detail[0], leftColX, detailY)
+      doc
+        .font("Helvetica-Bold")
+        .fillColor("#34495e")
+        .text(detail[1], leftColX + 100, detailY)
+    })
 
-      doc.font('Helvetica-Bold')
-        .fillColor('#34495e')
-        .text(detail[1], leftColX + 100, detailY);
-    });
-
-    doc.fontSize(14)
-      .font('Helvetica-Bold')
-      .fillColor('#2c3e50')
-      .text('Delivery Address', rightColX, sectionY);
+    doc.fontSize(14).font("Helvetica-Bold").fillColor("#2c3e50").text("Delivery Address", rightColX, sectionY)
 
     const addressLines = [
       order.address.name,
       order.address.landMark,
       `${order.address.city}, ${order.address.state}`,
       `PIN: ${order.address.pincode}`,
-      `Phone: ${order.address.phone}`
-    ];
+      `Phone: ${order.address.phone}`,
+    ]
 
     if (order.address.altPhone) {
-      addressLines.push(`Alt: ${order.address.altPhone}`);
+      addressLines.push(`Alt: ${order.address.altPhone}`)
     }
 
     addressLines.forEach((line, index) => {
-      const lineY = sectionY + 20 + (index * 15);
-      doc.fontSize(11)
-        .font(index === 0 ? 'Helvetica-Bold' : 'Helvetica')
-        .fillColor(index === 0 ? '#2c3e50' : '#7f8c8d')
-        .text(line, rightColX, lineY);
-    });
+      const lineY = sectionY + 20 + index * 15
+      doc
+        .fontSize(11)
+        .font(index === 0 ? "Helvetica-Bold" : "Helvetica")
+        .fillColor(index === 0 ? "#2c3e50" : "#7f8c8d")
+        .text(line, rightColX, lineY)
+    })
 
-    moveDown(120);
-    drawLine();
-    moveDown(25);
+    moveDown(120)
+    drawLine()
+    moveDown(25)
 
-    doc.fontSize(16)
-      .font('Helvetica-Bold')
-      .fillColor('#2c3e50')
-      .text('Items Ordered', margin, yPosition);
+    // Items table
+    doc.fontSize(16).font("Helvetica-Bold").fillColor("#2c3e50").text("Items Ordered", margin, yPosition)
 
-    moveDown(20);
+    moveDown(20)
 
-    const tableHeaderY = yPosition;
+    const tableHeaderY = yPosition
     const colPositions = {
       product: margin,
       qty: margin + 280,
       price: margin + 350,
-      total: margin + 420
-    };
+      total: margin + 420,
+    }
+
     const colWidths = {
       product: 270,
       qty: 60,
       price: 60,
-      total: 80
-    };
+      total: 80,
+    }
 
-    doc.rect(margin, tableHeaderY, contentWidth, 25)
-      .fillColor('#ecf0f1')
-      .fill();
+    doc.rect(margin, tableHeaderY, contentWidth, 25).fillColor("#ecf0f1").fill()
 
-    doc.fontSize(12)
-      .font('Helvetica-Bold')
-      .fillColor('#2c3e50');
+    doc.fontSize(12).font("Helvetica-Bold").fillColor("#2c3e50")
 
-    doc.text('Product', colPositions.product + 5, tableHeaderY + 8);
-    doc.text('Qty', colPositions.qty, tableHeaderY + 8, { width: colWidths.qty, align: 'center' });
-    doc.text('Price', colPositions.price, tableHeaderY + 8, { width: colWidths.price, align: 'right' });
-    doc.text('Total', colPositions.total, tableHeaderY + 8, { width: colWidths.total, align: 'right' });
+    doc.text("Product", colPositions.product + 5, tableHeaderY + 8)
+    doc.text("Qty", colPositions.qty, tableHeaderY + 8, { width: colWidths.qty, align: "center" })
+    doc.text("Price", colPositions.price, tableHeaderY + 8, { width: colWidths.price, align: "right" })
+    doc.text("Total", colPositions.total, tableHeaderY + 8, { width: colWidths.total, align: "right" })
 
-    moveDown(35);
+    moveDown(35)
 
-    const activeItems = order.orderedItems.filter(item => !item.cancelled && item.returnStatus !== "approved");
+    const activeItems = order.orderedItems.filter((item) => !item.cancelled && item.returnStatus !== "approved")
 
     order.orderedItems.forEach((item, index) => {
-      const rowY = yPosition;
-      const rowHeight = 30;
+      const rowY = yPosition
+      const rowHeight = 30
 
       if (index % 2 === 0) {
-        doc.rect(margin, rowY, contentWidth, rowHeight)
-          .fillColor('#fafafa')
-          .fill();
+        doc.rect(margin, rowY, contentWidth, rowHeight).fillColor("#fafafa").fill()
       }
 
-      doc.fontSize(11)
-        .font('Helvetica')
-        .fillColor('#2c3e50');
+      doc.fontSize(11).font("Helvetica").fillColor("#2c3e50")
 
-      let productName = item.product ? item.product.productName : 'N/A';
+      let productName = item.product ? item.product.productName : "N/A"
       if (productName.length > 40) {
-        productName = productName.substring(0, 37) + '...';
+        productName = productName.substring(0, 37) + "..."
       }
 
-      doc.text(productName, colPositions.product + 5, rowY + 8);
+      doc.text(productName, colPositions.product + 5, rowY + 8)
       doc.text(item.quantity.toString(), colPositions.qty, rowY + 8, {
         width: colWidths.qty,
-        align: 'center'
-      });
+        align: "center",
+      })
 
-      const itemPrice = (item.cancelled || item.returnStatus === "approved") ? 0 : item.price;
-      const itemTotal = (item.cancelled || item.returnStatus === "approved") ? 0 : item.price * item.quantity;
+      const itemPrice = item.cancelled || item.returnStatus === "approved" ? 0 : item.price
+      const itemTotal = item.cancelled || item.returnStatus === "approved" ? 0 : item.price * item.quantity
 
       doc.text(formatCurrency(itemPrice), colPositions.price, rowY + 8, {
         width: colWidths.price,
-        align: 'right'
-      });
+        align: "right",
+      })
+
       doc.text(formatCurrency(itemTotal), colPositions.total, rowY + 8, {
         width: colWidths.total,
-        align: 'right'
-      });
+        align: "right",
+      })
 
       if (item.cancelled) {
-        doc.fontSize(9)
-          .fillColor('#e74c3c')
-          .text(`Cancelled${item.cancelReason ? ': ' + item.cancelReason : ''}`, colPositions.product + 5, rowY + 20);
+        doc
+          .fontSize(9)
+          .fillColor("#e74c3c")
+          .text(`Cancelled${item.cancelReason ? ": " + item.cancelReason : ""}`, colPositions.product + 5, rowY + 20)
       } else if (item.returned) {
-        doc.fontSize(9)
-          .fillColor('#e74c3c');
-        let statusText = '';
-        if (item.returnStatus === 'pending') {
-          statusText = `Return Requested: ${item.returnReason}`;
-        } else if (item.returnStatus === 'approved') {
-          statusText = `Returned: ${item.returnReason}`;
-        } else if (item.returnStatus === 'rejected') {
-          statusText = `Return Rejected: ${item.returnReason}`;
+        doc.fontSize(9).fillColor("#e74c3c")
+        let statusText = ""
+        if (item.returnStatus === "pending") {
+          statusText = `Return Requested: ${item.returnReason}`
+        } else if (item.returnStatus === "approved") {
+          statusText = `Returned: ${item.returnReason}`
+        } else if (item.returnStatus === "rejected") {
+          statusText = `Return Rejected: ${item.returnReason}`
         }
-        doc.text(`(${statusText})`, colPositions.product + 5, rowY + 20);
+        doc.text(`(${statusText})`, colPositions.product + 5, rowY + 20)
       }
 
-      moveDown(rowHeight);
-    });
+      moveDown(rowHeight)
+    })
 
-    drawLine(yPosition, 1);
-    moveDown(25);
+    drawLine(yPosition, 1)
+    moveDown(25)
 
-    const summaryX = margin + contentWidth - 200;
-    const summaryY = yPosition;
-
-    const finalTotal = order.finalAmount;
-    const subtotal = activeItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const tax = order.tax || (subtotal * 0.05);
-    const shipping = order.shippingCharge || (subtotal > 0 ? 50 : 0);
-    const walletAmount = order.walletAmount || 0;
-    const discount = order.discount || 0;
+    // Summary section
+    const summaryX = margin + contentWidth - 200
+    const summaryY = yPosition
+    const finalTotal = order.finalAmount
+    const subtotal = activeItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    const tax = order.tax || subtotal * 0.05
+    const shipping = order.shippingCharge || (subtotal > 0 ? 50 : 0)
+    const walletAmount = order.walletAmount || 0
+    const discount = order.discount || 0
 
     const summaryItems = [
-      ['Subtotal:', formatCurrency(subtotal)],
-      ['Tax (5%):', formatCurrency(tax)],
-      ['Shipping:', formatCurrency(shipping)],
-      ['Wallet Amount Used:', formatCurrency(walletAmount)],
-    ];
+      ["Subtotal:", formatCurrency(subtotal)],
+      ["Tax (5%):", formatCurrency(tax)],
+      ["Shipping:", formatCurrency(shipping)],
+      ["Wallet Amount Used:", formatCurrency(walletAmount)],
+    ]
 
     if (discount > 0) {
-      summaryItems.push(['Discount:', `-${formatCurrency(discount)}`]);
+      summaryItems.push(["Discount:", `-${formatCurrency(discount)}`])
     }
 
-    const calculatedTotal = subtotal + tax + shipping - discount - walletAmount;
-    let adjustment = finalTotal - calculatedTotal;
+    const calculatedTotal = subtotal + tax + shipping - discount - walletAmount
+    const adjustment = finalTotal - calculatedTotal
     if (adjustment !== 0) {
-      summaryItems.push(['Adjustment:', formatCurrency(adjustment)]);
+      summaryItems.push(["Adjustment:", formatCurrency(adjustment)])
     }
 
     summaryItems.forEach((item, index) => {
-      const itemY = summaryY + (index * 20);
-      doc.fontSize(12)
-        .font('Helvetica')
-        .fillColor('#7f8c8d')
-        .text(item[0], summaryX, itemY);
+      const itemY = summaryY + index * 20
+      doc.fontSize(12).font("Helvetica").fillColor("#7f8c8d").text(item[0], summaryX, itemY)
+      doc.text(item[1], summaryX + 100, itemY, { width: 80, align: "right" })
+    })
 
-      doc.text(item[1], summaryX + 100, itemY, { width: 80, align: 'right' });
-    });
-
-    const totalY = summaryY + (summaryItems.length * 20) + 10;
-
-    doc.lineWidth(1)
-      .strokeColor('#bdc3c7')
+    const totalY = summaryY + summaryItems.length * 20 + 10
+    doc
+      .lineWidth(1)
+      .strokeColor("#bdc3c7")
       .moveTo(summaryX, totalY)
       .lineTo(summaryX + 180, totalY)
-      .stroke();
+      .stroke()
 
-    doc.fontSize(14)
-      .font('Helvetica-Bold')
-      .fillColor('#2c3e50')
-      .text('Total:', summaryX, totalY + 15);
+    doc
+      .fontSize(14)
+      .font("Helvetica-Bold")
+      .fillColor("#2c3e50")
+      .text("Total:", summaryX, totalY + 15)
 
     doc.text(formatCurrency(finalTotal), summaryX + 100, totalY + 15, {
       width: 80,
-      align: 'right'
-    });
+      align: "right",
+    })
 
-    const footerY = pageWidth - 80;
-    doc.fontSize(10)
-      .font('Helvetica')
-      .fillColor('#95a5a6')
-      .text(
-        'Thank you for choosing BookHorizon! We appreciate your business.',
-        margin,
-        footerY,
-        { align: 'center', width: contentWidth }
-      );
-    doc.fontSize(9)
-      .text(
-        'For support queries, please contact our customer service team.',
-        margin,
-        footerY + 15,
-        { align: 'center', width: contentWidth }
-      );
-    doc.end();
+    // Update yPosition after summary
+    yPosition = totalY + 40
+
+    // FIXED FOOTER SECTION - Always at bottom of page
+    const footerHeight = 40 // Height needed for footer messages
+    const minFooterY = pageHeight - margin - footerHeight // Minimum Y position for footer
+
+    // If current content would overlap with footer area, add space or new page
+    if (yPosition > minFooterY - 30) {
+      // 30 points buffer
+      doc.addPage()
+      yPosition = margin
+    }
+
+    // Always place footer at the bottom of the current page
+    const footerY = Math.max(yPosition + 30, minFooterY)
+
+    doc
+      .fontSize(10)
+      .font("Helvetica")
+      .fillColor("#95a5a6")
+      .text("Thank you for choosing BookHorizon! We appreciate your business.", margin, footerY, {
+        align: "center",
+        width: contentWidth,
+      })
+
+    doc.fontSize(9).text("For support queries, please contact our customer service team.", margin, footerY + 20, {
+      align: "center",
+      width: contentWidth,
+    })
+
+    doc.end()
   } catch (error) {
-    console.error('Error generating invoice:', error);
-    res.status(500).send('Error generating invoice');
+    console.error("Error generating invoice:", error)
+    res.status(500).send("Error generating invoice")
   }
-};
-
-
+}
 module.exports = {
   downloadInvoice,
   returnOrder,

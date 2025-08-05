@@ -62,9 +62,6 @@ router.post("/change-password", userAuth, profileController.changePasswordValid)
 
 
 
-
-
-
 // Shop Page 
 router.get("/shop", userController.loadShoppingPage);
 router.get("/filter", userController.filterProduct);
@@ -82,6 +79,7 @@ router.post("/profile/addresses/edit/:addrId", userAuth, addressController.editA
 router.get("/profile/addresses/delete/:addrId", userAuth, addressController.deleteAddress);
 router.get("/profile/addresses/set-default/:addrId", userAuth, addressController.setDefaultAddress);
 
+
 // Wishlist Management
 router.get("/wishlist", userAuth, wishlistController.getwishlist);
 router.post("/addToWishlist", userAuth, wishlistController.addToWishlist);
@@ -90,12 +88,14 @@ router.post('/moveToCart', userAuth, wishlistController.moveToCart);
 router.post("/clear-wishlist", userAuth, wishlistController.clearWishlist);
 router.post("/toggleWishlist", userAuth, wishlistController.toggleWishlist);
 
+
 // Cart Management
 router.get("/cart", userAuth, cartController.viewCart);
 router.post("/cart/add", userAuth, cartController.addToCart);
 router.post("/cart/update-quantity", userAuth, cartController.updateQuantity);
 router.get("/cart/remove/:productId", userAuth, cartController.removeItem);
 router.post("/cart/remove", userAuth, cartController.removeItemPost);
+
 
 // Checkout Management
 router.get('/checkout', userAuth, checkoutController.checkoutPage);
@@ -109,6 +109,7 @@ router.get('/order/success/:orderID', userAuth, checkoutController.successPage);
 router.get('/order/failure/:orderID', userAuth, checkoutController.failurePage);
 router.get('/edit-address', userAuth, checkoutController.editCheckout);
 router.post('/checkout/cancel-order', userAuth, checkoutController.cancelOrder);
+
 
  //order Management
 router.get("/orders", userAuth, orderController.getOrders);

@@ -7,7 +7,7 @@ const path = require("path");
 // Utility function for formatting Indian currency
 const formatIndianCurrency = (amount) => {
   if (!amount && amount !== 0 || isNaN(amount)) return '₹0';
-  return `₹${parseFloat(amount).toLocaleString('en-IN', { 
+  return `Rs ${parseFloat(amount).toLocaleString('en-IN', { 
     minimumFractionDigits: 0,
     maximumFractionDigits: 0 
   })}`;
@@ -47,10 +47,10 @@ const drawTable = (doc, data, headers, startX, startY, colWidths, options = {}) 
     const cardHeight = 65;
     const cardSpacing = 20;
     const summaryCards = [
-      { title: 'Total Orders', value: summary.totalSalesCount.toString(), color: '#3498db', icon: '📊' },
-      { title: 'Total Amount', value: new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(summary.totalOrderAmount), color: '#27ae60', icon: '💰' },
-      { title: 'Total Discount', value: new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(summary.totalDiscount), color: '#e74c3c', icon: '💸' },
-      { title: 'Final Amount', value: new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(summary.totalOrderAmount - summary.totalDiscount), color: '#f39c12', icon: '💳' }
+    { title: 'Total Orders', value: summary.totalSalesCount.toString(), color: '#3498db', icon: '📊' },
+    { title: 'Total Amount', value: formatIndianCurrency(summary.totalOrderAmount), color: '#27ae60', icon: '💰' },
+    { title: 'Total Discount', value: formatIndianCurrency(summary.totalDiscount), color: '#e74c3c', icon: '💸' },
+    { title: 'Final Amount', value: formatIndianCurrency(summary.totalOrderAmount - summary.totalDiscount), color: '#f39c12', icon: '💳' }
     ];
     summaryCards.forEach((card, index) => {
       const x = startX + (index * (cardWidth + cardSpacing));
@@ -105,8 +105,9 @@ const drawTable = (doc, data, headers, startX, startY, colWidths, options = {}) 
       else if (cellIndex === 3) align = 'left';
       if (cellIndex >= 4 && cellIndex <= 7) {
         if (cell && cell !== 'N/A') {
-          const numValue = parseFloat(cell.replace(/[₹,]/g, '') || 0);
-          cell = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(numValue);
+          const numValue = parseFloat(cell.replace(/[₹,Rs\s]/g, '') || 0);
+
+          cell = formatIndianCurrency(numValue);
         }
         doc.font('Helvetica-Bold');
       } else doc.font('Helvetica');
@@ -129,6 +130,8 @@ const drawTable = (doc, data, headers, startX, startY, colWidths, options = {}) 
   return currentY;
 };
 
+
+
 const getSalesReportPage = async (req, res) => {
   try {
     const { filter, startDate, endDate, status } = req.query;
@@ -137,16 +140,14 @@ const getSalesReportPage = async (req, res) => {
     const now = new Date();
     
     if (filter === "daily") {
-      // Get today's date in IST
+  
       const today = new Date();
-      const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+      const istOffset = 5.5 * 60 * 60 * 1000; 
       const istDate = new Date(today.getTime() + istOffset);
       
-      // Create start and end of day in IST, then convert to UTC for MongoDB
       const startOfDay = new Date(istDate.getFullYear(), istDate.getMonth(), istDate.getDate());
       const endOfDay = new Date(istDate.getFullYear(), istDate.getMonth(), istDate.getDate(), 23, 59, 59, 999);
       
-      // Convert IST times back to UTC for MongoDB query
       const startUTC = new Date(startOfDay.getTime() - istOffset);
       const endUTC = new Date(endOfDay.getTime() - istOffset);
       
@@ -263,24 +264,22 @@ const getSalesReportPage = async (req, res) => {
   }
 };
 
+
+
 const downloadSalesReport = async (req, res) => {
   try {
     const { filter, startDate, endDate, format, status } = req.query;
-
     const now = new Date();
     let dateFilter = {};
 
     if (filter === "daily") {
-      // Get today's date in IST
       const today = new Date();
-      const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+      const istOffset = 5.5 * 60 * 60 * 1000; 
       const istDate = new Date(today.getTime() + istOffset);
       
-      // Create start and end of day in IST, then convert to UTC for MongoDB
       const startOfDay = new Date(istDate.getFullYear(), istDate.getMonth(), istDate.getDate());
       const endOfDay = new Date(istDate.getFullYear(), istDate.getMonth(), istDate.getDate(), 23, 59, 59, 999);
       
-      // Convert IST times back to UTC for MongoDB query
       const startUTC = new Date(startOfDay.getTime() - istOffset);
       const endUTC = new Date(endOfDay.getTime() - istOffset);
       
@@ -339,13 +338,13 @@ const downloadSalesReport = async (req, res) => {
       .populate("user")
       .populate("orderedItems.product")
       .lean()
-      .limit(10); // Limit to 10 orders for one page
+      .limit(10);
+
     const allOrders = await Order.find({ ...dateFilter, ...statusFilter }).lean();
     const totalSalesCount = await Order.countDocuments({ ...dateFilter, ...statusFilter });
     const totalOrderAmount = allOrders.reduce((sum, order) => sum + (order.finalAmount || 0), 0);
     const totalDiscount = allOrders.reduce((sum, order) => sum + ((order.discount || 0) + (order.couponDiscount || 0)), 0);
     const totalCouponDiscount = allOrders.reduce((sum, order) => sum + (order.couponDiscount || 0), 0);
-
     const summary = { totalSalesCount, totalOrderAmount, totalDiscount, totalCouponDiscount };
 
     if (format === "pdf") {
@@ -355,22 +354,23 @@ const downloadSalesReport = async (req, res) => {
       doc.pipe(res);
 
       const headers = ['Order ID', 'Date', 'Customer', 'Items', 'Amount'];
-      const colWidths = [70, 70, 90, 100, 70];
+      const colWidths = [80, 75, 95, 135, 75];
+      
       const tableData = orders.map(order => [
-        order.orderId?.substring(0, 12) + '...' || 'N/A',
+        order.orderId?.substring(0, 8) || 'N/A',
         new Date(order.createdOn).toLocaleDateString('en-IN'),
         order.user?.name || 'N/A',
-        (order.orderedItems?.map(item => item.product?.productName || 'N/A').join(', ') || 'N/A').length > 20 ? 
-          (order.orderedItems?.map(item => item.product?.productName || 'N/A').join(', ').substring(0, 20) + '...') : 
+        (order.orderedItems?.map(item => item.product?.productName || 'N/A').join(', ') || 'N/A').length > 25 ? 
+          (order.orderedItems?.map(item => item.product?.productName || 'N/A').join(', ').substring(0, 25) + '...') : 
           (order.orderedItems?.map(item => item.product?.productName || 'N/A').join(', ') || 'N/A'),
-        order.finalAmount !== undefined && order.finalAmount !== null && !isNaN(order.finalAmount) ? 
-          new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(order.finalAmount) : 
-          new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(0)
+        formatIndianCurrency(order.finalAmount || 0)
+        
       ]);
 
-      drawTable(doc, tableData, headers, 50, 50, colWidths, {
+      drawTable(doc, tableData, headers, 50, 150, colWidths, {
         summary: summary,
-        pageHeight: 842 // A4 height in points
+        pageHeight: 842,
+        marginBottom: 80
       });
 
       doc.end();
@@ -378,18 +378,17 @@ const downloadSalesReport = async (req, res) => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet("Sales Report");
 
-      // Cover
       worksheet.mergeCells('A1:E2');
       worksheet.getCell('A1').value = 'BookHorizon Sales Report';
-      worksheet.getCell('A1').font = { size: 16, bold: true };
-      worksheet.getCell('A1').alignment = { horizontal: 'center' };
+      worksheet.getCell('A1').font = { size: 18, bold: true, color: { argb: 'FF2d3748' } };
+      worksheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
       worksheet.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFedf2f7' } };
+
       worksheet.mergeCells('A3:E3');
       worksheet.getCell('A3').value = `Generated: ${new Date().toLocaleString('en-IN', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} IST`;
-      worksheet.getCell('A3').font = { size: 10, italic: true };
+      worksheet.getCell('A3').font = { size: 11, italic: true, color: { argb: 'FF718096' } };
       worksheet.getCell('A3').alignment = { horizontal: 'center' };
 
-      // Filters
       worksheet.addRow([]);
       if (filter) {
         let filterText = `Period: ${filter.charAt(0).toUpperCase() + filter.slice(1)}`;
@@ -399,40 +398,51 @@ const downloadSalesReport = async (req, res) => {
         if (status) filterText += ` | Status: ${status.split(',').join(', ')}`;
         worksheet.mergeCells(`A${worksheet.rowCount + 1}:E${worksheet.rowCount + 1}`);
         worksheet.getCell(`A${worksheet.rowCount}`).value = filterText;
-        worksheet.getCell(`A${worksheet.rowCount}`).font = { size: 11, bold: true };
+        worksheet.getCell(`A${worksheet.rowCount}`).font = { size: 12, bold: true, color: { argb: 'FF2d3748' } };
         worksheet.getCell(`A${worksheet.rowCount}`).alignment = { horizontal: 'center' };
         worksheet.getCell(`A${worksheet.rowCount}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFe6f0fa' } };
       }
 
-      // Summary
       worksheet.addRow([]);
       worksheet.mergeCells(`A${worksheet.rowCount + 1}:E${worksheet.rowCount + 1}`);
       worksheet.getCell(`A${worksheet.rowCount}`).value = 'Summary';
-      worksheet.getCell(`A${worksheet.rowCount}`).font = { size: 12, bold: true };
+      worksheet.getCell(`A${worksheet.rowCount}`).font = { size: 14, bold: true, color: { argb: 'FF2d3748' } };
       worksheet.getCell(`A${worksheet.rowCount}`).alignment = { horizontal: 'center' };
+      worksheet.getCell(`A${worksheet.rowCount}`).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFe2e8f0' } };
+      
       worksheet.addRow(['Metric', 'Value']);
       worksheet.addRow(['Total Orders', summary.totalSalesCount]);
-      worksheet.addRow(['Total Revenue', 'INR ' + new Intl.NumberFormat('en-IN').format(summary.totalOrderAmount)]);
-      worksheet.addRow(['Total Discounts', 'INR ' + new Intl.NumberFormat('en-IN').format(summary.totalDiscount)]);
-      worksheet.addRow(['Net Revenue', 'INR ' + new Intl.NumberFormat('en-IN').format(summary.totalOrderAmount - summary.totalDiscount)]);
-      worksheet.getRows(worksheet.rowCount - 4, 5).forEach(row => {
-        row.getCell(1).font = { bold: true };
-        row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFf7fafc' } };
+      worksheet.addRow(['Total Revenue', formatIndianCurrency(summary.totalOrderAmount)]);
+      worksheet.addRow(['Total Discounts', formatIndianCurrency(summary.totalDiscount)]);
+      worksheet.addRow(['Net Revenue', formatIndianCurrency(summary.totalOrderAmount - summary.totalDiscount)]);
+
+      const summaryStartRow = worksheet.rowCount - 5;
+      worksheet.getRows(summaryStartRow, 6).forEach((row, index) => {
+        if (index === 0) {
+          row.font = { bold: true, color: { argb: 'FFffffff' } };
+          row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4a5568' } };
+        } else {
+          row.getCell(1).font = { bold: true, color: { argb: 'FF2d3748' } };
+          row.getCell(2).font = { bold: true, color: { argb: 'FF2b6cb0' } };
+          row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFf7fafc' } };
+        }
+        row.alignment = { horizontal: 'center' };
       });
 
-      // Table
       worksheet.addRow([]);
       worksheet.columns = [
-        { header: 'Order ID', key: 'orderId', width: 15 },
-        { header: 'Date', key: 'date', width: 12 },
-        { header: 'Customer', key: 'customer', width: 20 },
-        { header: 'Items', key: 'items', width: 25 },
-        { header: 'Amount', key: 'amount', width: 12 },
+        { header: 'Order ID', key: 'orderId', width: 18, alignment: { horizontal: 'left' } },
+        { header: 'Date', key: 'date', width: 15, alignment: { horizontal: 'center' } },
+        { header: 'Customer', key: 'customer', width: 22, alignment: { horizontal: 'left' } },
+        { header: 'Items', key: 'items', width: 30, alignment: { horizontal: 'left' } },
+        { header: 'Amount', key: 'amount', width: 15, alignment: { horizontal: 'right' } },
       ];
+
       const headerRow = worksheet.getRow(worksheet.rowCount);
-      headerRow.font = { bold: true, color: { argb: 'FFffffff' } };
+      headerRow.font = { bold: true, color: { argb: 'FFffffff' }, size: 12 };
       headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4a5568' } };
-      headerRow.alignment = { horizontal: 'center' };
+      headerRow.alignment = { vertical: 'middle' };
+      headerRow.height = 25;
 
       orders.forEach((order, index) => {
         const itemNames = order.orderedItems?.map(item => item.product?.productName || 'N/A').join(', ') || 'N/A';
@@ -440,15 +450,27 @@ const downloadSalesReport = async (req, res) => {
           orderId: order.orderId || 'N/A',
           date: new Date(order.createdOn).toLocaleDateString('en-IN'),
           customer: order.user?.name || 'N/A',
-          items: itemNames.length > 20 ? itemNames.substring(0, 20) + '...' : itemNames,
-          amount: 'INR ' + new Intl.NumberFormat('en-IN').format(order.finalAmount || 0),
+          items: itemNames.length > 25 ? itemNames.substring(0, 25) + '...' : itemNames,
+          amount: formatIndianCurrency(order.finalAmount || 0),
+          
         });
-        if (index % 2 === 0) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFf7fafc' } };
+        
+        row.height = 20;
+        row.getCell(5).alignment = { horizontal: 'right', vertical: 'middle' };
+        
+        if (index % 2 === 0) {
+          row.fill = { type: 'pattern', pattern: 'solid', fgContent: { argb: 'FFf7fafc' } };
+        }
       });
 
-      worksheet.eachRow((row) => {
+      worksheet.eachRow((row, rowNumber) => {
         row.eachCell((cell) => {
-          cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+          cell.border = { 
+            top: { style: 'thin', color: { argb: 'FFe2e8f0' } }, 
+            left: { style: 'thin', color: { argb: 'FFe2e8f0' } }, 
+            bottom: { style: 'thin', color: { argb: 'FFe2e8f0' } }, 
+            right: { style: 'thin', color: { argb: 'FFe2e8f0' } } 
+          };
         });
       });
 
@@ -464,6 +486,7 @@ const downloadSalesReport = async (req, res) => {
     res.status(500).json({ error: "Failed to generate sales report due to server error. Please try again or contact support." });
   }
 };
+
 
 
 module.exports = {
