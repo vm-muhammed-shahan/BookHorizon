@@ -1,4 +1,3 @@
-
 const Order = require("../../models/orderSchema");
 const User = require("../../models/userSchema");
 const Product = require("../../models/productSchema");
@@ -61,6 +60,7 @@ const getOrderDetail = async (req, res) => {
       })
       .populate("user", "name email");
     console.log('Order Details:', order);
+    console.log('Delivered On:', order.deliveredOn);
     if (!order) {
       req.session.message = { type: "error", text: "Order not found or you are not authorized to view it" };
       return res.redirect("/orders");
@@ -223,7 +223,7 @@ const cancelOrder = async (req, res) => {
       if (allCancelled) {
         order.status = "Cancelled";
         order.cancelReason = reason || "No reason provided";
-        order.paymentStatus = "Failed";
+        order.paymentStatus = "Cancelled";
         order.finalAmount = 0;
         order.tax = 0;
         order.shippingCharge = 0;
@@ -242,15 +242,14 @@ const cancelOrder = async (req, res) => {
       for (const item of order.orderedItems) {
         if (!item.cancelled) {
           await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } })
-            .catch(err => { throw new Error(`Failed to update product quantity: ${err.message}`); });
           item.cancelled = true;
           item.cancelReason = reason || "No reason provided";
         }
       }
 
-      order.status = "Cancelled";
+     order.status = "Cancelled";
+      order.paymentStatus = "Cancelled"; 
       order.cancelReason = reason || "No reason provided";
-      order.paymentStatus = "Failed";
       order.finalAmount = 0;
       order.tax = 0;
       order.shippingCharge = 0;
@@ -335,12 +334,13 @@ const returnOrder = async (req, res) => {
     item.returnReason = reason;
     item.returnStatus = "pending";
 
-   
     const hasPendingReturns = order.orderedItems.some(i => i.returnStatus === "pending");
-if (hasPendingReturns) {
-  order.status = "Return Request";
-  order.paymentStatus = "Pending";
-}
+    if (hasPendingReturns) {
+      order.status = "Return Request";
+      if (order.paymentMethod === "cod") {
+        order.paymentStatus = "Pending"; 
+      }
+    }
 
     await order.save();
     return res.status(200).json({
@@ -352,7 +352,6 @@ if (hasPendingReturns) {
     return res.status(500).json({ error: "Server error while submitting return request" });
   }
 };
-
 
 const downloadInvoice = async (req, res) => {
   try {

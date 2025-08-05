@@ -355,29 +355,29 @@ const createRazorpayOrder = async (req, res) => {
       }
     }
 
-    const order = new Order({
-      orderId: uuidv4(),
-      orderedItems: validItems.map((item) => ({
-        product: item.productId._id,
-        quantity: item.quantity,
-        price: item.price,
-      })),
-      totalPrice: subTotal,
-      discount,
-      finalAmount,
-      walletAmount: walletAmountUsed,
-      user: userId,
-      address: selectedAddress,
-      invoiceDate: new Date(),
-      couponApplied: cart.coupon?.couponId ? true : false,
-      couponId: cart.coupon?.couponId || null,
-      status: "Pending",
-      paymentMethod: effectivePaymentMethod,
-      paymentStatus: effectivePaymentMethod.includes("razorpay") ? "Pending" : "Completed",
-      shippingCharge: shipping,
-      razorpayOrderId: razorpayOrder ? razorpayOrder.id : null,
-    });
-
+    // In createRazorpayOrder function, update the order creation block
+const order = new Order({
+  orderId: uuidv4(),
+  orderedItems: validItems.map((item) => ({
+    product: item.productId._id,
+    quantity: item.quantity,
+    price: item.price,
+  })),
+  totalPrice: subTotal,
+  discount,
+  finalAmount,
+  walletAmount: walletAmountUsed,
+  user: userId,
+  address: selectedAddress,
+  invoiceDate: new Date(),
+  couponApplied: cart.coupon?.couponId ? true : false,
+  couponId: cart.coupon?.couponId || null,
+  status: "Pending",
+  paymentMethod: effectivePaymentMethod,
+  paymentStatus: effectivePaymentMethod === "cod" ? "Pending" : effectivePaymentMethod.includes("razorpay") ? "Pending" : "Completed",
+  shippingCharge: shipping,
+  razorpayOrderId: razorpayOrder ? razorpayOrder.id : null,
+});
     await order.save();
 
     if (cart.coupon?.couponId && (paymentMethod === "cod" || paymentMethod === "wallet")) {

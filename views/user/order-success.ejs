@@ -49,7 +49,7 @@
     </svg>
     
     <h2>Thank You for Your Order!</h2>
-    <p>Your order #<%= order.orderId %> has been successfully placed.</p>
+    <p>Your order #<%= order.orderId.substring(0, 8) %> has been successfully placed.</p>
     <div class="mt-4">
       <a href="/orders/<%= order.orderId %>" class="btn btn-primary me-2">View Order Details</a>
       <a href="/shop" class="btn btn-secondary">Continue Shopping</a>

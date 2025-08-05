@@ -118,10 +118,10 @@ const updateOrderStatus = async (req, res) => {
 
     order.status = status;
     if (status === "Delivered") {
-      order.paymentStatus = "Completed";
-      order.deliveredOn = new Date();
+      order.paymentStatus = order.paymentMethod === "cod" ? "Completed" : order.paymentStatus;
+      order.deliveredOn = new Date(); // Set deliveredOn for all orders
     } else if (status === "Cancelled") {
-      order.paymentStatus = "Failed";
+      order.paymentStatus = "Cancelled";
       let refundAmount = order.finalAmount;
       for (const item of order.orderedItems) {
         if (!item.cancelled && !item.returned) {
@@ -160,12 +160,14 @@ const updateOrderStatus = async (req, res) => {
       order.tax = 0;
       order.shippingCharge = 0;
     } else if (status === "Returned") {
-      order.paymentStatus = "Completed";
       const activeItems = order.orderedItems.filter(i => !i.cancelled && i.returnStatus !== "approved");
       order.totalPrice = activeItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
       order.tax = order.totalPrice > 0 ? order.totalPrice * 0.05 : 0;
       order.shippingCharge = order.totalPrice > 0 ? 50 : 0;
       order.finalAmount = order.totalPrice + order.tax + order.shippingCharge - order.discount - order.walletAmount;
+      if (order.paymentMethod === "cod" && activeItems.length === 0) {
+        order.paymentStatus = "Completed";
+      }
     }
 
     await order.save();
@@ -179,6 +181,8 @@ const updateOrderStatus = async (req, res) => {
     });
   }
 };
+
+
 
 const verifyReturnRequest = async (req, res) => {
   try {
