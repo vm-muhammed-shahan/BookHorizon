@@ -11,7 +11,7 @@
       <form method="get" action="/admin/salesReport" class="row g-3">
         <div class="col-md-3">
           <label class="form-label">Filter By</label>
-          <select name="filter" class="form-select" onchange="toggleCustomDate(this)">
+          <select name="filter" id="filterSelect" class="form-select" onchange="toggleCustomDate(this)">
             <option value="daily" <%=filter==='daily' ? 'selected' : '' %>>Daily</option>
             <option value="weekly" <%=filter==='weekly' ? 'selected' : '' %>>Weekly</option>
             <option value="monthly" <%=filter==='monthly' ? 'selected' : '' %>>Monthly</option>
@@ -21,11 +21,11 @@
         </div>
         <div class="col-md-3 custom-date" style="display: <%= filter === 'custom' ? 'block' : 'none' %>;">
           <label class="form-label">Start Date</label>
-          <input type="date" name="startDate" class="form-control" value="<%= startDate || '' %>">
+          <input type="date" name="startDate" id="startDate" class="form-control" value="<%= startDate || '' %>">
         </div>
         <div class="col-md-3 custom-date" style="display: <%= filter === 'custom' ? 'block' : 'none' %>;">
           <label class="form-label">End Date</label>
-          <input type="date" name="endDate" class="form-control" value="<%= endDate || '' %>">
+          <input type="date" name="endDate" id="endDate" class="form-control" value="<%= endDate || '' %>">
         </div>
         <div class="col-md-2">
           <label class="form-label">Status</label>
@@ -108,7 +108,7 @@
               <% orders.forEach((order, index)=> { %>
                 <tr class="<%= index % 2 === 0 ? 'bg-white' : 'bg-light' %>">
                   <td class="px-3 py-3 text-center"><%= index + 1 %></td>
-                  <td class="px-3 py-3"><%= order.orderId %></td>
+                  <td class="px-3 py-3"><%= order.orderId.substring(0, 8) %></td>
                   <td class="px-3 py-3"><%= new Date(order.createdOn).toLocaleDateString() %></td>
                   <td class="px-3 py-3"><%= order.user ? order.user.name : 'N/A' %></td>
                   <td class="px-3 py-3"><%= formatIndianCurrency(order.totalPrice || 0) %></td>
@@ -130,13 +130,42 @@
 <script src="https://kit.fontawesome.com/16d4885483.js" crossorigin="anonymous"></script>
 
 <script>
-  function toggleCustomDate(select) {
-    const customDateFields = document.querySelectorAll('.custom-date');
-    if (select.value === 'custom') customDateFields.forEach(field => field.style.display = 'block');
-    else customDateFields.forEach(field => field.style.display = 'none');
+ function toggleCustomDate(select) {
+  const customDateFields = document.querySelectorAll('.custom-date');
+  if (select.value === 'custom') {
+    customDateFields.forEach(field => field.style.display = 'block');
+    updateEndDateMin(); // Update End Date restrictions when Custom is selected
+  } else {
+    customDateFields.forEach(field => field.style.display = 'none');
+    document.getElementById('endDate').removeAttribute('min'); // Clear min attribute
   }
+}
 
-  function downloadReport(format) {
+  function updateEndDateMin() {
+  const startDateInput = document.getElementById('startDate');
+  const endDateInput = document.getElementById('endDate');
+  const filterSelect = document.getElementById('filterSelect');
+
+  if (filterSelect.value === 'custom' && startDateInput.value) {
+    endDateInput.min = startDateInput.value;
+    // Clear End Date if it's before the new Start Date
+    if (endDateInput.value && endDateInput.value < startDateInput.value) {
+      endDateInput.value = '';
+    }
+  } else {
+    endDateInput.removeAttribute('min');
+  }
+}
+// Add event listener for Start Date changes
+document.getElementById('startDate').addEventListener('change', updateEndDateMin);
+// Run on page load to handle pre-filled Start Date
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('filterSelect').value === 'custom') {
+    updateEndDateMin();
+  }
+});
+
+function downloadReport(format) {
     const filter = '<%= filter %>';
     const startDate = '<%= startDate || '' %>';
     const endDate = '<%= endDate || '' %>';

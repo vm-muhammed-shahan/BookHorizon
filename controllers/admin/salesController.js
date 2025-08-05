@@ -337,9 +337,10 @@ const downloadSalesReport = async (req, res) => {
     const orders = await Order.find({ ...dateFilter, ...statusFilter })
       .populate("user")
       .populate("orderedItems.product")
+      .sort({ createdOn: -1 }) 
       .lean()
-      .limit(10);
-
+      
+      
     const allOrders = await Order.find({ ...dateFilter, ...statusFilter }).lean();
     const totalSalesCount = await Order.countDocuments({ ...dateFilter, ...statusFilter });
     const totalOrderAmount = allOrders.reduce((sum, order) => sum + (order.finalAmount || 0), 0);
