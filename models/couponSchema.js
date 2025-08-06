@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
@@ -38,7 +39,7 @@ const couponSchema = new Schema({
   ],
 });
 
-// Validate that minimumPrice is greater than the potential discount value
+
 couponSchema.pre('save', function(next) {
   const maxDiscount = (this.minimumPrice * this.discountPercentage) / 100;
   if (this.minimumPrice <= maxDiscount) {

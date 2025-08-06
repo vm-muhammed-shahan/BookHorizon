@@ -87,8 +87,6 @@ router.get('/coupons', adminAuth, couponController.getCouponPage);
 router.post('/coupons/create', adminAuth, couponController.createCoupon);
 router.post('/coupons/delete/:couponId', adminAuth, couponController.deleteCoupon);
 
-
-
 // Dashboard Management
 router.get("/dashboard", adminAuth, dashboardController.getDashboard);
 

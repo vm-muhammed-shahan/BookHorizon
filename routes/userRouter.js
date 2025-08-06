@@ -96,7 +96,6 @@ router.post("/cart/update-quantity", userAuth, cartController.updateQuantity);
 router.get("/cart/remove/:productId", userAuth, cartController.removeItem);
 router.post("/cart/remove", userAuth, cartController.removeItemPost);
 
-
 // Checkout Management
 router.get('/checkout', userAuth, checkoutController.checkoutPage);
 router.post('/checkout/apply-coupon', userAuth, checkoutController.applyCoupon);
@@ -109,7 +108,6 @@ router.get('/order/success/:orderID', userAuth, checkoutController.successPage);
 router.get('/order/failure/:orderID', userAuth, checkoutController.failurePage);
 router.get('/edit-address', userAuth, checkoutController.editCheckout);
 router.post('/checkout/cancel-order', userAuth, checkoutController.cancelOrder);
-
 
  //order Management
 router.get("/orders", userAuth, orderController.getOrders);
