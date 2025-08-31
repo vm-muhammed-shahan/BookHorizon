@@ -15,18 +15,15 @@ const createCoupon = async (req, res) => {
   try {
     const { name, discountPercentage, minimumPrice, expireOn } = req.body;
 
-    // Validate input
     if (!name || !discountPercentage || !minimumPrice || !expireOn) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    // Check if coupon code already exists
     const existingCoupon = await Coupon.findOne({ name: name.trim().toUpperCase() });
     if (existingCoupon) {
       return res.status(400).json({ error: 'Coupon code already exists' });
     }
 
-    // Validate numeric fields
     const discountPercentageNum = parseFloat(discountPercentage);
     const minimumPriceNum = parseFloat(minimumPrice);
     if (isNaN(discountPercentageNum) || discountPercentageNum <= 0 || discountPercentageNum > 100) {
@@ -66,13 +63,11 @@ const deleteCoupon = async (req, res) => {
     const { couponId } = req.params;
     const { islist } = req.body;
 
-    // Validate coupon ID
     const coupon = await Coupon.findById(couponId);
     if (!coupon) {
       return res.status(400).json({ error: 'Coupon not found' });
     }
 
-    // Update islist status
     coupon.islist = islist;
     await coupon.save();
 

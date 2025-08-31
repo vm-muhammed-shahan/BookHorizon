@@ -25,11 +25,9 @@ const getOrders = async (req, res) => {
       matchQuery.paymentStatus = paymentFilter;
     }
 
-    // Aggregation pipeline to prioritize orders with pending return requests
+    
     const orders = await Order.aggregate([
-      // Apply filters
       { $match: matchQuery },
-      // Populate user and product data
       {
         $lookup: {
           from: "users",
@@ -47,7 +45,6 @@ const getOrders = async (req, res) => {
           as: "orderedItemsProduct",
         },
       },
-      // Add a field to indicate if the order has pending return requests
       {
         $addFields: {
           hasPendingReturn: {
@@ -66,11 +63,10 @@ const getOrders = async (req, res) => {
           },
         },
       },
-      // Sort: prioritize hasPendingReturn, then apply user-selected sort
       {
         $sort: {
-          hasPendingReturn: -1, // Orders with pending returns first (true before false)
-          [sort.startsWith("-") ? sort.slice(1) : sort]: sort.startsWith("-") ? -1 : 1, // Apply user sort
+          hasPendingReturn: -1, 
+          [sort.startsWith("-") ? sort.slice(1) : sort]: sort.startsWith("-") ? -1 : 1, 
         },
       },
     ]);
@@ -271,7 +267,7 @@ const verifyReturnRequest = async (req, res) => {
 
       refundAmount = originalItemTotal - proratedDiscount;
 
-      // Update order financials
+      // update order financials
       order.totalPrice = remainingSubTotal;
       order.tax = order.tax || (order.totalPrice > 0 ? order.totalPrice * 0.05 : 0);
       order.shippingCharge = remainingSubTotal > 0 ? 50 : 0;

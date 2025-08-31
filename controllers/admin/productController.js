@@ -8,6 +8,7 @@ const { getRandomNumber } = require("../../helpers/multer");
 
 
 
+
 const getProductAddPage = async (req, res) => {
   try {
 
@@ -101,7 +102,7 @@ const addProducts = async (req, res) => {
       status: 'Available',
     });
 
-    // Pass categoryId._id to applyBestOffer
+    // pass categoryId._id to applyBestOffer fn
     const { discountedPrice } = await applyBestOffer(newProduct, null, categoryId._id);
     newProduct.salePrice = discountedPrice;
 
@@ -136,7 +137,6 @@ const getAllProducts = async (req, res) => {
       .skip(skip)
       .limit(limit);
 
-    // Fetch all active offers for products and categories
     const offers = await Offer.find({
       offerType: { $in: ['product', 'category'] },
       isActive: true,
@@ -144,7 +144,6 @@ const getAllProducts = async (req, res) => {
       endDate: { $gte: new Date() },
     });
 
-    // Apply best offer to each product and update salePrice
     for (const product of products) {
       const { discountedPrice } = await applyBestOffer(product, offers);
       if (product.salePrice !== discountedPrice) {
@@ -250,6 +249,7 @@ const addProductOffer = async (req, res) => {
     res.status(500).json({ status: false, message: "Failed to add product offer" });
   }
 };
+
 const removeProductOffer = async (req, res) => {
   try {
     const { productId } = req.body;
@@ -260,7 +260,7 @@ const removeProductOffer = async (req, res) => {
 
     await Offer.deleteOne({ offerType: 'product', applicableId: productId });
 
-    // Recalculate salePrice using applyBestOffer
+    // recalculate salePrice using applyBestOffer
     const offers = await Offer.find({
       offerType: { $in: ['product', 'category'] },
       isActive: true,
@@ -445,7 +445,7 @@ const editProduct = async (req, res) => {
     product.quantity = parseInt(data.quantity);
     product.productImage = finalImages;
 
-    // Calculate salePrice using applyBestOffer
+    // calculate salePrice using applyBestOffer
     const offers = await Offer.find({
       offerType: { $in: ['product', 'category'] },
       isActive: true,
@@ -493,7 +493,6 @@ const deleteSingleImage = async (req, res) => {
 
 const applyBestOffer = async (product, offers, categoryId) => {
   try {
-    // Use categoryId if provided, otherwise use product.category._id
     const catId = categoryId || (product.category && product.category._id ? product.category._id.toString() : null);
 
     const productOffers = offers ? offers.filter(

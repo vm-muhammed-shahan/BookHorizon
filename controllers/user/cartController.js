@@ -64,6 +64,7 @@ const addToCart = async (req, res) => {
   }
 };
 
+
 const updateQuantity = async (req, res) => {
   try {
     const { productId, action } = req.body;
@@ -110,6 +111,7 @@ const updateQuantity = async (req, res) => {
   }
 };
 
+
 const removeItem = async (req, res) => {
   const { productId } = req.params;
   const userId = req.session.user._id;
@@ -121,6 +123,7 @@ const removeItem = async (req, res) => {
 
   res.redirect("/cart");
 };
+
 
 const removeItemPost = async (req, res) => {
   try {
@@ -157,7 +160,7 @@ const viewCart = async (req, res) => {
       return res.redirect('/login');
     }
 
-    // Clean cart before rendering
+    // clean cart before rendering
     await cleanCartItems(userId);
 
     const cart = await Cart.findOne({ userId: userId }).populate({
@@ -167,19 +170,18 @@ const viewCart = async (req, res) => {
 
     let items = cart?.items || [];
 
-    // Update cart item prices with the latest Product.salePrice
+    // update cart item prices with the latest Product.salePrice
     for (const item of items) {
       if (item.productId && !item.productId.isBlocked && item.productId.status === 'Available') {
         const product = await Product.findById(item.productId._id).select('salePrice quantity');
         if (product) {
           item.price = product.salePrice;
           item.totalPrice = item.quantity * product.salePrice;
-          item.productId.quantity = product.quantity; // Ensure latest quantity
+          item.productId.quantity = product.quantity; 
         }
       }
     }
 
-    // Save the updated cart to persist price changes
     if (cart) {
       await cart.save();
     }
@@ -188,7 +190,7 @@ const viewCart = async (req, res) => {
     for (const item of items) {
       if (!item.productId || item.productId.isBlocked || item.productId.status !== 'Available') {
         console.log(`Skipping invalid item: productId=${item.productId?._id}, isBlocked=${item.productId?.isBlocked}, status=${item.productId?.status}`);
-        continue; // Skip blocked or unavailable items
+        continue; 
       }
       validItems.push({
         ...item.toObject(),
@@ -213,6 +215,7 @@ const viewCart = async (req, res) => {
     res.redirect('/cart');
   }
 };
+
 
 const cleanCartItems = async (userId) => {
   try {

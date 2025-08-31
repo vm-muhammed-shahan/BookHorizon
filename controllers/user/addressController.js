@@ -16,14 +16,13 @@ const getAddresses = async (req, res) => {
 // 2. ADD a new address
 const addAddress = async (req, res) => {
   try {
-    console.log("addAddress called with body:", req.body); // Debug log
+    console.log("addAddress called with body:", req.body); 
     const userId = req.session.user._id;
     const {
       name, phone, city, state,
       landMark, pincode, altPhone, addressType
     } = req.body;
 
-    // Validation checks
     const phoneRegex = /^[6-9]\d{9}$/;
     const pincodeRegex = /^\d{6}$/;
 
@@ -43,7 +42,6 @@ const addAddress = async (req, res) => {
       return res.redirect('/profile/addresses?error=Pincode+must+be+6+digits');
     }
 
-    // Proceed if valid
     let doc = await Address.findOne({ userId });
     const newAddr = {
       name, phone, city, state, landMark, pincode,
@@ -99,7 +97,7 @@ const editAddress = async (req, res) => {
       landMark, pincode, altPhone, addressType, isDefault
     } = req.body;
 
-    console.log("editAddress called with params:", { addrId }, "and body:", req.body); // Debug log
+    console.log("editAddress called with params:", { addrId }, "and body:", req.body); 
 
     const phoneRegex = /^[6-9]\d{9}$/;
     const pincodeRegex = /^\d{6}$/;
@@ -130,7 +128,6 @@ const editAddress = async (req, res) => {
       return res.status(404).json({ error: 'Address not found' });
     }
 
-    // Update the address
     const updatedIsDefault = isDefault === true || isDefault === 'true' || isDefault === 'on';
     doc.address[index] = {
       name, phone, city, state, landMark, pincode,
@@ -138,7 +135,7 @@ const editAddress = async (req, res) => {
       isDefault: updatedIsDefault
     };
 
-    // If this address is set as default, unset others
+    // if this address is set as default then unset others
     if (updatedIsDefault) {
       doc.address.forEach((addr, i) => {
         if (i !== index) addr.isDefault = false;
@@ -146,7 +143,7 @@ const editAddress = async (req, res) => {
     }
 
     await doc.save();
-    console.log("Address updated successfully:", doc.address[index]); // Debug log
+    console.log("Address updated successfully:", doc.address[index]); 
     return res.status(200).json({ success: true, message: 'Address updated successfully' });
   } catch (err) {
     console.error("Error updating address:", err);
@@ -171,9 +168,8 @@ const deleteAddress = async (req, res) => {
     }
 
     const wasDefault = doc.address[index].isDefault;
-    // Remove the address
+    
     doc.address.splice(index, 1);
-    // If default address was deleted, set another as default
     if (wasDefault && doc.address.length > 0) {
       doc.address[0].isDefault = true;
     }
@@ -201,8 +197,7 @@ const setDefaultAddress = async (req, res) => {
     if (index === -1) {
       return res.status(404).json({ error: 'Address not found' });
     }
-
-    // Set the selected address as default, unset others
+    // set the selected address as default then unset others
     doc.address.forEach((addr, i) => {
       addr.isDefault = i === index;
     });

@@ -52,7 +52,7 @@ const addToWishlist = async (req, res) => {
       wishlist &&
       wishlist.products.some((item) => item.productId.toString() === productId)
     ) {
-      // Instead of returning success, we'll let the client decide to remove it
+      // instead of returning success,  i will let the client decide to remove it
       return res.status(400).json({
         success: false,
         message: 'Product is already in your wishlist'

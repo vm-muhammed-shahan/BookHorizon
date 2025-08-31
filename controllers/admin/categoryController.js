@@ -1,6 +1,7 @@
 const Category = require("../../models/categorySchema");
 const Product = require("../../models/productSchema");
 const Offer = require("../../models/offerSchema");
+const { applyBestOffer } = require("../admin/productController");
 
 
 const categoryInfo = async (req, res) => {
@@ -19,10 +20,9 @@ const categoryInfo = async (req, res) => {
       .skip(skip)
       .limit(limit);
 
-    // Fetch all category offers to ensure newly created offers are included
     const offers = await Offer.find({ offerType: 'category' });
-    console.log('Fetched offers:', offers);
-    
+    // console.log('Fetched offers:', offers);
+
     res.render('category', {
       cat: categories,
       currentPage: page,
@@ -52,10 +52,11 @@ const addCategory = async (req, res) => {
     res.json({ message: "Category added successfully" });
 
   } catch (error) {
-     console.error(error);
+    console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 const addCategoryOffer = async (req, res) => {
   try {
@@ -63,6 +64,24 @@ const addCategoryOffer = async (req, res) => {
     const categoryId = req.body.categoryId;
     const startDate = new Date(req.body.startDate);
     const endDate = new Date(req.body.endDate);
+
+    // ✅ Normalize today to ignore hours/minutes/seconds
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    if (startDate < startOfToday) {
+      return res.status(400).json({
+        status: false,
+        message: "Start date cannot be in the past",
+      });
+    }
+
+    if (endDate < startDate) {
+      return res.status(400).json({
+        status: false,
+        message: "End date cannot be before start date",
+      });
+    }
 
     console.log('Adding category offer:', { percentage, categoryId, startDate, endDate });
 
@@ -109,26 +128,17 @@ const addCategoryOffer = async (req, res) => {
     await Category.updateOne({ _id: categoryId }, { $set: { categoryOffer: percentage } });
 
     for (const product of products) {
+      const { discountedPrice } = await applyBestOffer(product, null, categoryId);
+      product.salePrice = discountedPrice;
       product.productOffer = 0;
       product.categoryOffer = percentage;
+      product.productOffer = 0; // Reset product-specific offer if any
       product.salePrice = product.regularPrice - Math.floor(product.regularPrice * (percentage / 100));
       await product.save();
+      console.log(`Updated product ${product.productName}: salePrice=${product.salePrice}, categoryOffer=${product.categoryOffer}`);
     }
 
-    res.json({ 
-      status: true, 
-      message: "Category offer added successfully", 
-      offer: {
-        discountPercentage: percentage,
-        startDate: startDate,
-        endDate: endDate,
-        isActive: true
-      },
-      category: {
-        _id: categoryId,
-        categoryOffer: percentage
-      }
-    });
+    res.json({ status: true, message: "Category offer added successfully", offer: offer });
   } catch (error) {
     console.error(error);
     res.status(500).json({ status: false, message: "Internal Server Error" });
@@ -136,7 +146,7 @@ const addCategoryOffer = async (req, res) => {
 };
 
 const removeCategoryOffer = async (req, res) => {
- try {
+  try {
     const categoryId = req.body.categoryId;
     const category = await Category.findById(categoryId);
     if (!category) {
@@ -144,17 +154,17 @@ const removeCategoryOffer = async (req, res) => {
     }
     const percentage = category.categoryOffer;
     const products = await Product.find({ category: category._id });
-    // Reset product prices and offers
+
     for (const product of products) {
       product.salePrice = product.regularPrice;
       product.productOffer = 0;
       product.categoryOffer = 0;
       await product.save();
     }
-    // Reset the category offer
+
     category.categoryOffer = 0;
     await category.save();
-    // Delete the offer from the Offer collection
+
     await Offer.deleteOne({ offerType: 'category', applicableId: categoryId });
     res.json({ status: true, message: "Category offer removed successfully" });
   } catch (error) {

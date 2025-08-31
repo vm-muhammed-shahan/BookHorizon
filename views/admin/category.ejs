@@ -369,25 +369,27 @@
       }
 
       const todayStr = new Date().toISOString().split('T')[0];
-      if (startDate < todayStr) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Invalid Input',
-          text: 'Start Date cannot be in the past!',
-          confirmButtonColor: '#212529',
-        });
-        return;
-      }
+if (startDate < todayStr) {
+  Swal.fire({
+    icon: 'error',
+    title: 'Invalid Input',
+    text: 'Start Date cannot be in the past!',
+    confirmButtonColor: '#212529',
+  });
+  return;
+}
 
-      if (endDate <= startDate) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Invalid Input',
-          text: 'End Date must be after Start Date!',
-          confirmButtonColor: '#212529',
-        });
-        return;
-      }
+
+      if (endDate < startDate) {
+  Swal.fire({
+    icon: 'error',
+    title: 'Invalid Input',
+    text: 'End Date must be after Start Date!',
+    confirmButtonColor: '#212529',
+  });
+  return;
+}
+
 
       try {
         const response = await fetch("/admin/addCategoryOffer", {

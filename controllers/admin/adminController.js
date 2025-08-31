@@ -8,8 +8,9 @@ const pageerror = (req, res) => {
 };
 
 
+
 const loadLogin = (req, res) => {
-  console.log(req.session.admin)
+  // console.log(req.session.admin)
   if (req.session.admin) {
     return res.redirect("/");
   }
@@ -19,37 +20,23 @@ const loadLogin = (req, res) => {
 
 const login = async (req, res) => {
   try {
-   
     const { email, password } = req.body;
     const admin = await User.findOne({ email, isAdmin: true });
     if (admin) { 
       const passwordMatch = await bcrypt.compare(password, admin.password);
-
       if (passwordMatch) {
         req.session.admin = admin;
+        // console.log(req.session.admin)
         return res.redirect("/admin/dashboard");
       } else {
-        return res.render("admin-login", { message: "Invalid email or password" });
+        return res.render("admin-login", { message: "Invalid password" });
       }
     } else {
-      return res.render("admin-login", { message: "Invalid email or password" });
+      return res.render("admin-login", { message: "Invalid email" });
     }
-
   } catch (error) {
     console.log("login error", error);
     return res.redirect("/pageerror");
-  }
-};
-
-
-const loadDashboard = async (req, res) => {
-  if (req.session.admin) {
-    try {
-      res.render("dashboard");
-      console.log("Admin session:", req.session.admin);
-    } catch (error) {
-      res.redirect("/pageerror");
-    }
   }
 };
 
@@ -70,31 +57,10 @@ const logout = async (req, res) => {
 };
 
 
-const getAjaxUsers = async (req, res) => {
-  try {
-    const search = req.query.search?.trim() || "";
-    const query = {
-      $or: [
-        { name: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } }
-      ]
-    };
-
-    const users = await User.find(search ? query : {});
-    res.json({ users });
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    res.status(500).json({ error: "Something went wrong." });
-  }
-};
-
 module.exports = {
   loadLogin,
   login,
-  loadDashboard,
   pageerror,
   logout,
-  getAjaxUsers,
 };
 

@@ -350,11 +350,11 @@
 
       <div class="action-buttons">
 
-        <% if (order.status === 'Pending' || order.status === 'Processing') { %>
+        <!-- <% if (order.status === 'Pending' || order.status === 'Processing') { %>
 
           <button class="clear-wishlist-btn" data-action="cancel" data-order-id="<%= order.orderId %>" data-product-id="">Cancel Entire Order</button>
 
-        <% } %>
+        <% } %> -->
 
         <a href="/orders/invoice/<%= order.orderId %>" class="action-btn invoice-btn">Download Invoice</a>
 

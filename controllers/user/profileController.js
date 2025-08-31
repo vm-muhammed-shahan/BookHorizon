@@ -23,6 +23,7 @@ console.error("Error hashing password:", error);
   }
 }
 
+
 function generateOtp() {
   const digits = "0123456789";
   let otp = "";
@@ -67,6 +68,7 @@ const sendVerificationEmail = async (email, otp) => {
   }
 }
 
+
 const getForgotPassPage = async (req, res) => {
   try {
     res.render("forgot-password");
@@ -74,6 +76,7 @@ const getForgotPassPage = async (req, res) => {
     res.redirect("/pageNotFound");
   }
 }
+
 
 const forgotEmailValid = async (req, res) => {
   try {
@@ -115,6 +118,7 @@ const verifyForgotPassOtp = async (req, res) => {
   }
 }
 
+
 const getResetPassPage = async (req, res) => {
   try {
 
@@ -124,6 +128,7 @@ const getResetPassPage = async (req, res) => {
     res.redirect("/pageNotPage");
   }
 }
+
 
 const resendotp = async (req, res) => {
   try {
@@ -141,6 +146,7 @@ const resendotp = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 }
+
 
 const postNewPassword = async (req, res) => {
   try {
@@ -163,6 +169,7 @@ const postNewPassword = async (req, res) => {
   }
 }
 
+
 const changeEmail = async (req, res) => {
   try {
     res.render("change-email")
@@ -170,6 +177,7 @@ const changeEmail = async (req, res) => {
     res.redirect("/pageNotFound");
   }
 }
+
 
 const changeEmailValid = async (req, res) => {
   try {
@@ -198,6 +206,7 @@ const changeEmailValid = async (req, res) => {
   }
 }
 
+
 const verifyEmailOtp = async (req, res) => {
   try {
 
@@ -219,6 +228,7 @@ const verifyEmailOtp = async (req, res) => {
   }
 }
 
+
 const updateEmail = async (req, res) => {
   try {
     const newEmail = req.body.newEmail;
@@ -230,6 +240,7 @@ const updateEmail = async (req, res) => {
   }
 }
 
+
 const changePassword = async (req, res) => {
   try {
     res.render("change-password")
@@ -237,6 +248,7 @@ const changePassword = async (req, res) => {
     res.redirect("/pageNotFound");
   }
 }
+
 
 const changePasswordValid = async (req, res) => {
   try {

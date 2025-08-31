@@ -5,7 +5,7 @@ const Coupon = require("../../models/couponSchema");
 const User = require("../../models/userSchema");
 
 
-// Get all offers page
+
 const getOffersPage = async (req, res) => {
   try {
     const offers = await Offer.find()
@@ -18,7 +18,7 @@ const getOffersPage = async (req, res) => {
   }
 }
 
-// Add Product Offer
+
 const addProductOffer = async (req, res) => {
   try {
     const { productId, percentage, startDate, endDate, name } = req.body;
@@ -43,7 +43,7 @@ const addProductOffer = async (req, res) => {
   }
 }
 
-// Add Category Offer
+
 const addCategoryOffer = async (req, res) => {
   try {
     const { categoryId, percentage, startDate, endDate, name } = req.body;
@@ -68,7 +68,7 @@ const addCategoryOffer = async (req, res) => {
   }
 }
 
-// Remove Offer
+
 const removeOffer = async (req, res) => {
   try {
     const { offerId } = req.body;
@@ -80,7 +80,7 @@ const removeOffer = async (req, res) => {
   }
 }
 
-// Create Referral Offer
+
 const createReferralOffer = async (req, res) => {
   try {
     const { name, discountPercentage, startDate, endDate, minimumPrice } = req.body;
@@ -114,11 +114,6 @@ const createReferralOffer = async (req, res) => {
   }
 }
 
-
-// Apply the largest offer to a product
-
-
-// Handle Referral via Token URL or Code
 const handleReferral = async (req, res) => {
   try {
     const { referralCode, token } = req.query;
@@ -142,7 +137,6 @@ const handleReferral = async (req, res) => {
   }
 }
 
-// Reward Referrer After New User Registration
 const rewardReferrer = async (newUser, referrerId) => {
   try {
     const referrer = await User.findById(referrerId);
@@ -171,8 +165,6 @@ const rewardReferrer = async (newUser, referrerId) => {
     console.error("Error rewarding referrer:", error);
   }
 }
-
-
 
 const removeCategoryOffer = async (req, res) => {
   try {

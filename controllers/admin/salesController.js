@@ -4,7 +4,7 @@ const PDFDocument = require("pdfkit");
 const ExcelJS = require("exceljs");
 const path = require("path");
 
-// Utility function for formatting Indian currency
+
 const formatIndianCurrency = (amount) => {
   if (!amount && amount !== 0 || isNaN(amount)) return '₹0';
   return `Rs ${parseFloat(amount).toLocaleString('en-IN', { 
@@ -13,7 +13,7 @@ const formatIndianCurrency = (amount) => {
   })}`;
 };
 
-// Enhanced table drawing function with better styling and alignment
+
 const drawTable = (doc, data, headers, startX, startY, colWidths, options = {}) => {
   const { 
     headerHeight = 40,

@@ -179,14 +179,13 @@ const cancelOrder = async (req, res) => {
       const itemPrice = item.price * item.quantity;
       const itemProportion = originalTotalItemsPrice > 0 ? itemPrice / originalTotalItemsPrice : 0;
 
-      // Ensure required fields exist
       order.tax = order.tax || 0;
       order.shippingCharge = order.shippingCharge || 0;
       order.discount = order.discount || 0;
       order.couponApplied = order.couponApplied || false;
       order.couponId = order.couponId || null;
 
-      // Calculate original item contribution to total before discount
+      // calculate original item contribution to total before discount
       const originalItemTotal = itemPrice + (itemProportion * order.tax) + (itemProportion * order.shippingCharge);
       let proratedDiscount = order.discount * itemProportion;
 
@@ -196,7 +195,7 @@ const cancelOrder = async (req, res) => {
       item.cancelled = true;
       item.cancelReason = reason || "No reason provided";
 
-      // Check if cancellation drops subTotal below coupon minimum
+      // check if cancellation drops subTotal below coupon minimum
       const remainingSubTotal = originalTotalItemsPrice - itemPrice;
       if (coupon && remainingSubTotal < coupon.minimumPrice) {
         order.discount = 0;
@@ -293,10 +292,11 @@ const cancelOrder = async (req, res) => {
       }`,
     });
   } catch (error) {
-    console.error("Error cancelling order:", error.stack); // Log full stack trace
+    console.error("Error cancelling order:", error.stack); 
     return res.status(500).json({ error: "Server error while cancelling order" });
   }
 };
+
 
 const returnOrder = async (req, res) => {
   try {
@@ -353,6 +353,7 @@ const returnOrder = async (req, res) => {
   }
 };
 
+
 const downloadInvoice = async (req, res) => {
   try {
     const { orderId } = req.params
@@ -374,15 +375,15 @@ const downloadInvoice = async (req, res) => {
     doc.pipe(res)
 
     const margin = 40
-    const pageWidth = 595.28 // A4 width in points
-    const pageHeight = 841.89 // A4 height in points
+    const pageWidth = 595.28 
+    const pageHeight = 841.89 
     const contentWidth = pageWidth - margin * 2
     let yPosition = margin
 
     const moveDown = (space = 15) => {
       yPosition += space
       if (yPosition > pageHeight - margin - 100) {
-        // Increased buffer for footer
+        
         doc.addPage()
         yPosition = margin
       }
@@ -697,6 +698,8 @@ const downloadInvoice = async (req, res) => {
     res.status(500).send("Error generating invoice")
   }
 }
+
+
 module.exports = {
   downloadInvoice,
   returnOrder,

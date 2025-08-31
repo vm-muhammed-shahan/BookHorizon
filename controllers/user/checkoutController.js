@@ -14,6 +14,7 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
+
 const checkoutPage = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -111,6 +112,7 @@ const checkoutPage = async (req, res) => {
     res.status(500).render("error", { message: "Error loading checkout page" });
   }
 };
+
 
 const applyCoupon = async (req, res) => {
   try {
@@ -243,6 +245,7 @@ const removeCoupon = async (req, res) => {
   }
 };
 
+
 const createRazorpayOrder = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -281,7 +284,7 @@ const createRazorpayOrder = async (req, res) => {
     const selectedAddress = addressDoc.address[selectedAddressIndex];
     const subTotal = validItems.reduce((sum, item) => sum + item.totalPrice, 0);
     
-    // Add COD restriction validation
+    // add COD restriction validation
     if (paymentMethod === "cod" && subTotal > 1000) {
       return res.status(400).json({ error: "Cash on Delivery is not available for orders above ₹1000" });
     }
@@ -307,11 +310,11 @@ const createRazorpayOrder = async (req, res) => {
 
     if (paymentMethod === "wallet") {
       if (wallet.balance >= finalAmount) {
-        // Full payment from wallet
+        
         walletAmountUsed = finalAmount;
         effectivePaymentMethod = "wallet";
       } else {
-        // Partial payment: use wallet balance and Razorpay for the rest
+        // partial payment: use wallet balance and razorpay for the rest
         walletAmountUsed = wallet.balance;
         const remainingAmount = finalAmount - walletAmountUsed;
         if (remainingAmount > 0) {
@@ -330,7 +333,7 @@ const createRazorpayOrder = async (req, res) => {
         }
       }
 
-      // Deduct wallet balance
+      // deduct wallet balance
       if (walletAmountUsed > 0) {
         wallet.balance -= walletAmountUsed;
         wallet.transactions.push({
@@ -355,7 +358,7 @@ const createRazorpayOrder = async (req, res) => {
       }
     }
 
-    // In createRazorpayOrder function, update the order creation block
+    // in createRazorpayOrder function then update the order creation block
 const order = new Order({
   orderId: uuidv4(),
   orderedItems: validItems.map((item) => ({
@@ -388,7 +391,7 @@ const order = new Order({
       }
     }
 
-    // Clear cart and update product quantities after order is saved
+    // clear cart and update product quantities after order is saved
     await clearCartAfterOrder(cart, validItems, outOfStockItems);
 
     if (effectivePaymentMethod === "cod" || effectivePaymentMethod === "wallet") {
@@ -411,22 +414,22 @@ const order = new Order({
 
 const clearCartAfterOrder = async (cart, validItems, outOfStockItems) => {
   try {
-    // Update product quantities
+    
     for (let item of validItems) {
       await Product.findByIdAndUpdate(item.productId._id, {
         $inc: { quantity: -item.quantity },
       });
     }
 
-    // Clear cart items, keeping only out-of-stock items if any
     cart.items = cart.items.filter(item => outOfStockItems.some(out => out.productId.toString() === item.productId.toString()));
     cart.coupon = { couponId: null, discount: 0, couponName: "" };
     await cart.save();
   } catch (error) {
     console.error("Error clearing cart after order:", error);
-    throw error; // Let the calling function handle the error
+    throw error; 
   }
 };
+
 
 const verifyPayment = async (req, res) => {
   try {
@@ -469,7 +472,6 @@ const verifyPayment = async (req, res) => {
       res.json({ success: true, redirect: `/order/success/${order.orderId}` });
     } else {
       order.paymentStatus = "Failed";
-      // If payment fails, refund the wallet amount used (if any)
       if (order.walletAmount > 0) {
         let wallet = await Wallet.findOne({ user: order.user });
         if (!wallet) {
@@ -518,7 +520,6 @@ const retryPayment = async (req, res) => {
       return res.status(400).json({ error: "Cannot retry payment for this order" });
     }
 
-    // Refund wallet amount used in the previous failed attempt
     if (order.walletAmount > 0) {
       let wallet = await Wallet.findOne({ user: userId });
       if (!wallet) {
@@ -542,13 +543,13 @@ const retryPayment = async (req, res) => {
         });
       }
       await wallet.save();
-      order.walletAmount = 0; // Reset wallet amount for the retry
+      order.walletAmount = 0; 
     }
 
     let amountToPay = order.finalAmount;
     let effectivePaymentMethod = order.paymentMethod;
 
-    // Re-evaluate wallet balance for retry
+    // Reevaluate wallet balance for retry
     let wallet = await Wallet.findOne({ user: userId });
     if (!wallet) {
       wallet = new Wallet({
@@ -606,6 +607,7 @@ const retryPayment = async (req, res) => {
   }
 };
 
+
 const paymentFailed = async (req, res) => {
   try {
     const { orderId } = req.body;
@@ -622,7 +624,7 @@ const paymentFailed = async (req, res) => {
 
     order.paymentStatus = "Failed";
 
-    // Refund wallet amount if used
+    // refund wallet amount if used
     if (order.walletAmount > 0) {
       let wallet = await Wallet.findOne({ user: userId });
       if (!wallet) {
@@ -657,6 +659,7 @@ const paymentFailed = async (req, res) => {
   }
 };
 
+
 const successPage = async (req, res) => {
   try {
     const order = await Order.findOne({ orderId: req.params.orderID }).populate({
@@ -675,6 +678,7 @@ const successPage = async (req, res) => {
   }
 };
 
+
 const failurePage = async (req, res) => {
   try {
     const order = await Order.findOne({ orderId: req.params.orderID }).populate({
@@ -692,6 +696,7 @@ const failurePage = async (req, res) => {
     res.status(500).send("Failed to load order details");
   }
 };
+
 
 const editCheckout = async (req, res) => {
   try {

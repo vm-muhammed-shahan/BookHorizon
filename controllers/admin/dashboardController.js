@@ -12,7 +12,7 @@ const getDashboard = async (req, res) => {
       const filterType = req.query.filter || 'yearly';
       let matchStage = {};
 
-      // Set date range based on filter with IST awareness
+      
       const now = new Date(); // Current time in local system time (likely IST)
       now.setUTCHours(now.getUTCHours() + 5.5); // Adjust to IST explicitly
       if (filterType === 'yearly') {
@@ -72,7 +72,7 @@ const getDashboard = async (req, res) => {
               {
                 $group: {
                   _id: '$days',
-                  totalSales: { $sum: 0 } // Default to 0 if no data
+                  totalSales: { $sum: 0 }
                 }
               },
               {
@@ -119,7 +119,7 @@ const getDashboard = async (req, res) => {
         { $sort: { '_id': 1 } }
       ]);
 
-      console.log('Sales Data:', salesData);
+      // console.log('Sales Data:', salesData);
 
       // Prepare chart data
       const labels = filterType === 'yearly' ?
@@ -136,14 +136,14 @@ const getDashboard = async (req, res) => {
         }
       });
 
-      // Calculate total orders and average order value across all time
+      // Calculate total orders and average order value a all time
       const totalOrdersResult = await Order.aggregate([
         { $match: { status: { $nin: ['Cancelled', 'Returned'] } } },
         { $group: { _id: null, total: { $sum: 1 } } }
       ]);
       const totalOrders = totalOrdersResult.length > 0 ? totalOrdersResult[0].total : 0;
 
-      // Calculate total sales across all time
+      // Calculate total sales  all time
       const totalSalesResult = await Order.aggregate([
         { $match: { status: { $nin: ['Cancelled', 'Returned'] } } },
         { $group: { _id: null, total: { $sum: '$finalAmount' } } }
@@ -152,7 +152,7 @@ const getDashboard = async (req, res) => {
 
       const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
-      // Top 10 Best-Selling Products
+      // Top 10 best selling Products
       const topProducts = await Order.aggregate([
         { $match: { status: { $nin: ['Cancelled', 'Returned'] } } },
         { $unwind: '$orderedItems' },
@@ -181,7 +181,7 @@ const getDashboard = async (req, res) => {
         { $limit: 10 },
       ]);
 
-      // Top 10 Best-Selling Categories
+      // Top 10 best selling Categories
       const topCategories = await Order.aggregate([
         { $match: { status: { $nin: ['Cancelled', 'Returned'] } } },
         { $unwind: '$orderedItems' },
