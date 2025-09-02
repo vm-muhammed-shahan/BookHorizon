@@ -3,6 +3,7 @@ const User = require("../../models/userSchema");
 const Product = require("../../models/productSchema");
 const Wallet = require("../../models/walletSchema");
 const Coupon = require("../../models/couponSchema");
+const formatDate = require("../../helpers/dateFormatter");
 const PDFDocument = require("pdfkit");
 const path = require("path");
 
@@ -28,6 +29,11 @@ const getOrders = async (req, res) => {
       }
     });
 
+orders.forEach(order => {
+  order.formattedDate = formatDate(order.createdOn);
+});
+
+
     let wallet = await Wallet.findOne({ user: userId });
     if (!wallet) {
       wallet = new Wallet({
@@ -39,10 +45,10 @@ const getOrders = async (req, res) => {
     }
 
     const userData = await User.findOne({ _id: userId }, 'name');
-    console.log('User Orders:', orders);
+    // console.log('User Orders:', orders);
     res.render("orders", { orders, search, user: userData || req.session.user, wallet });
   } catch (error) {
-    console.error("Error fetching orders:", error);
+    // console.error("Error fetching orders:", error);
     res.status(500).render("error", { message: "Error fetching orders" });
   }
 };
@@ -77,6 +83,11 @@ const getOrderDetail = async (req, res) => {
     const userData = await User.findOne({ _id: userId });
     const notification = req.session.message || null;
     req.session.message = null;
+
+
+    order.formattedDate = formatDate(order.createdOn);
+order.formattedDeliveryDate = formatDate(order.deliveredOn);
+
     res.render("order-Detail", {
       order,
       user: userData,

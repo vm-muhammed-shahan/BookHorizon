@@ -407,10 +407,7 @@
                   <td data-label="Order ID:">
                     <%= order.orderId || 'N/A' %>
                   </td>
-                  <td data-label="Date:">
-                    <%= order.createdOn ? new Date(order.createdOn).toLocaleDateString('en-US', {
-                      timeZone: 'Asia/Kolkata' }) : 'N/A' %>
-                  </td>
+                  <td data-label="Date:"><%= order.formattedDate %></td>
                   <td data-label="Status:"><span class="status-badge">
                       <%= order.status || 'N/A' %>
                     </span></td>
