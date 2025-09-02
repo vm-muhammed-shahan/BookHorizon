@@ -8,13 +8,9 @@ const userAuth = (req, res, next) => {
         if (user && !user.isBlocked && !user.isAdmin) {
           next();
         } else { 
-          req.session.destroy(err => {
-            if (err) {
-              console.error("Error destroying session:", err);
-            }
-            res.clearCookie("connect.sid"); 
-            return res.redirect("/login");
-          });
+          delete req.session.user;
+          res.clearCookie("connect.sid");
+          return res.redirect("/login");
         }
       })
       .catch(error => {
@@ -27,7 +23,7 @@ const userAuth = (req, res, next) => {
 };
 
 const adminAuth = (req, res, next) => {
-  if (req.session.admin) {
+  if (req.session.admin && req.session.admin._id) {
     // console.log()
     next();
   } else {
