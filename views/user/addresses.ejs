@@ -1,49 +1,76 @@
-<%- include("../../views/partials/user/header.ejs") %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Manage Addresses</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
 
-<div class="manage-addresses-container">
-  <div class="page-header">
-    <h2>Manage Addresses</h2>
-    <a href="/profile" class="back-link">Back to Profile</a>
+  <!-- Core CSS -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css" type="text/css">
+  <link rel="stylesheet" href="/css/font-awesome.min.css" type="text/css">
+  <link rel="stylesheet" href="/css/elegant-icons.css" type="text/css">
+  <link rel="stylesheet" href="/css/magnific-popup.css" type="text/css">
+  <link rel="stylesheet" href="/css/nice-select.css" type="text/css">
+  <link rel="stylesheet" href="/css/owl.carousel.min.css" type="text/css">
+  <link rel="stylesheet" href="/css/slicknav.min.css" type="text/css">
+  <link rel="stylesheet" href="/css/style.css" type="text/css">
+  <link rel="stylesheet" href="./user-assets/css/maind134.css">
+
+  <!-- SweetAlert2 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <%- include("../../views/partials/user/header.ejs") %>
+
+  <!-- Addresses Page Content -->
+  <div class="manage-addresses-container">
+    <div class="page-header">
+      <h2>Manage Addresses</h2>
+      <a href="/profile" class="back-link">Back to Profile</a>
+    </div>
+
+    <div class="address-form-container">
+      <h3>Manage Addresses</h3>
+      <button type="button" class="add-btn" id="openAddAddressModalBtn">Add New Address</button>
+    </div>
+
+    <div class="saved-addresses">
+      <h3>Saved Addresses</h3>
+      <% if (addresses.length === 0) { %>
+        <p class="no-address">No addresses saved yet.</p>
+      <% } %>
+      
+      <% addresses.forEach(addr => { %>
+        <div class="address-card" data-address-id="<%= addr._id %>">
+          <div class="address-header">
+            <div class="address-name"><%= addr.name %> | <%= addr.phone %></div>
+            <% if (addr.isDefault) { %>
+              <!-- <span class="default-badge">Default</span> -->
+            <% } %>
+          </div>
+          
+          <div class="address-details">
+            <p><%= addr.landMark %>, <%= addr.city %>, <%= addr.state %> - <%= addr.pincode %></p>
+          </div>
+          
+          <div class="address-actions">
+            <% if (!addr.isDefault) { %>
+              <span class="action-link set-default-link" onclick="setDefaultAddress('<%= addr._id %>')">Set Default</span>
+            <% } %>
+            <span class="action-link edit-link" onclick="openEditForm('<%= addr._id %>', '<%= addr.name %>', '<%= addr.phone %>', '<%= addr.city %>', '<%= addr.state %>', '<%= addr.landMark %>', '<%= addr.pincode %>', '<%= addr.altPhone %>', '<%= addr.addressType %>', <%= addr.isDefault %>)">Edit</span>
+            <span class="delete-link" onclick="confirmDelete('<%= addr._id %>')">Delete</span>
+          </div>
+        </div>
+      <% }) %>
+    </div>
   </div>
 
-  <div class="address-form-container">
-    <h3>Manage Addresses</h3>
-    <button type="button" class="add-btn" id="openAddAddressModalBtn">Add New Address</button>
-  </div>
-
-  <div class="saved-addresses">
-    <h3>Saved Addresses</h3>
-    <% if (addresses.length === 0) { %>
-      <p class="no-address">No addresses saved yet.</p>
-    <% } %>
-    
-    <% addresses.forEach(addr => { %>
-      <div class="address-card" data-address-id="<%= addr._id %>">
-        <div class="address-header">
-          <div class="address-name"><%= addr.name %> | <%= addr.phone %></div>
-          <% if (addr.isDefault) { %>
-            <!-- <span class="default-badge">1</span> -->
-          <% } %>
-        </div>
-        
-        <div class="address-details">
-          <p><%= addr.landMark %>, <%= addr.city %>, <%= addr.state %> - <%= addr.pincode %></p>
-        </div>
-        
-        <div class="address-actions">
-          <% if (!addr.isDefault) { %>
-            <span class="action-link set-default-link" onclick="setDefaultAddress('<%= addr._id %>')">Set Default</span>
-          <% } %>
-          <span class="action-link edit-link" onclick="openEditForm('<%= addr._id %>', '<%= addr.name %>', '<%= addr.phone %>', '<%= addr.city %>', '<%= addr.state %>', '<%= addr.landMark %>', '<%= addr.pincode %>', '<%= addr.altPhone %>', '<%= addr.addressType %>', <%= addr.isDefault %>)">Edit</span>
-          <span class="delete-link" onclick="confirmDelete('<%= addr._id %>')">Delete</span>
-        </div>
-      </div>
-    <% }) %>
-  </div>
-</div>
-
-<!-- Add Address Modal -->
+  <!-- Add Address Modal -->
 <div id="add-address-modal" class="modal" style="display: none;">
   <div class="modal-content">
     <h3>Add New Address</h3>
@@ -161,8 +188,9 @@
   </div>
 </div>
 
-<style>
-  body {
+  <!-- Styles -->
+  <style>
+   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f5f5f5;
     color: #333;
@@ -480,11 +508,13 @@
     margin-top: 0.25rem;
     display: none;
   }
-</style>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-  // Toast configuration using SweetAlert2
+  </style>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+     // Toast configuration using SweetAlert2
   const Toast = Swal.mixin({
     toast: true,
     position: 'top-end',
@@ -798,6 +828,10 @@
       validateField(field, value, { required: true });
     });
   });
-</script>
+  </script>
 
-<%- include("../../views/partials/user/footer.ejs") %>
+  <!-- Footer -->
+  <%- include("../../views/partials/user/footer.ejs") %>
+
+</body>
+</html>

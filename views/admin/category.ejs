@@ -384,7 +384,7 @@ if (startDate < todayStr) {
   Swal.fire({
     icon: 'error',
     title: 'Invalid Input',
-    text: 'End Date must be after Start Date!',
+    text: 'End Date cannot be before Start Date!',
     confirmButtonColor: '#212529',
   });
   return;

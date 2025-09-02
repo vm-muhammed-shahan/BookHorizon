@@ -1,11 +1,18 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
-const { v4: uuidv4 } = require("uuid");
+
+
+const counterSchema = new Schema({
+  name: { type: String, required: true, unique: true },
+  seq: { type: Number, default: 100000 }, 
+});
+
+const Counter = mongoose.models.Counter || mongoose.model("Counter", counterSchema);
+
 
 const orderSchema = new Schema({
   orderId: {
     type: String,
-    default: () => uuidv4(),
     unique: true,
   },
   orderedItems: [
@@ -62,7 +69,7 @@ const orderSchema = new Schema({
     type: Number,
     default: 0,
   },
-tax: {
+  tax: {
     type: Number,
     default: 0,
   },
@@ -94,14 +101,23 @@ tax: {
   status: {
     type: String,
     required: true,
-    enum: ["Pending", "Processing", "Shipped", "Out for Delivery", "Delivered", "Cancelled", "Return Request", "Returned"],
+    enum: [
+      "Pending",
+      "Processing",
+      "Shipped",
+      "Out for Delivery",
+      "Delivered",
+      "Cancelled",
+      "Return Request",
+      "Returned",
+    ],
   },
   createdOn: {
     type: Date,
     default: Date.now,
     required: true,
   },
-deliveredOn: { 
+  deliveredOn: {
     type: Date,
     default: null,
   },
@@ -137,6 +153,25 @@ deliveredOn: {
     type: String,
     default: null,
   },
+});
+
+
+orderSchema.pre("save", async function (next) {
+  if (this.isNew && !this.orderId) {
+    try {
+      const counter = await Counter.findOneAndUpdate(
+        { name: "orderId" },
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+      );
+      this.orderId = `ORD${counter.seq}`;
+      next();
+    } catch (err) {
+      next(err);
+    }
+  } else {
+    next();
+  }
 });
 
 const Order = mongoose.model("Order", orderSchema);

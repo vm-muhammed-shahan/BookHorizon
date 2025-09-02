@@ -359,8 +359,7 @@ const createRazorpayOrder = async (req, res) => {
     }
 
     // in createRazorpayOrder function then update the order creation block
-const order = new Order({
-  orderId: uuidv4(),
+const order = new Order({ 
   orderedItems: validItems.map((item) => ({
     product: item.productId._id,
     quantity: item.quantity,

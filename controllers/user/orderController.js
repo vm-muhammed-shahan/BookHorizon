@@ -56,11 +56,11 @@ const getOrderDetail = async (req, res) => {
     const order = await Order.findOne({ orderId, user: userId })
       .populate({
         path: "orderedItems.product",
-        select: "productName"
+        select: "productName productImage" 
       })
       .populate("user", "name email");
-    console.log('Order Details:', order);
-    console.log('Delivered On:', order.deliveredOn);
+    // console.log('Order Details:', order);
+    // console.log('Delivered On:', order.deliveredOn);
     if (!order) {
       req.session.message = { type: "error", text: "Order not found or you are not authorized to view it" };
       return res.redirect("/orders");

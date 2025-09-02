@@ -218,7 +218,7 @@
     const submitBtn = document.getElementById("submit-btn");
     const validTick = document.getElementById("valid-tick");
 
-    // Debounce function to limit real-time validation frequency
+    // Debounce function to limit realtime validation frequency
     function debounce(func, wait) {
       let timeout;
       return function executedFunction(...args) {
@@ -297,7 +297,7 @@
     function passValidationChecking() {
       const passval = passid.value;
       const cpassval = cpassid.value;
-      const passPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      const passPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
       let isValid = true;
 
       if (!passval) {

@@ -114,7 +114,8 @@ const signup = async (req, res) => {
     const namePattern = /^[A-Za-z\s]{2,50}$/;
     const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     const phonePattern = /^\d{10}$/;
-    const passPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    const passPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
 
     if (!name || !phone || !email || !password || !cpassword) {
       return res.render("signup", { message: "All fields are required" });
