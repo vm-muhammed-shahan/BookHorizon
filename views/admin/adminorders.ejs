@@ -112,7 +112,7 @@
   <% } %>
 </td>
               <td class="p-4 border"><%= order.user && order.user.name ? order.user.name : 'N/A' %></td>
-              <td class="p-4 border"><%= order.createdOn ? new Date(order.createdOn).toLocaleDateString() : 'N/A' %></td>
+              <td class="p-4 border"><%= order.formattedDate %></td>
               <td class="p-4 border">
                 <% if (order.status) { %>
                   <span class="status-badge 

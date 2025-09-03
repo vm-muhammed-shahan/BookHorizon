@@ -1,13 +1,14 @@
 const Order = require("../../models/orderSchema");
 const Wallet = require("../../models/walletSchema");
 const Product = require("../../models/productSchema");
+const formatDate = require("../../helpers/dateFormatter");
 
 
 
 const getOrders = async (req, res) => {
   try {
-    console.log('Session:', req.session);
-    console.log('Query Parameters:', req.query);
+    // console.log('Session:', req.session);
+    // console.log('Query Parameters:', req.query);
 
     const search = req.query.search || "";
     const sort = req.query.sort || "-createdOn";
@@ -25,7 +26,7 @@ const getOrders = async (req, res) => {
       matchQuery.paymentStatus = paymentFilter;
     }
 
-    
+
     const orders = await Order.aggregate([
       { $match: matchQuery },
       {
@@ -65,13 +66,16 @@ const getOrders = async (req, res) => {
       },
       {
         $sort: {
-          hasPendingReturn: -1, 
-          [sort.startsWith("-") ? sort.slice(1) : sort]: sort.startsWith("-") ? -1 : 1, 
+          hasPendingReturn: -1,
+          [sort.startsWith("-") ? sort.slice(1) : sort]: sort.startsWith("-") ? -1 : 1,
         },
       },
     ]);
 
-    console.log('Orders:', orders);
+    // console.log('Orders:', orders);
+    orders.forEach(order => {
+      order.formattedDate = formatDate(order.createdOn);
+    });
 
     res.render("adminorders", {
       title: "Order Management",
@@ -97,7 +101,7 @@ const getOrderDetails = async (req, res) => {
   try {
     const order = await Order.findOne({ orderId: req.params.orderId })
       .populate("user", "name email")
-      .populate("orderedItems.product", "productName price");
+      .populate("orderedItems.product", "productName price productImage");
     if (!order) {
       return res.status(404).render("admin-error", {
         title: "Error",
@@ -106,15 +110,16 @@ const getOrderDetails = async (req, res) => {
     }
 
     const notification = req.session.notification || null;
-
     req.session.notification = null;
+
+    order.formattedDate = formatDate(order.createdOn);
     res.render("orderDetails", {
       title: `Order ${order.orderId}`,
       order,
       notification,
     });
   } catch (error) {
-    console.error('Error in getOrderDetails:', error);
+    // console.error('Error in getOrderDetails:', error);
     res.status(500).render("admin-error", {
       title: "Error",
       message: "Unable to load order details. Please try again later.",
@@ -316,16 +321,16 @@ const verifyReturnRequest = async (req, res) => {
 
 
     const nonCancelledItems = order.orderedItems.filter(i => !i.cancelled);
-const allNonCancelledApprovedOrCancelled = nonCancelledItems.every(i => i.returnStatus === "approved" || i.cancelled);
-const hasPendingReturns = order.orderedItems.some(i => i.returnStatus === "pending");
+    const allNonCancelledApprovedOrCancelled = nonCancelledItems.every(i => i.returnStatus === "approved" || i.cancelled);
+    const hasPendingReturns = order.orderedItems.some(i => i.returnStatus === "pending");
 
-if (allNonCancelledApprovedOrCancelled) {
-  order.status = "Returned";
-  order.paymentStatus = "Completed";
-} else {
-  order.status = hasPendingReturns ? "Return Request" : "Delivered";
-  order.paymentStatus = hasPendingReturns ? "Pending" : "Completed";
-}
+    if (allNonCancelledApprovedOrCancelled) {
+      order.status = "Returned";
+      order.paymentStatus = "Completed";
+    } else {
+      order.status = hasPendingReturns ? "Return Request" : "Delivered";
+      order.paymentStatus = hasPendingReturns ? "Pending" : "Completed";
+    }
 
     await order.save().catch(err => { throw new Error(`Failed to save order: ${err.message}`); });
     res.status(200).json({ success: true, message: notificationMessage });

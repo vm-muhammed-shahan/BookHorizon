@@ -62,6 +62,7 @@ const checkoutPage = async (req, res) => {
     }
 
     const subTotal = validItems.reduce((acc, item) => acc + item.totalPrice, 0);
+
     let discount = 0;
     if (cart.coupon?.couponId) {
       const coupon = await Coupon.findById(cart.coupon.couponId);
@@ -283,15 +284,37 @@ const createRazorpayOrder = async (req, res) => {
 
     const selectedAddress = addressDoc.address[selectedAddressIndex];
     const subTotal = validItems.reduce((sum, item) => sum + item.totalPrice, 0);
-    
-    // add COD restriction validation
+
     if (paymentMethod === "cod" && subTotal > 1000) {
       return res.status(400).json({ error: "Cash on Delivery is not available for orders above ₹1000" });
     }
 
     const tax = subTotal * 0.05;
     const shipping = 50;
-    const discount = cart.coupon?.discount || 0;
+
+    let discount = 0;
+    if (cart.coupon?.couponId) {
+      const coupon = await Coupon.findById(cart.coupon.couponId);
+      if (
+        coupon &&
+        coupon.islist &&
+        new Date(coupon.expireOn) > new Date() &&
+        subTotal >= coupon.minimumPrice
+      ) {
+        const preTaxTotal = subTotal;
+        const tax = preTaxTotal * 0.05;
+        const shipping = 50;
+        const totalBeforeDiscount = preTaxTotal + tax + shipping;
+
+        discount = (totalBeforeDiscount * coupon.discountPercentage) / 100;
+        if (discount > totalBeforeDiscount) discount = totalBeforeDiscount;
+      } else {
+        cart.coupon = { couponId: null, discount: 0, couponName: "" };
+        await cart.save();
+      }
+    }
+
+
     const finalAmount = subTotal + tax + shipping - discount;
 
     let wallet = await Wallet.findOne({ user: userId });
@@ -310,11 +333,11 @@ const createRazorpayOrder = async (req, res) => {
 
     if (paymentMethod === "wallet") {
       if (wallet.balance >= finalAmount) {
-        
+
         walletAmountUsed = finalAmount;
         effectivePaymentMethod = "wallet";
       } else {
-        // partial payment: use wallet balance and razorpay for the rest
+
         walletAmountUsed = wallet.balance;
         const remainingAmount = finalAmount - walletAmountUsed;
         if (remainingAmount > 0) {
@@ -358,28 +381,28 @@ const createRazorpayOrder = async (req, res) => {
       }
     }
 
-    // in createRazorpayOrder function then update the order creation block
-const order = new Order({ 
-  orderedItems: validItems.map((item) => ({
-    product: item.productId._id,
-    quantity: item.quantity,
-    price: item.price,
-  })),
-  totalPrice: subTotal,
-  discount,
-  finalAmount,
-  walletAmount: walletAmountUsed,
-  user: userId,
-  address: selectedAddress,
-  invoiceDate: new Date(),
-  couponApplied: cart.coupon?.couponId ? true : false,
-  couponId: cart.coupon?.couponId || null,
-  status: "Pending",
-  paymentMethod: effectivePaymentMethod,
-  paymentStatus: effectivePaymentMethod === "cod" ? "Pending" : effectivePaymentMethod.includes("razorpay") ? "Pending" : "Completed",
-  shippingCharge: shipping,
-  razorpayOrderId: razorpayOrder ? razorpayOrder.id : null,
-});
+
+    const order = new Order({
+      orderedItems: validItems.map((item) => ({
+        product: item.productId._id,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+      totalPrice: subTotal,
+      discount,
+      finalAmount,
+      walletAmount: walletAmountUsed,
+      user: userId,
+      address: selectedAddress,
+      invoiceDate: new Date(),
+      couponApplied: cart.coupon?.couponId ? true : false,
+      couponId: cart.coupon?.couponId || null,
+      status: "Pending",
+      paymentMethod: effectivePaymentMethod,
+      paymentStatus: effectivePaymentMethod === "cod" ? "Pending" : effectivePaymentMethod.includes("razorpay") ? "Pending" : "Completed",
+      shippingCharge: shipping,
+      razorpayOrderId: razorpayOrder ? razorpayOrder.id : null,
+    });
     await order.save();
 
     if (cart.coupon?.couponId && (paymentMethod === "cod" || paymentMethod === "wallet")) {
@@ -413,7 +436,7 @@ const order = new Order({
 
 const clearCartAfterOrder = async (cart, validItems, outOfStockItems) => {
   try {
-    
+
     for (let item of validItems) {
       await Product.findByIdAndUpdate(item.productId._id, {
         $inc: { quantity: -item.quantity },
@@ -425,7 +448,7 @@ const clearCartAfterOrder = async (cart, validItems, outOfStockItems) => {
     await cart.save();
   } catch (error) {
     console.error("Error clearing cart after order:", error);
-    throw error; 
+    throw error;
   }
 };
 
@@ -542,7 +565,7 @@ const retryPayment = async (req, res) => {
         });
       }
       await wallet.save();
-      order.walletAmount = 0; 
+      order.walletAmount = 0;
     }
 
     let amountToPay = order.finalAmount;

@@ -57,6 +57,65 @@ const createCoupon = async (req, res) => {
   }
 };
 
+const editCoupon = async (req, res) => {
+  try {
+    const { couponId } = req.params;
+    const { name, discountPercentage, minimumPrice, expireOn, usageLimit } = req.body;
+
+    const coupon = await Coupon.findById(couponId);
+    if (!coupon) {
+      return res.status(404).json({ error: 'Coupon not found' });
+    }
+
+    // Validate new values
+    if (name) {
+      const existingCoupon = await Coupon.findOne({ name: name.trim().toUpperCase(), _id: { $ne: couponId } });
+      if (existingCoupon) {
+        return res.status(400).json({ error: 'Another coupon with this name already exists' });
+      }
+      coupon.name = name.trim().toUpperCase();
+    }
+
+    if (discountPercentage !== undefined) {
+      const discountPercentageNum = parseFloat(discountPercentage);
+      if (isNaN(discountPercentageNum) || discountPercentageNum <= 0 || discountPercentageNum > 100) {
+        return res.status(400).json({ error: 'Discount percentage must be between 0 and 100' });
+      }
+      coupon.discountPercentage = discountPercentageNum;
+    }
+
+    if (minimumPrice !== undefined) {
+      const minimumPriceNum = parseFloat(minimumPrice);
+      if (isNaN(minimumPriceNum) || minimumPriceNum <= 0) {
+        return res.status(400).json({ error: 'Minimum purchase must be a positive number' });
+      }
+      coupon.minimumPrice = minimumPriceNum;
+    }
+
+    if (expireOn) {
+      const expiryDate = new Date(expireOn);
+      if (isNaN(expiryDate.getTime()) || expiryDate < new Date()) {
+        return res.status(400).json({ error: 'Invalid or past expiry date' });
+      }
+      coupon.expireOn = expiryDate;
+    }
+
+    if (usageLimit !== undefined) {
+      const usageLimitNum = parseInt(usageLimit);
+      if (isNaN(usageLimitNum) || usageLimitNum < 1) {
+        return res.status(400).json({ error: 'Usage limit must be at least 1' });
+      }
+      coupon.usageLimit = usageLimitNum;
+    }
+
+    await coupon.save();
+    res.json({ success: true, message: 'Coupon updated successfully', coupon });
+  } catch (error) {
+    console.error('Error editing coupon:', error);
+    res.status(500).json({ error: `Server error: ${error.message}` });
+  }
+};
+
 
 const deleteCoupon = async (req, res) => {
   try {
@@ -84,5 +143,6 @@ const deleteCoupon = async (req, res) => {
 module.exports = {
   getCouponPage,
   createCoupon,
-  deleteCoupon
+  deleteCoupon,
+  editCoupon,
 };

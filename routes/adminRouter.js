@@ -87,6 +87,7 @@ router.get("/sales-report/download", adminAuth, salesController.downloadSalesRep
 router.get('/coupons', adminAuth, couponController.getCouponPage);
 router.post('/coupons/create', adminAuth, couponController.createCoupon);
 router.post('/coupons/delete/:couponId', adminAuth, couponController.deleteCoupon);
+router.put('/coupons/:couponId',adminAuth,couponController.editCoupon)
 
 // Dashboard Management
 router.get("/dashboard", adminAuth, dashboardController.getDashboard);

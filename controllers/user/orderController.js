@@ -196,7 +196,6 @@ const cancelOrder = async (req, res) => {
       order.couponApplied = order.couponApplied || false;
       order.couponId = order.couponId || null;
 
-      // calculate original item contribution to total before discount
       const originalItemTotal = itemPrice + (itemProportion * order.tax) + (itemProportion * order.shippingCharge);
       let proratedDiscount = order.discount * itemProportion;
 
@@ -206,13 +205,12 @@ const cancelOrder = async (req, res) => {
       item.cancelled = true;
       item.cancelReason = reason || "No reason provided";
 
-      // check if cancellation drops subTotal below coupon minimum
       const remainingSubTotal = originalTotalItemsPrice - itemPrice;
       if (coupon && remainingSubTotal < coupon.minimumPrice) {
         order.discount = 0;
         order.couponApplied = false;
         order.couponId = null;
-        proratedDiscount = 0; // Remove discount from refund if coupon becomes invalid
+        proratedDiscount = 0; 
       }
 
       refundAmount = originalItemTotal - proratedDiscount;
