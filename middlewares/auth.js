@@ -23,10 +23,9 @@ const userAuth = (req, res, next) => {
 
 const adminAuth = (req, res, next) => {
   if (req.session.admin && req.session.admin._id) {
-    // console.log()
     next();
   } else {
-    res.redirect("/admin/login");
+   res.redirect("/admin/login");
   }
 };
 

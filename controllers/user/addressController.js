@@ -1,5 +1,11 @@
 const Address = require("../../models/addressSchema");
 const validator = require("validator");
+const isOnlyUnderscoresOrHyphens = (value) => {
+  return /^_+$/.test(value) || /^-+$/.test(value);
+};
+
+
+
 
 // 1. GET all addresses
 const getAddresses = async (req, res) => {
@@ -16,7 +22,7 @@ const getAddresses = async (req, res) => {
 // 2. ADD a new address
 const addAddress = async (req, res) => {
   try {
-    console.log("addAddress called with body:", req.body); 
+    // console.log("addAddress called with body:", req.body); 
     const userId = req.session.user._id;
     const {
       name, phone, city, state,
@@ -101,11 +107,23 @@ const editAddress = async (req, res) => {
 
     const phoneRegex = /^[6-9]\d{9}$/;
     const pincodeRegex = /^\d{6}$/;
+    const isOnlyUnderscoresOrHyphens = (val) =>
+      /^_+$/.test(val) || /^-+$/.test(val);
 
+    // ✅ Basic required check
     if (!name || !phone || !city || !state || !landMark || !pincode || !altPhone || !addressType) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
+    // ✅ Extra validation for underscores / hyphens
+    const fieldsToCheck = { name, city, state, landMark };
+    for (const [key, value] of Object.entries(fieldsToCheck)) {
+      if (isOnlyUnderscoresOrHyphens(value)) {
+        return res.status(400).json({ error: `${key} cannot be only underscores or hyphens` });
+      }
+    }
+
+    // ✅ Phone number validation
     if (!phoneRegex.test(phone) || !phoneRegex.test(altPhone)) {
       return res.status(400).json({ error: 'Phone numbers must be 10-digit valid numbers' });
     }
@@ -114,10 +132,12 @@ const editAddress = async (req, res) => {
       return res.status(400).json({ error: 'Phone and Alternative Phone must be different' });
     }
 
+    // ✅ Pincode validation
     if (!pincodeRegex.test(pincode)) {
       return res.status(400).json({ error: 'Pincode must be 6 digits' });
     }
 
+    // ✅ Find user address
     const doc = await Address.findOne({ userId });
     if (!doc) {
       return res.status(404).json({ error: 'User address record not found' });
@@ -135,7 +155,7 @@ const editAddress = async (req, res) => {
       isDefault: updatedIsDefault
     };
 
-    // if this address is set as default then unset others
+    // If this address is default → unset others
     if (updatedIsDefault) {
       doc.address.forEach((addr, i) => {
         if (i !== index) addr.isDefault = false;

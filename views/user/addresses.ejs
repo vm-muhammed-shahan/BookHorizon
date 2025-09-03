@@ -514,6 +514,11 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
+   
+function hasOnlyHyphensOrUnderscores(value) {
+  return /^[-_]+$/.test(value.trim());
+}
+
      // Toast configuration using SweetAlert2
   const Toast = Swal.mixin({
     toast: true,
@@ -554,9 +559,14 @@
     errorElement.style.display = 'none';
 
     if (rules.required && !value.trim()) {
-      showError(inputId, `${inputId.replace('add-', '').charAt(0).toUpperCase() + inputId.replace('add-', '').slice(1)} is required`);
-      return false;
-    }
+  showError(inputId, `${inputId.replace('add-', '').charAt(0).toUpperCase() + inputId.replace('add-', '').slice(1)} is required`);
+  return false;
+}
+
+if (hasOnlyHyphensOrUnderscores(value)) {
+  showError(inputId, "Only hyphens or underscores are not allowed");
+  return false;
+}
 
     switch (inputId) {
       case 'add-name':
@@ -708,6 +718,21 @@
 
     const phoneRegex = /^[6-9]\d{9}$/;
     const pincodeRegex = /^\d{6}$/;
+
+    if (
+  hasOnlyHyphensOrUnderscores(name) ||
+  hasOnlyHyphensOrUnderscores(city) ||
+  hasOnlyHyphensOrUnderscores(state) ||
+  hasOnlyHyphensOrUnderscores(landmark)
+) {
+  Swal.fire({
+    title: 'Invalid Input',
+    text: 'Fields cannot contain only hyphens or underscores.',
+    icon: 'error'
+  });
+  return;
+}
+
 
     if (!phoneRegex.test(phone)) {
       Swal.fire({ title: 'Invalid Phone', text: 'Phone must be a valid 10-digit number starting with 6-9.', icon: 'warning' });
