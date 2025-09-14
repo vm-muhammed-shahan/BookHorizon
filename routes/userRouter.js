@@ -11,12 +11,11 @@ const checkoutController = require("../controllers/user/checkoutController");
 const orderController = require("../controllers/user/orderController");
 const wishlistController = require("../controllers/user/wishlistController");
 const { userAuth } = require('../middlewares/auth');
-const user = require('../models/userSchema');
-const upload = multer({ dest: 'public/uploads/' });
+// const user = require('../models/userSchema');
+// const upload = multer({ dest: 'public/uploads/' });
 
 
 // user Management
-
 router.get("/pageNotFound", userController.pageNotFound);
 router.get("/signup", userController.loadSignup); 
 router.post("/signup", userController.signup);
@@ -25,7 +24,7 @@ router.post("/resend-otp", userController.resendOtp);
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/signup' }), (req, res) => {
   req.session.user = req.user;
-  console.log("Google Authenticated User:", req.session.user);
+  // console.log("Google Authenticated User:", req.session.user);
   res.redirect('/');
 });
 router.get("/login", userController.loadLogin);
@@ -50,16 +49,8 @@ router.get('/profile', userAuth, userController.getProfile);
 router.get("/profile/edit", userAuth, userController.editProfilePage);
 router.post("/profile/edit", userAuth, userController.updateProfile);
 
-router.get("/change-email",userAuth,profileController.changeEmail);
-router.post("/change-email",userAuth,profileController.changeEmailValid);
-
-router.post("/verify-email-otp",userAuth,profileController.verifyEmailOtp);
-router.post("/update-email",userAuth,profileController.updateEmail);
-
 router.get("/change-password", userAuth, profileController.changePassword);
 router.post("/change-password", userAuth, profileController.changePasswordValid);
-
-
 
 
 // Shop Page 
@@ -68,8 +59,10 @@ router.get("/filter", userController.filterProduct);
 router.get("/filterPrice", userController.filterByprice);
 router.get("/search", userController.searchProducts);
 
+
 // Products Management
 router.get("/productDetails", userAuth, productController.productDetails);
+
 
 // Address Management 
 router.get("/profile/addresses", userAuth, addressController.getAddresses);
@@ -96,6 +89,7 @@ router.post("/cart/update-quantity", userAuth, cartController.updateQuantity);
 router.get("/cart/remove/:productId", userAuth, cartController.removeItem);
 router.post("/cart/remove", userAuth, cartController.removeItemPost);
 
+
 // Checkout Management
 router.get('/checkout', userAuth, checkoutController.checkoutPage);
 router.post('/checkout/apply-coupon', userAuth, checkoutController.applyCoupon);
@@ -106,8 +100,9 @@ router.post('/checkout/retry-payment', userAuth, checkoutController.retryPayment
 router.post('/checkout/payment-failed', userAuth, checkoutController.paymentFailed);
 router.get('/order/success/:orderID', userAuth, checkoutController.successPage);
 router.get('/order/failure/:orderID', userAuth, checkoutController.failurePage);
-router.get('/edit-address', userAuth, checkoutController.editCheckout);
+// router.get('/edit-address', userAuth, checkoutController.editCheckout);
 router.post('/checkout/cancel-order', userAuth, checkoutController.cancelOrder);
+
 
  //order Management
 router.get("/orders", userAuth, orderController.getOrders);
@@ -117,4 +112,7 @@ router.get('/wallet', orderController.getWalletDetails);
 router.post("/orders/return", userAuth, orderController.returnOrder);
 router.get("/orders/invoice/:orderId", userAuth, orderController.downloadInvoice);
 router.get("/orders/status/:orderId", userAuth, orderController.getOrderStatus);
+
+
+
 module.exports = router;

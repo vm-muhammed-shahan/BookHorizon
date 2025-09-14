@@ -2,7 +2,7 @@ const User = require("../../models/userSchema");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
-// Page Error
+
 const pageerror = (req, res) => {
   res.render("admin-error");
 };
@@ -10,7 +10,6 @@ const pageerror = (req, res) => {
 
 
 const loadLogin = (req, res) => {
-  // console.log(req.session.admin)
   if (req.session.admin) {
     return res.redirect("/");
   }
@@ -26,7 +25,6 @@ const login = async (req, res) => {
       const passwordMatch = await bcrypt.compare(password, admin.password);
       if (passwordMatch) {
         req.session.admin = admin;
-        // console.log(req.session.admin)
         return res.redirect("/admin/dashboard");
       } else {
         return res.render("admin-login", { message: "Invalid password" });
@@ -45,7 +43,6 @@ const logout = async (req, res) => {
   try {
     req.session.destroy(err => {
       if (err) {
-        console.log("Error destroying session", err);
         return res.redirect("/pageerror");
       }
       res.redirect("/admin/login");

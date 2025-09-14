@@ -118,7 +118,7 @@ const checkoutPage = async (req, res) => {
 const applyCoupon = async (req, res) => {
   try {
     const { couponCode } = req.body;
-    const userId = req.session.user._id;
+    const userId = req.session.user._id; 
 
     const cart = await Cart.findOne({ userId }).populate("items.productId");
     if (!cart || cart.items.length === 0) {
@@ -356,7 +356,6 @@ const createRazorpayOrder = async (req, res) => {
         }
       }
 
-      // deduct wallet balance
       if (walletAmountUsed > 0) {
         wallet.balance -= walletAmountUsed;
         wallet.transactions.push({
@@ -413,7 +412,6 @@ const createRazorpayOrder = async (req, res) => {
       }
     }
 
-    // clear cart and update product quantities after order is saved
     await clearCartAfterOrder(cart, validItems, outOfStockItems);
 
     if (effectivePaymentMethod === "cod" || effectivePaymentMethod === "wallet") {
@@ -646,7 +644,6 @@ const paymentFailed = async (req, res) => {
 
     order.paymentStatus = "Failed";
 
-    // refund wallet amount if used
     if (order.walletAmount > 0) {
       let wallet = await Wallet.findOne({ user: userId });
       if (!wallet) {
@@ -720,21 +717,21 @@ const failurePage = async (req, res) => {
 };
 
 
-const editCheckout = async (req, res) => {
-  try {
-    const userId = req.session.user._id;
-    const addrId = req.query.addrId;
-    const doc = await Address.findOne({ userId });
-    const address = doc.address.id(addrId);
-    if (!address) {
-      return res.status(404).send("Address not found");
-    }
-    res.render("edit-address", { address });
-  } catch (error) {
-    console.error("Error loading edit address:", error);
-    res.status(500).send("Server Error");
-  }
-};
+// const editCheckout = async (req, res) => {
+//   try {
+//     const userId = req.session.user._id;
+//     const addrId = req.query.addrId;
+//     const doc = await Address.findOne({ userId });
+//     const address = doc.address.id(addrId);
+//     if (!address) {
+//       return res.status(404).send("Address not found");
+//     }
+//     res.render("edit-address", { address });
+//   } catch (error) {
+//     console.error("Error loading edit address:", error);
+//     res.status(500).send("Server Error");
+//   }
+// };
 
 
 const cancelOrder = async (req, res) => {
@@ -825,6 +822,6 @@ module.exports = {
   paymentFailed,
   successPage,
   failurePage,
-  editCheckout,
+  // editCheckout,
   cancelOrder
 };

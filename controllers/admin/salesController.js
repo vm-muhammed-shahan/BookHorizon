@@ -3,8 +3,6 @@ const mongoose = require("mongoose");
 const PDFDocument = require("pdfkit");
 const ExcelJS = require("exceljs");
 const path = require("path");
-
-
 const formatIndianCurrency = (amount) => {
   if (!amount && amount !== 0 || isNaN(amount)) return '₹0';
   return `Rs ${parseFloat(amount).toLocaleString('en-IN', { 
@@ -12,8 +10,6 @@ const formatIndianCurrency = (amount) => {
     maximumFractionDigits: 0 
   })}`;
 };
-
-
 const drawTable = (doc, data, headers, startX, startY, colWidths, options = {}) => {
   const { 
     headerHeight = 40,
@@ -129,6 +125,10 @@ const drawTable = (doc, data, headers, startX, startY, colWidths, options = {}) 
 
   return currentY;
 };
+
+
+
+
 
 
 

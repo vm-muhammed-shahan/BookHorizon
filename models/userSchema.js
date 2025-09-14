@@ -54,7 +54,7 @@ const userSchema = new Schema({
   referralCode: {
     type: String,
     unique: true,
-    default: () => uuidv4().split("-")[0], // Generate a unique referral code
+    default: () => uuidv4().split("-")[0], 
   },
   redeemed: {
     type: Boolean,

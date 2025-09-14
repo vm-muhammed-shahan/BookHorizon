@@ -2,6 +2,32 @@ const Cart = require("../../models/cartSchema");
 const Product = require("../../models/productSchema");
 const Wishlist = require("../../models/wishlistSchema");
 const User = require("../../models/userSchema");
+const cleanCartItems = async (userId) => {
+  try {
+    const cart = await Cart.findOne({ userId }).populate('items.productId');
+    if (!cart) return;
+
+    const itemsToRemove = [];
+    for (const item of cart.items) {
+      if (!item.productId || item.productId.isBlocked || item.productId.status !== 'Available') {
+        itemsToRemove.push(item.productId._id);
+      }
+    }
+
+    if (itemsToRemove.length > 0) {
+      await Cart.updateOne(
+        { userId },
+        { $pull: { items: { productId: { $in: itemsToRemove } } } }
+      );
+    }
+  } catch (error) {
+    console.error('Error cleaning cart items:', error);
+  }
+};
+
+
+
+
 
 
 
@@ -160,7 +186,6 @@ const viewCart = async (req, res) => {
       return res.redirect('/login');
     }
 
-    // clean cart before rendering
     await cleanCartItems(userId);
 
     const cart = await Cart.findOne({ userId: userId }).populate({
@@ -170,7 +195,6 @@ const viewCart = async (req, res) => {
 
     let items = cart?.items || [];
 
-    // update cart item prices with the latest Product.salePrice
     for (const item of items) {
       if (item.productId && !item.productId.isBlocked && item.productId.status === 'Available') {
         const product = await Product.findById(item.productId._id).select('salePrice quantity');
@@ -189,7 +213,6 @@ const viewCart = async (req, res) => {
     const validItems = [];
     for (const item of items) {
       if (!item.productId || item.productId.isBlocked || item.productId.status !== 'Available') {
-        console.log(`Skipping invalid item: productId=${item.productId?._id}, isBlocked=${item.productId?.isBlocked}, status=${item.productId?.status}`);
         continue; 
       }
       validItems.push({
@@ -217,28 +240,7 @@ const viewCart = async (req, res) => {
 };
 
 
-const cleanCartItems = async (userId) => {
-  try {
-    const cart = await Cart.findOne({ userId }).populate('items.productId');
-    if (!cart) return;
 
-    const itemsToRemove = [];
-    for (const item of cart.items) {
-      if (!item.productId || item.productId.isBlocked || item.productId.status !== 'Available') {
-        itemsToRemove.push(item.productId._id);
-      }
-    }
-
-    if (itemsToRemove.length > 0) {
-      await Cart.updateOne(
-        { userId },
-        { $pull: { items: { productId: { $in: itemsToRemove } } } }
-      );
-    }
-  } catch (error) {
-    console.error('Error cleaning cart items:', error);
-  }
-};
 
 module.exports = {
   addToCart,

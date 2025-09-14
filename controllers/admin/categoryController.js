@@ -20,7 +20,6 @@ const categoryInfo = async (req, res) => {
       .skip(skip)
       .limit(limit);
 
-    // ✅ fetch only currently active offers (including same-day)
     const now = new Date();
     const offers = await Offer.find({
       offerType: 'category',
@@ -42,6 +41,7 @@ const categoryInfo = async (req, res) => {
     res.redirect('/admin/pageerror');
   }
 };
+
 
 const addCategory = async (req, res) => {
   try {
@@ -69,9 +69,7 @@ const addCategoryOffer = async (req, res) => {
     const percentage = parseInt(req.body.percentage);
     const categoryId = req.body.categoryId;
     const startDate = new Date(req.body.startDate);
-    // const endDate = new Date(req.body.endDate);
 
-    // ✅ normalize start of today (ignore time)
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
@@ -82,7 +80,6 @@ const addCategoryOffer = async (req, res) => {
       });
     }
 
-    // ✅ ensure endDate covers entire end day
     const endDate = new Date(req.body.endDate);
     endDate.setHours(23, 59, 59, 999);
 
@@ -94,7 +91,6 @@ const addCategoryOffer = async (req, res) => {
       });
     }
 
-    // console.log('Adding category offer:', { percentage, categoryId, startDate, endDate });
 
     const category = await Category.findById(categoryId);
     if (!category) {
@@ -134,8 +130,6 @@ const addCategoryOffer = async (req, res) => {
     });
     await offer.save();
 
-    // console.log('Created offer:', offer);
-
     await Category.updateOne({ _id: categoryId }, { $set: { categoryOffer: percentage } });
 
     for (const product of products) {
@@ -143,10 +137,9 @@ const addCategoryOffer = async (req, res) => {
       product.salePrice = discountedPrice;
       product.productOffer = 0;
       product.categoryOffer = percentage;
-      product.productOffer = 0; // Reset product-specific offer if any
+      product.productOffer = 0; 
       product.salePrice = product.regularPrice - Math.floor(product.regularPrice * (percentage / 100));
       await product.save();
-      // console.log(`Updated product ${product.productName}: salePrice=${product.salePrice}, categoryOffer=${product.categoryOffer}`);
     }
 
     res.json({ status: true, message: "Category offer added successfully", offer: offer });

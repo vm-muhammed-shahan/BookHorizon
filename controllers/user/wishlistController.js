@@ -7,14 +7,12 @@ const User = require('../../models/userSchema')
 
 const getwishlist = async (req, res) => {
   if (!req.session.user) {
-    console.log('No user session, redirecting to login');
     return res.redirect('/login');
   }
 
   try {
     const userData = req.session.user ? await User.findById(req.session.user._id) : null;
-    const wishlist = await Wishlist.findOne({ userId: req.session.user._id }).populate('products.productId');
-    console.log('Wishlist fetched:', JSON.stringify(wishlist, null, 2)); 
+    const wishlist = await Wishlist.findOne({ userId: req.session.user._id }).populate('products.productId'); 
     res.render('wishlist', {
       user: userData,
       products: wishlist ? wishlist.products : []
@@ -29,7 +27,6 @@ const addToWishlist = async (req, res) => {
   try {
     const userId = req.session.user._id;
     const { productId } = req.body;
-    console.log(productId);
     const product = await Product.findById(productId).select('isBlocked quantity');
     if (!product || product.isBlocked) {
       return res.status(404).json({

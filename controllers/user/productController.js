@@ -26,7 +26,6 @@ const { applyBestOffer } = require("../admin/productController");
       return res.redirect("/shop");
     }
 
-    // Fetch the latest active offers for both product and category
     const currentDate = new Date();
     const offers = await Offer.find({
       $or: [
@@ -38,18 +37,17 @@ const { applyBestOffer } = require("../admin/productController");
       endDate: { $gte: currentDate },
     }).lean();
 
-    // Apply best offer and update product if necessary
     const { discountedPrice, bestDiscount, bestOfferType } = await applyBestOffer(product, offers);
     if (discountedPrice !== product.salePrice || !product.salePrice) {
       product.salePrice = discountedPrice;
-      // Update categoryOffer based on the best offer
+      // update category offer based on the best offer
       const categoryOfferDoc = offers.find(offer => 
         offer.offerType === 'category' && 
         offer.applicableId.toString() === product.category._id.toString() && 
         offer.isActive
       );
       product.categoryOffer = categoryOfferDoc ? categoryOfferDoc.discountPercentage : 0;
-      await product.save(); // Persist the updated categoryOffer
+      await product.save(); 
     }
 
     const category = product.category;
@@ -60,7 +58,7 @@ const { applyBestOffer } = require("../admin/productController");
       quantity: { $gt: 0 }
     }).limit(4);
 
-    // Identify the best offer for display
+    // identify the best offer to display
     const productOffer = offers.find(offer => 
       offer.offerType === 'product' && 
       offer.applicableId.toString() === product._id.toString() &&
@@ -79,7 +77,7 @@ const { applyBestOffer } = require("../admin/productController");
       category: category,
       relatedProducts: relatedProducts,
       productOffer: productOffer || null,
-      categoryOffer: categoryOffer || { discountPercentage: product.categoryOffer }, // Fallback to product.categoryOffer
+      categoryOffer: categoryOffer || { discountPercentage: product.categoryOffer }, 
       bestDiscount: bestDiscount
     });
   } catch (error) {

@@ -102,7 +102,6 @@ const addProducts = async (req, res) => {
       status: 'Available',
     });
 
-    // pass categoryId._id to applyBestOffer fn
     const { discountedPrice } = await applyBestOffer(newProduct, null, categoryId._id);
     newProduct.salePrice = discountedPrice;
 
@@ -260,7 +259,6 @@ const removeProductOffer = async (req, res) => {
 
     await Offer.deleteOne({ offerType: 'product', applicableId: productId });
 
-    // recalculate salePrice using applyBestOffer
     const offers = await Offer.find({
       offerType: { $in: ['product', 'category'] },
       isActive: true,
@@ -445,7 +443,6 @@ const editProduct = async (req, res) => {
     product.quantity = parseInt(data.quantity);
     product.productImage = finalImages;
 
-    // calculate salePrice using applyBestOffer
     const offers = await Offer.find({
       offerType: { $in: ['product', 'category'] },
       isActive: true,
@@ -478,9 +475,7 @@ const deleteSingleImage = async (req, res) => {
     const imagePath = path.join("public", "uploads", "product-images", imageNameToServer);
     if (fs.existsSync(imagePath)) {
       await fs.unlinkSync(imagePath);
-      console.log(`Image ${imageNameToServer} deleted successfully`);
     } else {
-      console.log(`Image ${imageNameToServer} not found`);
     }
     
     res.send({ status: true });

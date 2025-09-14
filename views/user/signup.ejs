@@ -167,29 +167,28 @@
                     placeholder="Confirm Password" />
                   <div id="error5" class="error-message"></div>
                 </div>
-                <% if(locals.message && message.length > 0) { %>
+                <% if(locals.message && message.length> 0) { %>
                   <div class="alert alert-danger text-center">
                     <%= message %>
                   </div>
-                <% } %>
-                <div class="d-flex justify-content-between align-items-center">
-                  <button type="submit" class="btn btn-primary" name="submit" id="submit-btn" disabled>
-                    Sign Up
-                  </button>
-                  <div class="mt-2px">
-                    <p>or sign up with</p>
-                  </div>
-                  <div class="social-btns">
-                    <a href="/auth/google" class="btn btn-outline-danger" name="google-signup" formnovalidate>
-                      <img src="img/googlesignup.png" alt="Google Logo" style="width: 28px; height: 28px" />
-                    </a>
-                  </div>
-                </div>
+                  <% } %>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <button type="submit" class="btn btn-primary" name="submit" id="submit-btn" disabled>
+                        Sign Up
+                      </button>
+                      <div class="mt-2px">
+                        <p>or sign up with</p>
+                      </div>
+                      <div class="social-btns">
+                        <a href="/auth/google" class="btn btn-outline-danger" name="google-signup" formnovalidate>
+                          <img src="img/googlesignup.png" alt="Google Logo" style="width: 28px; height: 28px" />
+                        </a>
+                      </div>
+                    </div>
               </form>
             </div>
             <div class="signup-image">
               <a href="/">
-                <!-- <img src="img/signup.svg" alt="Shopping Site" /> -->
               </a>
               <div class="text-center mt-2">
                 <a href="/login" class="sign-in-link">Already registered? Log in</a>
@@ -203,188 +202,187 @@
   <div class="spacer"></div>
   <%- include("../../views/partials/user/footer") %>
 
-  <script>
-    const nameid = document.getElementById("name");
-    const emailid = document.getElementById("email");
-    const phoneid = document.getElementById("phone");
-    const passid = document.getElementById("password");
-    const cpassid = document.getElementById("confirm-password");
-    const error1 = document.getElementById("error1");
-    const error2 = document.getElementById("error2");
-    const error3 = document.getElementById("error3");
-    const error4 = document.getElementById("error4");
-    const error5 = document.getElementById("error5");
-    const signform = document.getElementById("signform");
-    const submitBtn = document.getElementById("submit-btn");
-    const validTick = document.getElementById("valid-tick");
+    <script>
+      const nameid = document.getElementById("name");
+      const emailid = document.getElementById("email");
+      const phoneid = document.getElementById("phone");
+      const passid = document.getElementById("password");
+      const cpassid = document.getElementById("confirm-password");
+      const error1 = document.getElementById("error1"); 
+      const error2 = document.getElementById("error2");
+      const error3 = document.getElementById("error3");
+      const error4 = document.getElementById("error4");
+      const error5 = document.getElementById("error5");
+      const signform = document.getElementById("signform");
+      const submitBtn = document.getElementById("submit-btn");
+      const validTick = document.getElementById("valid-tick");
 
-    // Debounce function to limit realtime validation frequency
-    function debounce(func, wait) {
-      let timeout;
-      return function executedFunction(...args) {
-        const later = () => {
+
+      function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+          const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+          };
           clearTimeout(timeout);
-          func(...args);
+          timeout = setTimeout(later, wait);
         };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-      };
-    }
-
-    function nameValidateChecking() {
-      const nameval = nameid.value.trim();
-      const namepattern = /^[A-Za-z\s]{2,50}$/;
-      if (!nameval) {
-        error1.style.display = "block";
-        error1.innerHTML = "Name is required";
-        nameid.classList.remove("valid-field");
-        return false;
-      } else if (!namepattern.test(nameval)) {
-        error1.style.display = "block";
-        error1.innerHTML = "Name must be 2-50 characters, letters and spaces only";
-        nameid.classList.remove("valid-field");
-        return false;
-      } else {
-        error1.style.display = "none";
-        error1.innerHTML = "";
-        nameid.classList.add("valid-field");
-        return true;
-      }
-    }
-
-    function emailValidateChecking() {
-      const emailval = emailid.value.trim();
-      const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-      if (!emailval) {
-        error2.style.display = "block";
-        error2.innerHTML = "Email is required";
-        emailid.classList.remove("valid-field");
-        return false;
-      } else if (!emailPattern.test(emailval)) {
-        error2.style.display = "block";
-        error2.innerHTML = "Invalid email format";
-        emailid.classList.remove("valid-field");
-        return false;
-      } else {
-        error2.style.display = "none";
-        error2.innerHTML = "";
-        emailid.classList.add("valid-field");
-        return true;
-      }
-    }
-
-    function phoneValidateChecking() {
-      const phoneval = phoneid.value.trim();
-      const phonePattern = /^\d{10}$/;
-      if (!phoneval) {
-        error3.style.display = "block";
-        error3.innerHTML = "Phone number is required";
-        phoneid.classList.remove("valid-field");
-        return false;
-      } else if (!phonePattern.test(phoneval)) {
-        error3.style.display = "block";
-        error3.innerHTML = "Phone number must be exactly 10 digits";
-        phoneid.classList.remove("valid-field");
-        return false;
-      } else {
-        error3.style.display = "none";
-        error3.innerHTML = "";
-        phoneid.classList.add("valid-field");
-        return true;
-      }
-    }
-
-    function passValidationChecking() {
-      const passval = passid.value;
-      const cpassval = cpassid.value;
-      const passPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
-      let isValid = true;
-
-      if (!passval) {
-        error4.style.display = "block";
-        error4.innerHTML = "Password is required";
-        passid.classList.remove("valid-field");
-        isValid = false;
-      } else if (!passPattern.test(passval)) {
-        error4.style.display = "block";
-        error4.innerHTML = "Password must be 8+ characters with uppercase, lowercase, number, and special character";
-        passid.classList.remove("valid-field");
-        isValid = false;
-      } else {
-        error4.style.display = "none";
-        error4.innerHTML = "";
-        passid.classList.add("valid-field");
       }
 
-      if (!cpassval) {
-        error5.style.display = "block";
-        error5.innerHTML = "Confirm password is required";
-        cpassid.classList.remove("valid-field");
-        isValid = false;
-      } else if (passval !== cpassval) {
-        error5.style.display = "block";
-        error5.innerHTML = "Passwords do not match";
-        cpassid.classList.remove("valid-field");
-        isValid = false;
-      } else {
-        error5.style.display = "none";
-        error5.innerHTML = "";
-        cpassid.classList.add("valid-field");
+
+
+      function nameValidateChecking() {
+        const nameval = nameid.value.trim();
+        const namepattern = /^[A-Za-z\s]{2,50}$/;
+        if (!nameval) {
+          error1.style.display = "block";
+          error1.innerHTML = "Name is required";
+          nameid.classList.remove("valid-field");
+          return false;
+        } else if (!namepattern.test(nameval)) {
+          error1.style.display = "block";
+          error1.innerHTML = "Name must be 2-50 characters, letters and spaces only";
+          nameid.classList.remove("valid-field");
+          return false;
+        } else {
+          error1.style.display = "none";
+          error1.innerHTML = "";
+          nameid.classList.add("valid-field");
+          return true;
+        }
       }
 
-      return isValid;
-    }
+      function emailValidateChecking() {
+        const emailval = emailid.value.trim();
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailval) {
+          error2.style.display = "block";
+          error2.innerHTML = "Email is required";
+          emailid.classList.remove("valid-field");
+          return false;
+        } else if (!emailPattern.test(emailval)) {
+          error2.style.display = "block";
+          error2.innerHTML = "Invalid email format";
+          emailid.classList.remove("valid-field");
+          return false;
+        } else {
+          error2.style.display = "none";
+          error2.innerHTML = "";
+          emailid.classList.add("valid-field");
+          return true;
+        }
+      }
 
-    function checkAllFieldsValid() {
-      const isNameValid = nameValidateChecking();
-      const isEmailValid = emailValidateChecking();
-      const isPhoneValid = phoneValidateChecking();
-      const isPassValid = passValidationChecking();
+      function phoneValidateChecking() {
+        const phoneval = phoneid.value.trim();
+        const phonePattern = /^\d{10}$/;
+        if (!phoneval) {
+          error3.style.display = "block";
+          error3.innerHTML = "Phone number is required";
+          phoneid.classList.remove("valid-field");
+          return false;
+        } else if (!phonePattern.test(phoneval)) {
+          error3.style.display = "block";
+          error3.innerHTML = "Phone number must be exactly 10 digits";
+          phoneid.classList.remove("valid-field");
+          return false;
+        } else {
+          error3.style.display = "none";
+          error3.innerHTML = "";
+          phoneid.classList.add("valid-field");
+          return true;
+        }
+      }
 
-      const allValid = isNameValid && isEmailValid && isPhoneValid && isPassValid;
-      submitBtn.disabled = !allValid;
-      validTick.style.display = allValid ? "block" : "none";
-    }
+      function passValidationChecking() {
+        const passval = passid.value;
+        const cpassval = cpassid.value;
+        const passPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+        let isValid = true;
 
-    document.addEventListener("DOMContentLoaded", function () {
-      // Initially disable the submit button
-      submitBtn.disabled = true;
+        if (!passval) {
+          error4.style.display = "block";
+          error4.innerHTML = "Password is required";
+          passid.classList.remove("valid-field");
+          isValid = false;
+        } else if (!passPattern.test(passval)) {
+          error4.style.display = "block";
+          error4.innerHTML = "Password must be 8+ characters with uppercase, lowercase, number, and special character";
+          passid.classList.remove("valid-field");
+          isValid = false;
+        } else {
+          error4.style.display = "none";
+          error4.innerHTML = "";
+          passid.classList.add("valid-field");
+        }
 
-      // Form submission validation
-      signform.addEventListener("submit", function (e) {
+        if (!cpassval) {
+          error5.style.display = "block";
+          error5.innerHTML = "Confirm password is required";
+          cpassid.classList.remove("valid-field");
+          isValid = false;
+        } else if (passval !== cpassval) {
+          error5.style.display = "block";
+          error5.innerHTML = "Passwords do not match";
+          cpassid.classList.remove("valid-field");
+          isValid = false;
+        } else {
+          error5.style.display = "none";
+          error5.innerHTML = "";
+          cpassid.classList.add("valid-field");
+        }
+
+        return isValid;
+      }
+
+      function checkAllFieldsValid() {
         const isNameValid = nameValidateChecking();
         const isEmailValid = emailValidateChecking();
         const isPhoneValid = phoneValidateChecking();
         const isPassValid = passValidationChecking();
 
-        if (!isNameValid || !isEmailValid || !isPhoneValid || !isPassValid) {
-          e.preventDefault();
-        }
-      });
+        const allValid = isNameValid && isEmailValid && isPhoneValid && isPassValid;
+        submitBtn.disabled = !allValid;
+        validTick.style.display = allValid ? "block" : "none";
+      }
 
-      // Real-time validation with debounce
-      nameid.addEventListener("input", debounce(() => {
-        nameValidateChecking();
-        checkAllFieldsValid();
-      }, 300));
-      emailid.addEventListener("input", debounce(() => {
-        emailValidateChecking();
-        checkAllFieldsValid();
-      }, 300));
-      phoneid.addEventListener("input", debounce(() => {
-        phoneValidateChecking();
-        checkAllFieldsValid();
-      }, 300));
-      passid.addEventListener("input", debounce(() => {
-        passValidationChecking();
-        checkAllFieldsValid();
-      }, 300));
-      cpassid.addEventListener("input", debounce(() => {
-        passValidationChecking();
-        checkAllFieldsValid();
-      }, 300));
-    });
-  </script>
+      document.addEventListener("DOMContentLoaded", function () {
+        submitBtn.disabled = true;
+
+        signform.addEventListener("submit", function (e) {
+          const isNameValid = nameValidateChecking();
+          const isEmailValid = emailValidateChecking();
+          const isPhoneValid = phoneValidateChecking();
+          const isPassValid = passValidationChecking();
+
+          if (!isNameValid || !isEmailValid || !isPhoneValid || !isPassValid) {
+            e.preventDefault();
+          }
+        });
+
+        nameid.addEventListener("input", debounce(() => {
+          nameValidateChecking();
+          checkAllFieldsValid();
+        }, 300));
+        emailid.addEventListener("input", debounce(() => {
+          emailValidateChecking();
+          checkAllFieldsValid();
+        }, 300));
+        phoneid.addEventListener("input", debounce(() => {
+          phoneValidateChecking();
+          checkAllFieldsValid();
+        }, 300));
+        passid.addEventListener("input", debounce(() => {
+          passValidationChecking();
+          checkAllFieldsValid();
+        }, 300));
+        cpassid.addEventListener("input", debounce(() => {
+          passValidationChecking();
+          checkAllFieldsValid();
+        }, 300));
+      });
+    </script>
 </body>
 
 </html>

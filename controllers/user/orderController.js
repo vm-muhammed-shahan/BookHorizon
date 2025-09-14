@@ -29,9 +29,9 @@ const getOrders = async (req, res) => {
       }
     });
 
-orders.forEach(order => {
-  order.formattedDate = formatDate(order.createdOn);
-});
+    orders.forEach(order => {
+      order.formattedDate = formatDate(order.createdOn);
+    });
 
 
     let wallet = await Wallet.findOne({ user: userId });
@@ -58,11 +58,11 @@ const getOrderDetail = async (req, res) => {
   try {
     const { orderId } = req.params;
     const userId = req.session.user._id;
-    console.log('Order ID:', orderId);
+    // console.log('Order ID:', orderId);
     const order = await Order.findOne({ orderId, user: userId })
       .populate({
         path: "orderedItems.product",
-        select: "productName productImage" 
+        select: "productName productImage"
       })
       .populate("user", "name email");
     // console.log('Order Details:', order);
@@ -86,7 +86,7 @@ const getOrderDetail = async (req, res) => {
 
 
     order.formattedDate = formatDate(order.createdOn);
-order.formattedDeliveryDate = formatDate(order.deliveredOn);
+    order.formattedDeliveryDate = formatDate(order.deliveredOn);
 
     res.render("order-Detail", {
       order,
@@ -210,7 +210,7 @@ const cancelOrder = async (req, res) => {
         order.discount = 0;
         order.couponApplied = false;
         order.couponId = null;
-        proratedDiscount = 0; 
+        proratedDiscount = 0;
       }
 
       refundAmount = originalItemTotal - proratedDiscount;
@@ -255,8 +255,8 @@ const cancelOrder = async (req, res) => {
         }
       }
 
-     order.status = "Cancelled";
-      order.paymentStatus = "Cancelled"; 
+      order.status = "Cancelled";
+      order.paymentStatus = "Cancelled";
       order.cancelReason = reason || "No reason provided";
       order.finalAmount = 0;
       order.tax = 0;
@@ -294,14 +294,13 @@ const cancelOrder = async (req, res) => {
     await order.save().catch(err => { throw new Error(`Failed to save order: ${err.message}`); });
     return res.status(200).json({
       success: true,
-      message: `Item${productId ? "" : "s"} cancelled successfully. ${
-        order.paymentMethod !== "cod" && refundAmount > 0
+      message: `Item${productId ? "" : "s"} cancelled successfully. ${order.paymentMethod !== "cod" && refundAmount > 0
           ? `Refund of ₹${refundAmount.toFixed(2)} credited to your wallet.`
           : "No refund applicable for COD orders."
-      }`,
+        }`,
     });
   } catch (error) {
-    console.error("Error cancelling order:", error.stack); 
+    console.error("Error cancelling order:", error.stack);
     return res.status(500).json({ error: "Server error while cancelling order" });
   }
 };
@@ -347,7 +346,7 @@ const returnOrder = async (req, res) => {
     if (hasPendingReturns) {
       order.status = "Return Request";
       if (order.paymentMethod === "cod") {
-        order.paymentStatus = "Pending"; 
+        order.paymentStatus = "Pending";
       }
     }
 
@@ -384,15 +383,15 @@ const downloadInvoice = async (req, res) => {
     doc.pipe(res)
 
     const margin = 40
-    const pageWidth = 595.28 
-    const pageHeight = 841.89 
+    const pageWidth = 595.28
+    const pageHeight = 841.89
     const contentWidth = pageWidth - margin * 2
     let yPosition = margin
 
     const moveDown = (space = 15) => {
       yPosition += space
       if (yPosition > pageHeight - margin - 100) {
-        
+
         doc.addPage()
         yPosition = margin
       }

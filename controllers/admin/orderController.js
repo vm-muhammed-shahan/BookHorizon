@@ -119,7 +119,6 @@ const getOrderDetails = async (req, res) => {
       notification,
     });
   } catch (error) {
-    // console.error('Error in getOrderDetails:', error);
     res.status(500).render("admin-error", {
       title: "Error",
       message: "Unable to load order details. Please try again later.",
@@ -161,7 +160,7 @@ const updateOrderStatus = async (req, res) => {
     order.status = status;
     if (status === "Delivered") {
       order.paymentStatus = order.paymentMethod === "cod" ? "Completed" : order.paymentStatus;
-      order.deliveredOn = new Date(); // Set deliveredOn for all orders
+      order.deliveredOn = new Date(); 
     } else if (status === "Cancelled") {
       order.paymentStatus = "Cancelled";
       let refundAmount = order.finalAmount;
@@ -272,7 +271,6 @@ const verifyReturnRequest = async (req, res) => {
 
       refundAmount = originalItemTotal - proratedDiscount;
 
-      // update order financials
       order.totalPrice = remainingSubTotal;
       order.tax = order.tax || (order.totalPrice > 0 ? order.totalPrice * 0.05 : 0);
       order.shippingCharge = remainingSubTotal > 0 ? 50 : 0;

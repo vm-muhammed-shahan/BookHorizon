@@ -6,8 +6,6 @@ const isOnlyUnderscoresOrHyphens = (value) => {
 
 
 
-
-// 1. GET all addresses
 const getAddresses = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -19,7 +17,7 @@ const getAddresses = async (req, res) => {
   }
 };
 
-// 2. ADD a new address
+
 const addAddress = async (req, res) => {
   try {
     // console.log("addAddress called with body:", req.body); 
@@ -73,7 +71,7 @@ const addAddress = async (req, res) => {
   }
 };
 
-// 3. GET edit address form
+
 const getEdit = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -93,7 +91,7 @@ const getEdit = async (req, res) => {
   }
 };
 
-// 4. EDIT an address
+
 const editAddress = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -103,19 +101,15 @@ const editAddress = async (req, res) => {
       landMark, pincode, altPhone, addressType, isDefault
     } = req.body;
 
-    console.log("editAddress called with params:", { addrId }, "and body:", req.body); 
-
     const phoneRegex = /^[6-9]\d{9}$/;
     const pincodeRegex = /^\d{6}$/;
     const isOnlyUnderscoresOrHyphens = (val) =>
       /^_+$/.test(val) || /^-+$/.test(val);
 
-    // ✅ Basic required check
     if (!name || !phone || !city || !state || !landMark || !pincode || !altPhone || !addressType) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    // ✅ Extra validation for underscores / hyphens
     const fieldsToCheck = { name, city, state, landMark };
     for (const [key, value] of Object.entries(fieldsToCheck)) {
       if (isOnlyUnderscoresOrHyphens(value)) {
@@ -123,7 +117,6 @@ const editAddress = async (req, res) => {
       }
     }
 
-    // ✅ Phone number validation
     if (!phoneRegex.test(phone) || !phoneRegex.test(altPhone)) {
       return res.status(400).json({ error: 'Phone numbers must be 10-digit valid numbers' });
     }
@@ -132,12 +125,10 @@ const editAddress = async (req, res) => {
       return res.status(400).json({ error: 'Phone and Alternative Phone must be different' });
     }
 
-    // ✅ Pincode validation
     if (!pincodeRegex.test(pincode)) {
       return res.status(400).json({ error: 'Pincode must be 6 digits' });
     }
 
-    // ✅ Find user address
     const doc = await Address.findOne({ userId });
     if (!doc) {
       return res.status(404).json({ error: 'User address record not found' });
@@ -147,7 +138,6 @@ const editAddress = async (req, res) => {
     if (index === -1) {
       return res.status(404).json({ error: 'Address not found' });
     }
-
     const updatedIsDefault = isDefault === true || isDefault === 'true' || isDefault === 'on';
     doc.address[index] = {
       name, phone, city, state, landMark, pincode,
@@ -155,7 +145,6 @@ const editAddress = async (req, res) => {
       isDefault: updatedIsDefault
     };
 
-    // If this address is default → unset others
     if (updatedIsDefault) {
       doc.address.forEach((addr, i) => {
         if (i !== index) addr.isDefault = false;
@@ -171,7 +160,7 @@ const editAddress = async (req, res) => {
   }
 };
 
-// 5. DELETE an address
+
 const deleteAddress = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -202,7 +191,7 @@ const deleteAddress = async (req, res) => {
   }
 };
 
-// 6. SET default address
+
 const setDefaultAddress = async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -217,7 +206,6 @@ const setDefaultAddress = async (req, res) => {
     if (index === -1) {
       return res.status(404).json({ error: 'Address not found' });
     }
-    // set the selected address as default then unset others
     doc.address.forEach((addr, i) => {
       addr.isDefault = i === index;
     });

@@ -9,13 +9,18 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const { session } = require("passport");
 const offerController = require("../admin/offerController");
-
-
-
 function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
-
+const securePassword = async (password) => {
+  try {
+    const passwordHash = await bcrypt.hash(password, 10);
+    return passwordHash;
+  } catch (error) {
+    console.error("Error hashing password:", error);
+    throw error;
+  }
+};
 async function sendVerificationEmail (email, otp)  {
   try {
     const transporter = nodemailer.createTransport({
@@ -45,9 +50,17 @@ async function sendVerificationEmail (email, otp)  {
   }
 }
 
+
+
+
+
+
+
+
+
 const pageNotFound = async (req, res) => {
   try {
-    res.render("page-404");
+    res.render("error");
   } catch (error) {
     res.redirect("/pageNotFound");
   }
@@ -73,18 +86,14 @@ const postNewPassword = async (req, res) => {
 }
  
 const loadHomepage = async (req, res) => {
-
   try {
     const categories = await Category.find({ isListed: true });
     let productData = await Product.find({
       isBlocked: false,
-      // quantity: { $gt: 0 }
     }).populate('category')
       .sort({ createdAt: -1 })
       .limit(8);
     if (req.session.user) {
-
-
       const userData = await User.findOne({ _id: req.session.user._id });
       if (userData) {
         return res.render("home", { user: userData, products: productData });
@@ -102,7 +111,6 @@ const loadSignup = async (req, res) => {
   try {
     return res.render("signup");
   } catch (error) {
-    console.log("Home page not loading:", error);
     res.status(500).send("server Error")
   }
 }
@@ -165,20 +173,9 @@ const signup = async (req, res) => {
   }
 };
 
-const securePassword = async (password) => {
-  try {
-    const passwordHash = await bcrypt.hash(password, 10);
-    return passwordHash;
-  } catch (error) {
-    console.error("Error hashing password:", error);
-    throw error;
-  }
-};
-
 const verifyOtp = async (req, res) => {
   try {
     const { otp } = req.body;
-    console.log("Entered OTP:", otp); 
     if (otp === req.session.userOtp) {
       const user = req.session.userData;
       const passwordHash = await securePassword(user.password);
@@ -204,7 +201,7 @@ const verifyOtp = async (req, res) => {
         });
       });
 
-     console.log("Session after OTP verification:", req.session); 
+    //  console.log("Session after OTP verification:", req.session); 
       res.json({ success: true, redirectUrl: "/login" });
     } else {
       res.status(400).json({ success: false, message: "Invalid OTP, please try again" });
@@ -308,7 +305,6 @@ const filterProduct = async (req, res) => {
     const searchQuery = req.query.query || "";
     const maxPrice = req.query.maxPrice ? parseFloat(req.query.maxPrice) : null;
 
-    // Validate categories
     const validCategories = selectedCategories.length > 0 ? await Category.find({ _id: { $in: selectedCategories }, isListed: true }) : [];
     if (selectedCategories.length > 0 && validCategories.length === 0) {
       console.log("No valid categories found");
@@ -436,7 +432,6 @@ const updatedLoadShoppingPage = async (req, res) => {
       name: category.name,
     }));
 
-    // Build query string for pagination
     let queryString = '';
     if (selectedCategories.length > 0) queryString += selectedCategories.map(cat => `category=${cat}`).join('&');
     if (sortOption) queryString += `${queryString ? '&' : ''}sort=${sortOption}`;
@@ -446,11 +441,11 @@ const updatedLoadShoppingPage = async (req, res) => {
     res.render("shop", {
       user: userData,
       products: products,
-      categories: categoriesWithIds,  // Changed from `category` to `categories` to match shop.ejs
+      categories: categoriesWithIds,  
       totalProducts: totalproducts,
       currentPage: page,
       totalPages: totalPages,
-      selectedCategories: selectedCategories,  // Changed to `selectedCategories`
+      selectedCategories: selectedCategories,  
       sortOption: sortOption,
       searchQuery: searchQuery,
       maxPrice: maxPrice,
@@ -466,10 +461,10 @@ const getProfile = async (req, res) => {
   try {
     const userId = req.session.user._id;
     const user = await User.findById(userId);
-    const addressDoc = await Address.findOne({ userId });
+    const addressDoc = await Address.findOne({ userId});
     res.render("profile", {
       user,
-      addresses: addressDoc?.address || []
+      addresses: addressDoc?.address || [],
     });
   } catch (err) {
     console.error("Error loading profile", err);
@@ -492,8 +487,6 @@ const updateProfile = async (req, res) => {
     const { name, phone } = req.body;
     const trimmedName = name?.trim();
     const trimmedPhone = phone?.trim();
-
-    console.log('Received Data:', { name, phone, trimmedName, trimmedPhone });
 
     const repeatedPhones = new Set([
       '0000000000', '1111111111', '2222222222', '3333333333',

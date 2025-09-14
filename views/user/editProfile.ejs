@@ -3,7 +3,6 @@
     <h2>Edit Profile</h2>
   </div>
 
-  <!-- PROFILE UPDATE FORM (Name + Phone) -->
   <form method="POST" action="/profile/edit" class="profile-form" id="profileForm" novalidate>
     <div class="form-group">
       <label for="name" class="form-label">Name</label>
@@ -266,19 +265,5 @@
       }
     });
   });
-
-
-  <% if (typeof successMessage !== 'undefined') { %>
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      Swal.fire({
-        title: 'Success!',
-        text: "<%= successMessage %>",
-        icon: 'success',
-        confirmButtonColor: '#000'
-      });
-    });
-  </script>
-<% } %>
 
 </script>
