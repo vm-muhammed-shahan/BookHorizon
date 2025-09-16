@@ -248,8 +248,14 @@ const removeCoupon = async (req, res) => {
 
 
 const createRazorpayOrder = async (req, res) => {
+  console.log('outside');
+  
   try {
+    console.log('inside');
+    
     const userId = req.session.user._id;
+    console.log('user id');
+    
     const { selectedAddressIndex, paymentMethod } = req.body;
 
     const cart = await Cart.findOne({ userId }).populate({
