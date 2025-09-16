@@ -100,7 +100,6 @@ router.post('/checkout/retry-payment', userAuth, checkoutController.retryPayment
 router.post('/checkout/payment-failed', userAuth, checkoutController.paymentFailed);
 router.get('/order/success/:orderID', userAuth, checkoutController.successPage);
 router.get('/order/failure/:orderID', userAuth, checkoutController.failurePage);
-// router.get('/edit-address', userAuth, checkoutController.editCheckout);
 router.post('/checkout/cancel-order', userAuth, checkoutController.cancelOrder);
 
 

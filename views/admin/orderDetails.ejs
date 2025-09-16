@@ -84,7 +84,6 @@ body {
   color: #000;
 }
 
-/* Section Titles */
 h2 {
   font-size: 22px;
   font-weight: 600;
@@ -94,7 +93,6 @@ h2 {
   padding-bottom: 8px;
 }
 
-/* Sub Headings */
 h3 {
   font-size: 18px;
   font-weight: 600;
@@ -104,7 +102,6 @@ h3 {
   padding-bottom: 6px;
 }
 
-/* Paragraphs & Labels */
 p, td, th {
   font-size: 15px;
   color: #333;
@@ -116,7 +113,6 @@ strong {
   color: #000;
 }
 
-/* Notifications */
 .notification {
   font-size: 14px;
   border-radius: 8px;
@@ -140,7 +136,6 @@ strong {
   border-left: 4px solid #dc3545;
 }
 
-/* Table Text */
 table th {
   font-size: 15px;
   font-weight: 600;
@@ -185,7 +180,6 @@ celled { background:#025b25; color:#991b1b; }
         <% } %>
 
           <div class="bg-white p-6 shadow-md rounded-lg">
-            <!-- Order Summary -->
             <div class="section-card">
               <div>
                 <h2 class="text-lg font-semibold mb-3 text-gray-700">Order Summary</h2>
@@ -257,7 +251,6 @@ celled { background:#025b25; color:#991b1b; }
               </div>
             </div>
 
-            <!-- Update Order Status -->
             <div class="mb-8">
               <h2 class="text-lg font-semibold mb-3 text-gray-700">Update Order Status</h2>
               <form action="/admin/orders/<%= order.orderId %>/status" method="POST" class="flex gap-4 items-center">
@@ -283,7 +276,6 @@ celled { background:#025b25; color:#991b1b; }
               </form>
             </div>
 
-            <!-- Items Table -->
             <div class="mb-8">
               <h2 class="text-lg font-semibold mb-3 text-gray-700">Items</h2>
               <table class="w-full border-collapse bg-white shadow-md rounded">
@@ -301,7 +293,6 @@ celled { background:#025b25; color:#991b1b; }
                 <tbody>
                   <% order.orderedItems.forEach((item, index)=> { %>
                     <tr>
-                      <!-- Product Image -->
                       <td class="p-3 border">
                         <% if (item.product && item.product.productImage && item.product.productImage.length> 0) { %>
                           <img src="/uploads/<%= item.product.productImage[0] %>" alt="<%= item.product.productName %>"
@@ -311,25 +302,20 @@ celled { background:#025b25; color:#991b1b; }
                             <% } %>
                       </td>
 
-                      <!-- Product Name -->
                       <td class="p-3 border text-center align-middle">
                         <%= item.product && item.product.productName ? item.product.productName : 'N/A' %>
                       </td>
 
-                      <!-- Quantity -->
                       <td class="p-3 border text-center align-middle">
                         <%= item.quantity %>
                       </td>
 
-                      <!-- Price -->
                       <td class="p-3 border text-center align-middle">₹<%= item.price ? item.price.toFixed(2) : '0.00' %>
                       </td>
 
-                      <!-- Total -->
                       <td class="p-3 border text-center align-middle">₹<%= item.price ? (item.price * item.quantity).toFixed(2) : '0.00' %>
                       </td>
 
-                      <!-- Status -->
                       <td class="p-3 border text-center align-middle">
                         <% if (item.cancelled) { %>
                           Cancelled: <%= item.cancelReason || 'No reason provided' %>
@@ -344,7 +330,6 @@ celled { background:#025b25; color:#991b1b; }
                                           <% } %>
                       </td>
 
-                      <!-- Actions -->
                       <td class="p-3 border text-center align-middle">
                         <% if (item.returned && item.returnStatus==='pending' ) { %>
                           <button onclick="verifyReturn('<%= order.orderId %>', <%= index %>, 'accept')"
@@ -360,7 +345,6 @@ celled { background:#025b25; color:#991b1b; }
               </table>
             </div>
 
-            <!-- Back Button -->
             <div class="flex justify-end">
               <a href="/admin/orders" class="bg-gray-500 text-white p-2 rounded hover:bg-gray-600 action-btn">Back to
                 Orders</a>

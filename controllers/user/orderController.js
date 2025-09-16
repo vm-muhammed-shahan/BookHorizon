@@ -45,10 +45,8 @@ const getOrders = async (req, res) => {
     }
 
     const userData = await User.findOne({ _id: userId }, 'name');
-    // console.log('User Orders:', orders);
     res.render("orders", { orders, search, user: userData || req.session.user, wallet });
   } catch (error) {
-    // console.error("Error fetching orders:", error);
     res.status(500).render("error", { message: "Error fetching orders" });
   }
 };
@@ -65,8 +63,6 @@ const getOrderDetail = async (req, res) => {
         select: "productName productImage"
       })
       .populate("user", "name email");
-    // console.log('Order Details:', order);
-    // console.log('Delivered On:', order.deliveredOn);
     if (!order) {
       req.session.message = { type: "error", text: "Order not found or you are not authorized to view it" };
       return res.redirect("/orders");
@@ -408,7 +404,6 @@ const downloadInvoice = async (req, res) => {
 
     const formatCurrency = (amount) => `Rs ${amount.toFixed(2)}`
 
-    // Header section
     doc.fontSize(28).font("Helvetica-Bold").fillColor("#2c3e50").text("BookHorizon", margin, yPosition)
 
     moveDown(25)
@@ -431,7 +426,6 @@ const downloadInvoice = async (req, res) => {
     drawLine()
     moveDown(25)
 
-    // Invoice details section
     const leftColX = margin
     const rightColX = margin + contentWidth * 0.6
 
@@ -467,7 +461,6 @@ const downloadInvoice = async (req, res) => {
 
     moveDown(30)
 
-    // Order details and address section
     const sectionY = yPosition
 
     doc.fontSize(14).font("Helvetica-Bold").fillColor("#2c3e50").text("Order Details", leftColX, sectionY)
@@ -526,7 +519,7 @@ const downloadInvoice = async (req, res) => {
     drawLine()
     moveDown(25)
 
-    // Items table
+    
     doc.fontSize(16).font("Helvetica-Bold").fillColor("#2c3e50").text("Items Ordered", margin, yPosition)
 
     moveDown(20)
@@ -617,7 +610,6 @@ const downloadInvoice = async (req, res) => {
     drawLine(yPosition, 1)
     moveDown(25)
 
-    // Summary section
     const summaryX = margin + contentWidth - 200
     const summaryY = yPosition
     const finalTotal = order.finalAmount
@@ -669,21 +661,18 @@ const downloadInvoice = async (req, res) => {
       align: "right",
     })
 
-    // Update yPosition after summary
+    
     yPosition = totalY + 40
+    
+    const footerHeight = 40 
+    const minFooterY = pageHeight - margin - footerHeight 
 
-    // FIXED FOOTER SECTION - Always at bottom of page
-    const footerHeight = 40 // Height needed for footer messages
-    const minFooterY = pageHeight - margin - footerHeight // Minimum Y position for footer
-
-    // If current content would overlap with footer area, add space or new page
     if (yPosition > minFooterY - 30) {
       // 30 points buffer
       doc.addPage()
       yPosition = margin
     }
 
-    // Always place footer at the bottom of the current page
     const footerY = Math.max(yPosition + 30, minFooterY)
 
     doc

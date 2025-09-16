@@ -19,8 +19,7 @@ const getAddresses = async (req, res) => {
 
 
 const addAddress = async (req, res) => {
-  try {
-    // console.log("addAddress called with body:", req.body); 
+  try { 
     const userId = req.session.user._id;
     const {
       name, phone, city, state,

@@ -13,8 +13,8 @@ const getDashboard = async (req, res) => {
       let matchStage = {};
 
       
-      const now = new Date(); // Current time in local system time (likely IST)
-      now.setUTCHours(now.getUTCHours() + 5.5); // Adjust to IST explicitly
+      const now = new Date(); 
+      now.setUTCHours(now.getUTCHours() + 5.5); 
       if (filterType === 'yearly') {
         matchStage = {
           createdOn: {
@@ -31,15 +31,13 @@ const getDashboard = async (req, res) => {
         };
       } else if (filterType === 'weekly') {
         const startOfWeek = new Date(now);
-        startOfWeek.setUTCDate(now.getUTCDate() - now.getUTCDay()); // Start of current week (Sunday in UTC, adjusted to IST)
+        startOfWeek.setUTCDate(now.getUTCDate() - now.getUTCDay()); 
         startOfWeek.setUTCHours(0, 0, 0, 0);
-        const endOfWeek = new Date(now); // Up to current moment
+        const endOfWeek = new Date(now); 
         endOfWeek.setUTCHours(23, 59, 59, 999);
         matchStage = { createdOn: { $gte: startOfWeek, $lte: endOfWeek } };
-        console.log('Weekly Range (UTC):', startOfWeek.toISOString(), 'to', endOfWeek.toISOString());
       }
 
-      // Total Sales Aggregation with all days ensured
       const salesData = await Order.aggregate([
         { $match: { status: { $nin: ['Cancelled', 'Returned'] }, ...matchStage } },
         {
@@ -119,9 +117,9 @@ const getDashboard = async (req, res) => {
         { $sort: { '_id': 1 } }
       ]);
 
-      // console.log('Sales Data:', salesData);
+    
 
-      // Prepare chart data
+  
       const labels = filterType === 'yearly' ?
         ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] :
         filterType === 'monthly' ?
@@ -136,14 +134,12 @@ const getDashboard = async (req, res) => {
         }
       });
 
-      // Calculate total orders and average order value a all time
       const totalOrdersResult = await Order.aggregate([
         { $match: { status: { $nin: ['Cancelled', 'Returned'] } } },
         { $group: { _id: null, total: { $sum: 1 } } }
       ]);
       const totalOrders = totalOrdersResult.length > 0 ? totalOrdersResult[0].total : 0;
 
-      // Calculate total sales  all time
       const totalSalesResult = await Order.aggregate([
         { $match: { status: { $nin: ['Cancelled', 'Returned'] } } },
         { $group: { _id: null, total: { $sum: '$finalAmount' } } }
@@ -152,7 +148,6 @@ const getDashboard = async (req, res) => {
 
       const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
-      // Top 10 best selling Products
       const topProducts = await Order.aggregate([
         { $match: { status: { $nin: ['Cancelled', 'Returned'] } } },
         { $unwind: '$orderedItems' },
@@ -181,7 +176,6 @@ const getDashboard = async (req, res) => {
         { $limit: 10 },
       ]);
 
-      // Top 10 best selling Categories
       const topCategories = await Order.aggregate([
         { $match: { status: { $nin: ['Cancelled', 'Returned'] } } },
         { $unwind: '$orderedItems' },

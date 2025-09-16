@@ -96,7 +96,6 @@ const createReferralOffer = async (req, res) => {
     });
     await offer.save();
 
-    // Create a corresponding coupon for referral rewards
     const coupon = new Coupon({
       name: couponCode,
       offerPrice: discountPercentage,

@@ -7,9 +7,6 @@ const formatDate = require("../../helpers/dateFormatter");
 
 const getOrders = async (req, res) => {
   try {
-    // console.log('Session:', req.session);
-    // console.log('Query Parameters:', req.query);
-
     const search = req.query.search || "";
     const sort = req.query.sort || "-createdOn";
     const statusFilter = req.query.status || "";
@@ -72,12 +69,22 @@ const getOrders = async (req, res) => {
       },
     ]);
 
-    // console.log('Orders:', orders);
     orders.forEach(order => {
       order.formattedDate = formatDate(order.createdOn);
     });
 
+
+
+const totalAmount = orders.reduce((sum, order) => {
+  if (order.paymentMethod === "razorpay" && order.paymentStatus === "Cancelled") {
+    return sum + (order.finalAmount || 0);
+  }
+  return sum;
+}, 0);
+
+
     res.render("adminorders", {
+      totalAmount,
       title: "Order Management",
       orders: orders || [],
       currentPage: 1,
@@ -160,7 +167,7 @@ const updateOrderStatus = async (req, res) => {
     order.status = status;
     if (status === "Delivered") {
       order.paymentStatus = order.paymentMethod === "cod" ? "Completed" : order.paymentStatus;
-      order.deliveredOn = new Date(); 
+      order.deliveredOn = new Date();
     } else if (status === "Cancelled") {
       order.paymentStatus = "Cancelled";
       let refundAmount = order.finalAmount;
@@ -222,7 +229,6 @@ const updateOrderStatus = async (req, res) => {
     });
   }
 };
-
 
 
 const verifyReturnRequest = async (req, res) => {

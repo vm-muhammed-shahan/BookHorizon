@@ -569,7 +569,6 @@ const retryPayment = async (req, res) => {
     let amountToPay = order.finalAmount;
     let effectivePaymentMethod = order.paymentMethod;
 
-    // Reevaluate wallet balance for retry
     let wallet = await Wallet.findOne({ user: userId });
     if (!wallet) {
       wallet = new Wallet({
@@ -715,23 +714,6 @@ const failurePage = async (req, res) => {
     res.status(500).send("Failed to load order details");
   }
 };
-
-
-// const editCheckout = async (req, res) => {
-//   try {
-//     const userId = req.session.user._id;
-//     const addrId = req.query.addrId;
-//     const doc = await Address.findOne({ userId });
-//     const address = doc.address.id(addrId);
-//     if (!address) {
-//       return res.status(404).send("Address not found");
-//     }
-//     res.render("edit-address", { address });
-//   } catch (error) {
-//     console.error("Error loading edit address:", error);
-//     res.status(500).send("Server Error");
-//   }
-// };
 
 
 const cancelOrder = async (req, res) => {
