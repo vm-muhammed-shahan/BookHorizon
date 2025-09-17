@@ -1487,7 +1487,7 @@
       initReviewRating();
       checkProductStatus();
       setupAddToCartForm();
-      checkWishlistStatus(productId); // Check wishlist status on page load
+      checkWishlistStatus(productId); 
     });
 
     // Function to initialize product image sliders
@@ -1570,7 +1570,7 @@
         currentImageIndex = index;
         updateZoomImage();
         zoomContainer.classList.add('active');
-        document.body.style.overflow = 'hidden'; // Prevent body scrolling
+        document.body.style.overflow = 'hidden';
       };
 
       // Update the zoom image
@@ -1584,7 +1584,7 @@
       // Close zoom view
       zoomClose.addEventListener('click', function () {
         zoomContainer.classList.remove('active');
-        document.body.style.overflow = ''; // Restore body scrolling
+        document.body.style.overflow = ''; 
       });
 
       // Navigate to previous image
@@ -1599,18 +1599,16 @@
         updateZoomImage();
       });
 
-      // Toggle zoom level
       zoomImage.addEventListener('click', function () {
         zoomImage.classList.toggle('zoomed');
       });
 
-      // Handle keyboard navigation
       document.addEventListener('keydown', function (e) {
         if (!zoomContainer.classList.contains('active')) return;
 
         if (e.key === 'Escape') {
           zoomContainer.classList.remove('active');
-          document.body.style.overflow = ''; // Restore body scrolling
+          document.body.style.overflow = ''; 
         } else if (e.key === 'ArrowLeft') {
           currentImageIndex = (currentImageIndex - 1 + totalImages) % totalImages;
           updateZoomImage();
@@ -1621,7 +1619,6 @@
       });
     }
 
-    // Initialize review star rating functionality
     function initReviewRating() {
       const ratingStars = document.querySelectorAll('.rating-star');
       let selectedRating = 0;
@@ -1631,7 +1628,6 @@
           const value = parseInt(this.dataset.value);
           selectedRating = value;
 
-          // Update the stars UI
           ratingStars.forEach(s => {
             const starValue = parseInt(s.dataset.value);
             s.classList.remove('fas', 'far');
@@ -1639,7 +1635,6 @@
           });
         });
 
-        // Hover effects
         star.addEventListener('mouseenter', function () {
           const value = parseInt(this.dataset.value);
 
@@ -1660,19 +1655,13 @@
       });
     }
 
-    // Check product status (blocked/unavailable)
     function checkProductStatus() {
       if (product.status === 'blocked' || product.status === 'unavailable') {
         console.log('Product is blocked or unavailable');
       }
     }
-
-    // Setup form submission for add to cart
     function setupAddToCartForm() {
-      // This function can be used if you need to handle form submissions dynamically
     }
-
-    // Show alert function using SweetAlert if available
     function showAlert(message, type) {
       if (typeof Swal !== 'undefined') {
         Swal.fire({
@@ -1688,8 +1677,6 @@
       }
     }
 
-    // Wishlist Functionality
-    // Function to check if the product is in the wishlist on page load
    function checkWishlistStatus(productId) {
   if (!user) {
     console.log('No user logged in, skipping wishlist status check');
@@ -1722,12 +1709,12 @@
       if (isInWishlist) {
         icon.classList.remove('far');
         icon.classList.add('fas');
-        icon.style.color = '#2d3748'; // Dark color for filled heart
+        icon.style.color = '#2d3748';
         console.log(`Product ${productId} is in wishlist, setting icon to filled`);
       } else {
         icon.classList.remove('fas');
         icon.classList.add('far');
-        icon.style.color = ''; // Default color
+        icon.style.color = ''; 
         console.log(`Product ${productId} is not in wishlist, setting icon to outline`);
       }
     })
@@ -1737,8 +1724,6 @@
     });
 }
 
-
-    // Function to toggle (add/remove) the product in the wishlist
    window.addToWishlist = async (productId, productName) => {
   if (!user) {
     window.location.href = '/login?redirect=productDetails?id=' + productId;
@@ -1746,7 +1731,7 @@
   }
 
   const icon = document.getElementById(`wishlist-icon-${productId}`);
-  const isInWishlist = icon.classList.contains('fas'); // Check if already in wishlist
+  const isInWishlist = icon.classList.contains('fas');
   const action = isInWishlist ? 'remove' : 'add';
 
   try {
@@ -1762,10 +1747,9 @@
 
     if (data.success) {
       if (action === 'add') {
-        // Add to wishlist
         icon.classList.remove('far');
         icon.classList.add('fas');
-        icon.style.color = '#2d3748'; // Dark color for filled heart
+        icon.style.color = '#2d3748';
         Swal.fire({
           title: 'Added to Wishlist!',
           text: `${productName} has been added to your wishlist.`,
@@ -1775,10 +1759,9 @@
           confirmButtonColor: '#3a86ff'
         });
       } else {
-        // Remove from wishlist
         icon.classList.remove('fas');
         icon.classList.add('far');
-        icon.style.color = ''; // Default color
+        icon.style.color = ''; 
         Swal.fire({
           title: 'Removed from Wishlist!',
           text: `${productName} has been removed from your wishlist.`,
@@ -1828,7 +1811,6 @@
   }
 };
 
-    // Add to cart function
     window.addToCart = (productId, productName, quantity) => {
       fetch('/cart/add', {
         method: 'POST',
@@ -1867,7 +1849,6 @@
         });
     };
 
-    // Add to cart quick function for related products
     function addToCartQuick(productId) {
       <% if (!user) { %>
         window.location.href = '/login?redirect=productDetails?id=<%= product._id %>';
@@ -1886,7 +1867,7 @@
         },
         body: JSON.stringify({
           productId: productId,
-          quantity: 1  // Default to 1 for quick add
+          quantity: 1  
         })
       })
         .then(response => {

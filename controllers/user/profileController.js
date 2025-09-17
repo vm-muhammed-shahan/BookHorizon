@@ -18,7 +18,7 @@ const securePassword = async (password) => {
     const passwordHash = await bcrypt.hash(password, 10);
     return passwordHash;
   } catch (error) {
-console.error("Error hashing password:", error);
+    console.error("Error hashing password:", error);
     throw error;
   }
 }
@@ -168,11 +168,13 @@ const postNewPassword = async (req, res) => {
 
 const changePassword = async (req, res) => {
   try {
-    res.render("change-password")
+    const userData = await User.findById(req.session.user._id).select('name email');
+    res.render("change-password",{ user: userData })
   } catch (error) {
     res.redirect("/pageNotFound");
   }
 }
+
 
 
 const changePasswordValid = async (req, res) => {
@@ -182,40 +184,54 @@ const changePasswordValid = async (req, res) => {
 
     const user = await User.findById(userId).select("+password");
     if (!user) {
-      return res.render("change-password", { message: "User not found" });
+       const userData = await User.findById(userId).select('name email');
+      return res.render("change-password", {user:  userData, message: "User not found" });
     }
 
     if (!currentPassword || currentPassword.trim() === "") {
-      return res.render("change-password", { message: "Current password is required" });
+      const userData = await User.findById(userId).select('name email');
+      return res.render("change-password", { user: userData, message: "Current password is required" });
     }
+
     const passwordMatch = await bcrypt.compare(currentPassword, user.password);
     if (!passwordMatch) {
-      return res.render("change-password", { message: "Current password is incorrect" });
+      const userData = await User.findById(userId).select('name email');
+      return res.render("change-password", { user: userData, message: "Current password is incorrect" });
     }
 
     if (!newPass1 || !newPass2) {
-      return res.render("change-password", { message: "New passwords are required" });
+       const userData = await User.findById(userId).select('name email');
+      return res.render("change-password", { user: userData, message: "New passwords are required" });
     }
-    const passPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    const passPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
     if (!passPattern.test(newPass1)) {
-      return res.render("change-password", { message: "New password must be 8+ characters with uppercase, lowercase, number, and special character" });
+      const userData = await User.findById(userId).select('name email');
+      return res.render("change-password", { user: userData, message: "New password must be 8+ characters with uppercase, lowercase, number, and special character" });
     }
+
     if (newPass1 !== newPass2) {
-      return res.render("change-password", { message: "New passwords do not match" });
+      const userData = await User.findById(userId).select('name email');
+      return res.render("change-password", { user: userData, message: "New passwords do not match" });
     }
+
     if (newPass1 === currentPassword) {
-      return res.render("change-password", { message: "New password must differ from current password" });
+      const userData = await User.findById(userId).select('name email');
+      return res.render("change-password", { user: userData, message: "New password must differ from current password" });
     }
 
     const passwordHash = await securePassword(newPass1);
     await User.findByIdAndUpdate(userId, { password: passwordHash });
-
-    res.render("change-password", { successMessage: "Password changed successfully" });
-  } catch (error) {
+    
+       const updatedUser = await User.findById(userId).select('name email');
+    res.render("change-password", {user: updatedUser, successMessage: "Password changed successfully" });
+  }
+  catch (error) {
     console.error("Error in change password validation:", error);
-    res.render("change-password", { message: "An error occurred. Please try again." });
+    res.render("change-password", {user: req.session.user, message: "An error occurred. Please try again." });
   }
 };
+
 
 
 

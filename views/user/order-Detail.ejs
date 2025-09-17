@@ -10,15 +10,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-
-
-  <!-- Google Font -->
-
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
-
-
-
-  <!-- Core CSS (adjust paths as needed) -->
 
   <link rel="stylesheet" href="/css/bootstrap.min.css" type="text/css">
 
@@ -38,37 +30,18 @@
 
   <link rel="stylesheet" href="./user-assets/css/maind134.css">
 
-  <!-- Font Awesome 6 (for any newer icons) -->
-
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-  <!-- SweetAlert2 CSS -->
-
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-
-  
-
-
-
-  <style>
-
-    
-
-  </style>
-
 </head>
 
 <body>
 
   <%- include("../../views/partials/user/header") %>
 
-
-
   <div class="order-container">
 
     <h2 class="order-title">Order Details</h2>
-
-    
 
     <% if (notification) { %>
 
@@ -361,12 +334,6 @@
 
       <div class="action-buttons">
 
-        <!-- <% if (order.status === 'Pending' || order.status === 'Processing') { %>
-
-          <button class="clear-wishlist-btn" data-action="cancel" data-order-id="<%= order.orderId %>" data-product-id="">Cancel Entire Order</button>
-
-        <% } %> -->
-
         <a href="/orders/invoice/<%= order.orderId %>" class="action-btn invoice-btn">Download Invoice</a>
 
       </div>
@@ -396,12 +363,7 @@
   </div>
 
 
-
-  <!-- SweetAlert2 JS -->
-
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-  <!-- Your script (unchanged) -->
 
   <script>
 
@@ -494,7 +456,6 @@
             confirmButtonText: 'Okay',
             confirmButtonColor: '#3b82f6',
           });
-          // Reload only after successful response
           setTimeout(() => location.reload(), 500);
         } else {
           await Swal.fire({
@@ -560,7 +521,6 @@
                 }
               }
 
-              // Update actions with event delegation in mind
               actionsDiv.innerHTML = '';
               if (isEligibleForReturn(item, order)) {
                 actionsDiv.innerHTML += `
@@ -599,7 +559,6 @@
 
       const hasPendingReturns = Array.from(document.querySelectorAll('.status-text')).some(el => el.textContent.includes('Return Requested'));
       if (hasPendingReturns) {
-        // Polling will start above if needed
       }
 
       window.orderData = {

@@ -9,6 +9,7 @@ const userRouter = require("./routes/userRouter");
 const adminRouter = require("./routes/adminRouter");
 db();
 
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

@@ -62,7 +62,6 @@ const addAddress = async (req, res) => {
     }
 
     await doc.save();
-    console.log("Address saved successfully");
     return res.status(200).json({success:true, message: 'address saved successfully'});
   } catch (err) {
     console.error("Address Error:", err);

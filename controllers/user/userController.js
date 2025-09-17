@@ -21,7 +21,7 @@ const securePassword = async (password) => {
     throw error;
   }
 };
-async function sendVerificationEmail (email, otp)  {
+async function sendVerificationEmail(email, otp) {
   try {
     const transporter = nodemailer.createTransport({
 
@@ -84,7 +84,7 @@ const postNewPassword = async (req, res) => {
     res.redirect("/pageNotFound");
   }
 }
- 
+
 const loadHomepage = async (req, res) => {
   try {
     const categories = await Category.find({ isListed: true });
@@ -121,7 +121,7 @@ const signup = async (req, res) => {
 
     const namePattern = /^[A-Za-z\s]{2,50}$/;
     const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    const phonePattern = /^\d{10}$/;
+    const phonePattern = /^[6-9]\d{9}$/;
     const passPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
 
@@ -138,7 +138,11 @@ const signup = async (req, res) => {
     }
 
     if (!phonePattern.test(phone)) {
-      return res.render("signup", { message: "Phone number must be exactly 10 digits" });
+      return res.render("signup", { message: "Phone number must be 10 digits and start with 6-9" });
+    }
+
+    if (/^(\d)\1{9}$/.test(phone) || phone === "1234567890") {
+      return res.render("signup", { message: "Invalid phone number" });
     }
 
     if (!passPattern.test(password)) {
@@ -201,7 +205,7 @@ const verifyOtp = async (req, res) => {
         });
       });
 
-    //  console.log("Session after OTP verification:", req.session); 
+      //  console.log("Session after OTP verification:", req.session); 
       res.json({ success: true, redirectUrl: "/login" });
     } else {
       res.status(400).json({ success: false, message: "Invalid OTP, please try again" });
@@ -239,7 +243,7 @@ const resendOtp = async (req, res) => {
 const loadLogin = async (req, res) => {
   try {
     if (req.session.user) {
-      return res.redirect("/"); 
+      return res.redirect("/");
     }
     req.session.user = null;
     await new Promise((resolve, reject) => {
@@ -251,7 +255,7 @@ const loadLogin = async (req, res) => {
         resolve();
       });
     });
-    return res.render("login", { message: "" }); 
+    return res.render("login", { message: "" });
   } catch (error) {
     console.error("Error loading login page:", error);
     res.redirect("/pageNotFound");
@@ -441,11 +445,11 @@ const updatedLoadShoppingPage = async (req, res) => {
     res.render("shop", {
       user: userData,
       products: products,
-      categories: categoriesWithIds,  
+      categories: categoriesWithIds,
       totalProducts: totalproducts,
       currentPage: page,
       totalPages: totalPages,
-      selectedCategories: selectedCategories,  
+      selectedCategories: selectedCategories,
       sortOption: sortOption,
       searchQuery: searchQuery,
       maxPrice: maxPrice,
@@ -461,7 +465,7 @@ const getProfile = async (req, res) => {
   try {
     const userId = req.session.user._id;
     const user = await User.findById(userId);
-    const addressDoc = await Address.findOne({ userId});
+    const addressDoc = await Address.findOne({ userId });
     res.render("profile", {
       user,
       addresses: addressDoc?.address || [],
@@ -631,8 +635,8 @@ module.exports = {
   filterByprice,
   searchProducts,
   postNewPassword,
-   getProfile,
+  getProfile,
   editProfilePage,
-   updateProfile,
-  
+  updateProfile,
+
 };

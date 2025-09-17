@@ -53,6 +53,9 @@ router.get("/change-password", userAuth, profileController.changePassword);
 router.post("/change-password", userAuth, profileController.changePasswordValid);
 
 
+
+
+
 // Shop Page 
 router.get("/shop", userController.loadShoppingPage);
 router.get("/filter", userController.filterProduct);

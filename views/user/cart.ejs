@@ -665,11 +665,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Debug logging
     console.log('Cart summary updated:', { validItems: validItems.length, total: total.toFixed(2), checkoutEnabled: hasValidItems });
   }
 
-  // Initial call to ensure correct state on page load
   updateCartSummary();
 });
 </script>

@@ -500,12 +500,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }).then(async ({ isConfirmed }) => {
         if (!isConfirmed) return;
 
-        // Show loading state
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Moving...';
 
         try {
-          // Step 1: Move to cart
           const cartResponse = await fetch('/moveToCart', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -517,7 +515,6 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error(cartData.message || 'Couldn\'t move to cart');
           }
 
-          // Step 2: Explicitly remove from wishlist
           const wishlistResponse = await fetch('/removeFromWishlist', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -525,12 +522,10 @@ document.addEventListener('DOMContentLoaded', () => {
           });
           const wishlistData = await wishlistResponse.json();
 
-          // Reset button state
           btn.disabled = false;
           btn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
 
           if (wishlistData.success) {
-            // Update UI
             toast('success', cartData.message || 'Moved to cart');
             btn.closest('.wishlist-item').remove();
             const remainingItems = document.querySelectorAll('.wishlist-item');

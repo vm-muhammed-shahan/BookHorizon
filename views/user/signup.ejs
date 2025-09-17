@@ -208,7 +208,7 @@
       const phoneid = document.getElementById("phone");
       const passid = document.getElementById("password");
       const cpassid = document.getElementById("confirm-password");
-      const error1 = document.getElementById("error1"); 
+      const error1 = document.getElementById("error1");
       const error2 = document.getElementById("error2");
       const error3 = document.getElementById("error3");
       const error4 = document.getElementById("error4");
@@ -276,7 +276,7 @@
 
       function phoneValidateChecking() {
         const phoneval = phoneid.value.trim();
-        const phonePattern = /^\d{10}$/;
+        const phonePattern = /^[6-9]\d{9}$/;
         if (!phoneval) {
           error3.style.display = "block";
           error3.innerHTML = "Phone number is required";
@@ -284,7 +284,12 @@
           return false;
         } else if (!phonePattern.test(phoneval)) {
           error3.style.display = "block";
-          error3.innerHTML = "Phone number must be exactly 10 digits";
+          error3.innerHTML = "Phone number must be 10 digits and start with 6-9";
+          phoneid.classList.remove("valid-field");
+          return false;
+        } else if (/^(\d)\1{9}$/.test(phoneval) || phoneval === "1234567890") {
+          error3.style.display = "block";
+          error3.innerHTML = "Invalid phone number";
           phoneid.classList.remove("valid-field");
           return false;
         } else {
