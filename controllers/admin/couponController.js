@@ -33,13 +33,11 @@ const createCoupon = async (req, res) => {
       return res.status(400).json({ error: 'Minimum purchase must be a positive number' });
     }
 
-    // Validate expiry date
     const expiryDate = new Date(expireOn);
     if (isNaN(expiryDate.getTime()) || expiryDate < new Date()) {
       return res.status(400).json({ error: 'Invalid or past expiry date' });
     }
 
-    // Create new coupon
     const coupon = new Coupon({
       name: name.trim().toUpperCase(),
       discountPercentage: discountPercentageNum,
@@ -67,7 +65,6 @@ const editCoupon = async (req, res) => {
       return res.status(404).json({ error: 'Coupon not found' });
     }
 
-    // Validate new values
     if (name) {
       const existingCoupon = await Coupon.findOne({ name: name.trim().toUpperCase(), _id: { $ne: couponId } });
       if (existingCoupon) {
