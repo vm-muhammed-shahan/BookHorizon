@@ -1,4 +1,5 @@
 const Address = require("../../models/addressSchema");
+const User = require("../../models/userSchema");
 const validator = require("validator");
 const isOnlyUnderscoresOrHyphens = (value) => {
   return /^_+$/.test(value) || /^-+$/.test(value);
@@ -10,7 +11,12 @@ const getAddresses = async (req, res) => {
   try {
     const userId = req.session.user._id;
     const doc = await Address.findOne({ userId });
-    res.render("addresses", { addresses: doc?.address || [] });
+    const userData = await User.findById(userId).select('name email');
+    res.render("addresses", {
+      user: userData,
+      addresses: doc?.address || [],
+      from: req.query.from || null
+    });
   } catch (error) {
     console.error("Error fetching addresses:", error);
     res.status(500).send("An error occurred while fetching addresses.");
@@ -19,7 +25,7 @@ const getAddresses = async (req, res) => {
 
 
 const addAddress = async (req, res) => {
-  try { 
+  try {
     const userId = req.session.user._id;
     const {
       name, phone, city, state,
@@ -62,7 +68,15 @@ const addAddress = async (req, res) => {
     }
 
     await doc.save();
-    return res.status(200).json({success:true, message: 'address saved successfully'});
+    if (req.headers['content-type']?.includes('application/json')) {
+  return res.status(200).json({ success: true, message: 'Address saved successfully' });
+} else {
+  if (req.body.from === 'checkout') {
+    return res.redirect('/checkout');
+  } else {
+    return res.redirect('/profile/addresses');
+  }
+}
   } catch (err) {
     console.error("Address Error:", err);
     return res.status(500).json({ error: 'Server error while adding address' });
@@ -150,7 +164,7 @@ const editAddress = async (req, res) => {
     }
 
     await doc.save();
-    console.log("Address updated successfully:", doc.address[index]); 
+    console.log("Address updated successfully:", doc.address[index]);
     return res.status(200).json({ success: true, message: 'Address updated successfully' });
   } catch (err) {
     console.error("Error updating address:", err);
@@ -175,7 +189,7 @@ const deleteAddress = async (req, res) => {
     }
 
     const wasDefault = doc.address[index].isDefault;
-    
+
     doc.address.splice(index, 1);
     if (wasDefault && doc.address.length > 0) {
       doc.address[0].isDefault = true;

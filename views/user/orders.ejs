@@ -351,6 +351,11 @@
           font-size: 12px;
         }
       }
+
+      .wallet-actions {
+        display: flex;
+        gap: 0.75rem;
+      }
     </style>
 </head>
 
@@ -364,7 +369,10 @@
       <div class="wallet-balance">
         Wallet Balance: ₹<%= wallet ? wallet.balance.toFixed(2) : '0.00' %>
       </div>
-      <a href="/wallet" class="btn btn-primary">View Wallet Details</a>
+      <div class="wallet-actions">
+        <a href="/profile" class="btn btn-secondary">Back to Profile</a>
+        <a href="/wallet" class="btn btn-primary">View Wallet Details</a>
+      </div>
     </div>
 
     <!-- Search Form -->
@@ -406,7 +414,9 @@
                   <td data-label="Order ID:">
                     <%= order.orderId || 'N/A' %>
                   </td>
-                  <td data-label="Date:"><%= order.formattedDate %></td>
+                  <td data-label="Date:">
+                    <%= order.formattedDate %>
+                  </td>
                   <td data-label="Status:"><span class="status-badge">
                       <%= order.status || 'N/A' %>
                     </span></td>

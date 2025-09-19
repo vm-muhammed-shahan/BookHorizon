@@ -46,7 +46,7 @@ router.post("/editCategory/:id", adminAuth, categoryController.editCategory);
 
 
 
-
+//product management
 router.get("/addProducts", adminAuth, productController.getProductAddPage);
 router.post("/addProducts", uploads.array('productImages', 3), adminAuth, productController.addProducts);
 router.get("/products", adminAuth, productController.getAllProducts);

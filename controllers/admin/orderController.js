@@ -75,16 +75,9 @@ const getOrders = async (req, res) => {
 
 
 
-const totalAmount = orders.reduce((sum, order) => {
-  if (order.paymentMethod === "razorpay" && order.paymentStatus === "Cancelled") {
-    return sum + (order.finalAmount || 0);
-  }
-  return sum;
-}, 0);
 
 
     res.render("adminorders", {
-      totalAmount,
       title: "Order Management",
       orders: orders || [],
       currentPage: 1,
