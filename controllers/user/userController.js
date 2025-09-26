@@ -493,22 +493,22 @@ const updateProfile = async (req, res) => {
     const trimmedPhone = phone?.trim();
 
     const repeatedPhones = new Set([
-      '0000000000', '1111111111', '2222222222', '3333333333',
-      '4444444444', '5555555555', '6666666666', '7777777777',
-      '8888888888', '9999999999'
+      '0000000000','1111111111','2222222222','3333333333',
+      '4444444444','5555555555','6666666666','7777777777',
+      '8888888888','9999999999','1234567890'
     ]);
 
-    const isValidName = /^[A-Za-z\s'-]{3,50}$/.test(trimmedName) && /[A-Za-z]/.test(trimmedName);
-    const isValidPhone = /^[7-9][0-9]{9}$/.test(trimmedPhone) && !repeatedPhones.has(trimmedPhone);
+    const namePattern = /^[A-Za-z\s]{2,50}$/;
+    const phonePattern = /^[6-9]\d{9}$/;
 
     const errors = {};
 
-    if (!trimmedName || !isValidName) {
-      errors.name = "Name must be 3-50 characters, letters only (spaces, hyphens, apostrophes allowed).";
+    if (!trimmedName || !namePattern.test(trimmedName)) {
+      errors.name = "Name must be 2-50 characters, letters and spaces only.";
     }
 
-    if (!trimmedPhone || !isValidPhone) {
-      errors.phone = "Phone must be 10 digits, start with 7-9, and not be repeated numbers.";
+    if (!trimmedPhone || !phonePattern.test(trimmedPhone) || repeatedPhones.has(trimmedPhone)) {
+      errors.phone = "Phone number must be 10 digits, start with 6-9, and not repeated numbers.";
     }
 
     if (Object.keys(errors).length > 0) {
@@ -523,15 +523,8 @@ const updateProfile = async (req, res) => {
 
     req.session.user.name = trimmedName;
     req.session.user.phone = trimmedPhone;
-
     await new Promise((resolve, reject) => {
-      req.session.save((err) => {
-        if (err) {
-          console.error('Error saving session:', err);
-          return reject(err);
-        }
-        resolve();
-      });
+      req.session.save(err => err ? reject(err) : resolve());
     });
 
     req.session.successMessage = 'Profile Updated Successfully';
@@ -541,6 +534,7 @@ const updateProfile = async (req, res) => {
     res.status(500).json({ error: "Server Error" });
   }
 };
+
 
 const changePassword = async (req, res) => {
   try {

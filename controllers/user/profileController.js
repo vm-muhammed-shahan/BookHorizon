@@ -152,19 +152,36 @@ const postNewPassword = async (req, res) => {
   try {
     const { newPass1, newPass2 } = req.body;
     const email = req.session.email;
-    if (newPass1 === newPass2) {
-      const passwordHash = await securePassword(newPass1);
-      await User.updateOne(
-        { email: email },
-        { $set: { password: passwordHash } }
-      )
-      res.redirect("/login");
-    } else {
-      res.render("reset-password", { message: "passwords do not match" });
+
+    const passPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
+    if (!newPass1 || !newPass2) {
+      return res.render("reset-password", { message: "Both password fields are required" });
     }
+
+    if (!passPattern.test(newPass1)) {
+      return res.render("reset-password", { 
+        message: "Password must be at least 8 characters long, include uppercase, lowercase, number, and special character." 
+      });
+    }
+
+    if (newPass1 !== newPass2) {
+      return res.render("reset-password", { message: "Passwords do not match" });
+    }
+
+    const passwordHash = await securePassword(newPass1);
+    await User.updateOne(
+      { email: email },
+      { $set: { password: passwordHash } }
+    );
+
+    res.redirect("/login");
   } catch (error) {
+    console.error("Error resetting password:", error);
+    res.render("reset-password", { message: "Something went wrong. Please try again." });
   }
-}
+};
+
 
 const changePassword = async (req, res) => {
   try {

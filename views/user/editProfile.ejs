@@ -1,270 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
 
-<div class="edit-profile-container">
-  <div class="form-header">
-    <h2>Edit Profile</h2>
-  </div>
+<head>
+  <meta charset="UTF-8">
+  <title>Edit Profile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <form method="POST" action="/profile/edit" class="profile-form" id="profileForm" novalidate>
-    <div class="form-group">
-      <label for="name" class="form-label">Name</label>
-      <input
-        type="text"
-        id="name"
-        name="name"
-        value="<%= user.name || '' %>"
-        required
-        class="form-input <%= errors && errors.name ? 'error' : '' %>"
-      />
-      <small class="error-text" id="nameError" style="<%= errors && errors.name ? 'display:block' : 'display:none' %>">
-        <%= errors ? errors.name : '' %>
-      </small>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600;700;800;900&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/bootstrap.min.css" type="text/css">
+  <link rel="stylesheet" href="/css/font-awesome.min.css" type="text/css">
+  <link rel="stylesheet" href="/css/elegant-icons.css" type="text/css">
+  <link rel="stylesheet" href="/css/magnific-popup.css" type="text/css">
+  <link rel="stylesheet" href="/css/nice-select.css" type="text/css">
+  <link rel="stylesheet" href="/css/owl.carousel.min.css" type="text/css">
+  <link rel="stylesheet" href="/css/slicknav.min.css" type="text/css">
+  <link rel="stylesheet" href="/css/style.css" type="text/css">
+  <link rel="stylesheet" href="./user-assets/css/maind134.css">
+</head>
+
+<body>
+  <%- include("../../views/partials/user/header.ejs") %>
+
+    <div class="edit-profile-container">
+      <div class="form-header">
+        <h2>Edit Profile</h2>
+      </div>
+
+      <form method="POST" action="/profile/edit" class="profile-form" id="profileForm" novalidate>
+        <div class="form-group">
+          <label for="name" class="form-label">Name</label>
+          <input type="text" id="name" name="name" value="<%= user.name || '' %>" required
+            class="form-input <%= errors && errors.name ? 'error' : '' %>" />
+          <small class="error-text" id="nameError"
+            style="<%= errors && errors.name ? 'display:block' : 'display:none' %>">
+            <%= errors ? errors.name : '' %>
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label for="phone" class="form-label">Phone</label>
+          <input type="tel" id="phone" name="phone" value="<%= user.phone || '' %>" required
+            class="form-input <%= errors && errors.phone ? 'error' : '' %>" />
+          <small class="help-text">Enter a 10-digit phone number starting with 6 - 9 only</small>
+          <small class="error-text" id="phoneError"
+            style="<%= errors && errors.phone ? 'display:block' : 'display:none' %>">
+            <%= errors ? errors.phone : '' %>
+          </small>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="submit-btn">Update Profile</button>
+          <a href="/profile" class="cancel-btn">Cancel</a>
+        </div>
+      </form>
     </div>
 
-    <div class="form-group">
-      <label for="phone" class="form-label">Phone</label>
-      <input
-        type="tel"
-        id="phone"
-        name="phone"
-        value="<%= user.phone || '' %>"
-        class="form-input <%= errors && errors.phone ? 'error' : '' %>"
-        pattern="[7-9][0-9]{9}"
-        required
-      />
-      <small class="help-text">Enter a 10-digit phone number starting with 7, 8, or 9</small>
-      <small class="error-text" id="phoneError" style="<%= errors && errors.phone ? 'display:block' : 'display:none' %>">
-        <%= errors ? errors.phone : '' %>
-      </small>
-    </div>
-
-    <div class="form-actions">
-      <button type="submit" class="submit-btn">Update Profile</button>
-      <a href="/profile" class="cancel-btn">Cancel</a>
-    </div>
-  </form>
-</div>
-
-<style>
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f5f5f5;
-    color: #333;
-    line-height: 1.6;
-    margin: 0;
-    padding: 0;
-  }
-  
-  .edit-profile-container {
-    max-width: 600px;
-    margin: 30px auto;
-    padding: 30px;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  .form-header {
-    margin-bottom: 30px;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 15px;
-  }
-  
-  .form-header h2 {
-    font-size: 24px;
-    font-weight: 600;
-    color: #000;
-    margin: 0;
-  }
-  
-  .profile-form {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .form-label {
-    font-weight: 600;
-    color: #000;
-    font-size: 14px;
-  }
-  
-  .form-input {
-    padding: 12px 15px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
-    transition: border 0.3s ease;
-  }
-  
-  .form-input:focus {
-    border-color: #000;
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* ERROR styling */
-  .form-input.error {
-    border-color: #e53935;
-  }
-  
-  .error-text {
-    font-size: 12px;
-    color: #e53935;
-    margin-top: 4px;
-  }
-  
-  .help-text {
-    font-size: 12px;
-    color: #666;
-    margin-top: 4px;
-  }
-  
-  .form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    margin-top: 10px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
-  }
-  
-  .submit-btn {
-    padding: 12px 24px;
-    background-color: #000;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  
-  .submit-btn:hover {
-    background-color: #333;
-    transform: translateY(-2px);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  }
-  
-  .cancel-btn {
-    padding: 12px 24px;
-    background-color: #f5f5f5;
-    color: #333;
-    text-decoration: none;
-    border-radius: 4px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-  }
-  
-  .cancel-btn:hover {
-    background-color: #e5e5e5;
-  }
-</style>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
-<script defer>
-  document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('profileForm');
-    const nameInput = document.getElementById('name');
-    const phoneInput = document.getElementById('phone');
-    const nameError = document.getElementById('nameError');
-    const phoneError = document.getElementById('phoneError');
-    const submitBtn = form.querySelector('.submit-btn');
-
-    const repeatedPhones = new Set([
-      '0000000000', '1111111111', '2222222222', '3333333333',
-      '4444444444', '5555555555', '6666666666', '7777777777',
-      '8888888888', '9999999999'
-    ]);
-
-    function isValidName(name) {
-      const nameTrimmed = name?.trim();
-      if (!nameTrimmed) {
-        return false;
-      }
-      return /^[A-Za-z\s'-]{3,50}$/.test(nameTrimmed);
-    }
-
-    function isValidPhone(phone) {
-      const phoneTrimmed = phone?.trim();
-      if (!phoneTrimmed) {
-        return false;
-      }
-      return /^[7-9][0-9]{9}$/.test(phoneTrimmed) && !repeatedPhones.has(phoneTrimmed);
-    }
-
-    phoneInput.addEventListener('input', () => {
-      phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 10);
-      const phone = phoneInput.value;
-      if (phone.length === 10) {
-        if (!isValidPhone(phone)) {
-          phoneInput.classList.add('error');
-          phoneError.textContent = 'Phone must start with 7-9 and not be repeated numbers';
-          phoneError.style.display = 'block';
-        } else {
-          phoneInput.classList.remove('error');
-          phoneError.style.display = 'none';
-        }
-      } else {
-        phoneInput.classList.remove('error');
-        phoneError.style.display = 'none';
-      }
-    });
-
-    form.addEventListener('submit', async function (event) {
-      event.preventDefault();
-
-      let isValid = true;
-
-      const name = nameInput.value;
-      const nameValid = isValidName(name);
-      if (!nameValid) {
-        nameInput.classList.add('error');
-        nameError.textContent = 'Name must be 3-50 characters and contain only letters, spaces, hyphens or apostrophes';
-        nameError.style.display = 'block';
-        isValid = false;
-      } else {
-        nameInput.classList.remove('error');
-        nameError.style.display = 'none';
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f5f5f5;
+        color: #333;
+        line-height: 1.6;
+        margin: 0;
+        padding: 0;
       }
 
-      const phone = phoneInput.value;
-      const phoneValid = isValidPhone(phone);
-      if (!phoneValid) {
-        phoneInput.classList.add('error');
-        phoneError.textContent = 'Phone must be 10 digits, start with 7-9, and not be repeated numbers';
-        phoneError.style.display = 'block';
-        isValid = false;
-      } else {
-        phoneInput.classList.remove('error');
-        phoneError.style.display = 'none';
+      .edit-profile-container {
+        max-width: 600px;
+        margin: 30px auto;
+        padding: 30px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
       }
 
-      if (!isValid) {
-        return;
+      .form-header {
+        margin-bottom: 30px;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 15px;
       }
 
-      const result = await Swal.fire({
-        title: 'Are you sure?',
-        text: 'Do you want to update your profile with these details?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, Update',
-        cancelButtonText: 'No, Cancel',
-        confirmButtonColor: '#000',
-        cancelButtonColor: '#e53935'
-      });
-
-      if (result.isConfirmed) {
-        // Submit the form naturally
-        form.submit();
+      .form-header h2 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #000;
+        margin: 0;
       }
-    });
-  });
 
-</script>
+      .profile-form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .form-label {
+        font-weight: 600;
+        color: #000;
+        font-size: 14px;
+      }
+
+      .form-input {
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+        transition: border 0.3s ease;
+      }
+
+      .form-input:focus {
+        border-color: #000;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+      }
+
+      /* ERROR styling */
+      .form-input.error {
+        border-color: #e53935;
+      }
+
+      .error-text {
+        font-size: 12px;
+        color: #e53935;
+        margin-top: 4px;
+      }
+
+      .help-text {
+        font-size: 12px;
+        color: #666;
+        margin-top: 4px;
+      }
+
+      .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        margin-top: 10px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+      }
+
+      .submit-btn {
+        padding: 12px 24px;
+        background-color: #000;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .submit-btn:hover {
+        background-color: #333;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      }
+
+      .cancel-btn {
+        padding: 12px 24px;
+        background-color: #f5f5f5;
+        color: #333;
+        text-decoration: none;
+        border-radius: 4px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e5e5e5;
+      }
+    </style>
+
+    <%- include("../../views/partials/user/footer.ejs") %>
+
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+      <script defer>
+        document.addEventListener('DOMContentLoaded', function () {
+          const form = document.getElementById('profileForm');
+          const nameInput = document.getElementById('name');
+          const phoneInput = document.getElementById('phone');
+          const nameError = document.getElementById('nameError');
+          const phoneError = document.getElementById('phoneError');
+
+          const repeatedPhones = new Set([
+            '0000000000', '1111111111', '2222222222', '3333333333',
+            '4444444444', '5555555555', '6666666666', '7777777777',
+            '8888888888', '9999999999', '1234567890'
+          ]);
+
+          function isValidName(name) {
+            return /^[A-Za-z\s]{2,50}$/.test(name?.trim());
+          }
+
+          function isValidPhone(phone) {
+            const trimmed = phone?.trim();
+            return /^[6-9]\d{9}$/.test(trimmed) && !repeatedPhones.has(trimmed);
+          }
+
+          function validateFields() {
+            let valid = true;
+
+            if (!isValidName(nameInput.value)) {
+              nameInput.classList.add('error');
+              nameError.textContent = 'Name must be 2-50 characters, letters and spaces only';
+              nameError.style.display = 'block';
+              valid = false;
+            } else {
+              nameInput.classList.remove('error');
+              nameError.style.display = 'none';
+            }
+
+            if (!isValidPhone(phoneInput.value)) {
+              phoneInput.classList.add('error');
+              phoneError.textContent = 'Phone number must be 10 digits, start with 6-9, and not repeated numbers';
+              phoneError.style.display = 'block';
+              valid = false;
+            } else {
+              phoneInput.classList.remove('error');
+              phoneError.style.display = 'none';
+            }
+
+            return valid;
+          }
+
+          nameInput.addEventListener('input', () => validateFields());
+          phoneInput.addEventListener('input', () => {
+            phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 10);
+            validateFields();
+          });
+
+          form.addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            if (!validateFields()) return;
+
+            const result = await Swal.fire({
+              title: 'Are you sure?',
+              text: 'Do you want to update your profile with these details?',
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'Yes, Update',
+              cancelButtonText: 'No, Cancel',
+              confirmButtonColor: '#000',
+              cancelButtonColor: '#e53935'
+            });
+
+            if (result.isConfirmed) form.submit();
+          });
+        });
+      </script>
+</body>
+
+</html>

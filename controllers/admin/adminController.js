@@ -8,7 +8,6 @@ const pageerror = (req, res) => {
 };
 
 
-
 const loadLogin = (req, res) => {
   if (req.session.admin) {
     return res.redirect("/");

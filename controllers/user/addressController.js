@@ -1,9 +1,7 @@
 const Address = require("../../models/addressSchema");
 const User = require("../../models/userSchema");
 const validator = require("validator");
-const isOnlyUnderscoresOrHyphens = (value) => {
-  return /^_+$/.test(value) || /^-+$/.test(value);
-};
+
 
 
 
@@ -28,58 +26,103 @@ const addAddress = async (req, res) => {
   try {
     const userId = req.session.user._id;
     const {
-      name, phone, city, state,
-      landMark, pincode, altPhone, addressType
+      name,
+      phone,
+      city,
+      state,
+      landMark,
+      pincode,
+      altPhone,
+      addressType,
     } = req.body;
 
+    const nameCityRegex = /^[A-Za-z\s.,'-]{2,50}$/;
     const phoneRegex = /^[6-9]\d{9}$/;
-    const pincodeRegex = /^\d{6}$/;
+    const pincodeRegex = /^[1-9][0-9]{5}$/;
+    const invalidPhone = (num) =>
+      !phoneRegex.test(num) || /^(\d)\1{9}$/.test(num) || num === "1234567890";
 
-    if (!name || !phone || !city || !state || !landMark || !pincode || !altPhone || !addressType) {
-      return res.redirect('/profile/addresses?error=All+fields+are+required');
+    if (
+      !name ||
+      !phone ||
+      !city ||
+      !state ||
+      !landMark ||
+      !pincode ||
+      !altPhone ||
+      !addressType
+    ) {
+      return res.redirect(
+        "/profile/addresses?error=All+fields+are+required"
+      );
     }
 
-    if (!phoneRegex.test(phone) || !phoneRegex.test(altPhone)) {
-      return res.redirect('/profile/addresses?error=Phone+numbers+must+be+10+digit+valid+numbers');
+    if (
+      !nameCityRegex.test(name) ||
+      !nameCityRegex.test(city) ||
+      !nameCityRegex.test(state) ||
+      !nameCityRegex.test(landMark)
+    ) {
+      return res.redirect(
+        "/profile/addresses?error=Invalid+characters+in+text+fields"
+      );
+    }
+
+    if (invalidPhone(phone) || invalidPhone(altPhone)) {
+      return res.redirect(
+        "/profile/addresses?error=Phone+numbers+must+be+valid+10-digit+numbers"
+      );
     }
 
     if (phone === altPhone) {
-      return res.redirect('/profile/addresses?error=Phone+and+Alternative+Phone+must+be+different');
+      return res.redirect(
+        "/profile/addresses?error=Phone+and+AltPhone+must+be+different"
+      );
     }
 
     if (!pincodeRegex.test(pincode)) {
-      return res.redirect('/profile/addresses?error=Pincode+must+be+6+digits');
+      return res.redirect("/profile/addresses?error=Invalid+pincode");
     }
 
     let doc = await Address.findOne({ userId });
     const newAddr = {
-      name, phone, city, state, landMark, pincode,
-      altPhone, addressType,
-      isDefault: !doc || doc.address.length === 0
+      name,
+      phone,
+      city,
+      state,
+      landMark,
+      pincode,
+      altPhone,
+      addressType,
+      isDefault: !doc || doc.address.length === 0,
     };
 
     if (!doc) {
       doc = new Address({ userId, address: [newAddr] });
     } else {
       if (newAddr.isDefault) {
-        doc.address.forEach(addr => (addr.isDefault = false));
+        doc.address.forEach((addr) => (addr.isDefault = false));
       }
       doc.address.push(newAddr);
     }
 
     await doc.save();
-    if (req.headers['content-type']?.includes('application/json')) {
-  return res.status(200).json({ success: true, message: 'Address saved successfully' });
-} else {
-  if (req.body.from === 'checkout') {
-    return res.redirect('/checkout');
-  } else {
-    return res.redirect('/profile/addresses');
-  }
-}
+    if (req.headers["content-type"]?.includes("application/json")) {
+      return res
+        .status(200)
+        .json({ success: true, message: "Address saved successfully" });
+    } else {
+      if (req.body.from === "checkout") {
+        return res.redirect("/checkout");
+      } else {
+        return res.redirect("/profile/addresses");
+      }
+    }
   } catch (err) {
     console.error("Address Error:", err);
-    return res.status(500).json({ error: 'Server error while adding address' });
+    return res
+      .status(500)
+      .json({ error: "Server error while adding address" });
   }
 };
 
@@ -113,15 +156,33 @@ const editAddress = async (req, res) => {
       landMark, pincode, altPhone, addressType, isDefault
     } = req.body;
 
+    // Regex scoped inside controller
+    const nameCityRegex = /^[A-Za-z\s.,'-]{2,50}$/;
     const phoneRegex = /^[6-9]\d{9}$/;
-    const pincodeRegex = /^\d{6}$/;
+    const pincodeRegex = /^[1-9][0-9]{5}$/; // 6 digits, not starting with 0
+    const invalidPhone = (num) =>
+      !phoneRegex.test(num) || /^(\d)\1{9}$/.test(num) || num === "1234567890";
     const isOnlyUnderscoresOrHyphens = (val) =>
       /^_+$/.test(val) || /^-+$/.test(val);
 
+    // Empty fields
     if (!name || !phone || !city || !state || !landMark || !pincode || !altPhone || !addressType) {
-      return res.status(400).json({ error: 'All fields are required' });
+      return res.status(400).json({ error: "All fields are required" });
     }
 
+    // Check text fields
+    if (
+      !nameCityRegex.test(name) ||
+      !nameCityRegex.test(city) ||
+      !nameCityRegex.test(state) ||
+      !nameCityRegex.test(landMark)
+    ) {
+      return res.status(400).json({
+        error: "Text fields must be 2–50 characters and valid format",
+      });
+    }
+
+    // Reject only underscores/hyphens
     const fieldsToCheck = { name, city, state, landMark };
     for (const [key, value] of Object.entries(fieldsToCheck)) {
       if (isOnlyUnderscoresOrHyphens(value)) {
@@ -129,34 +190,54 @@ const editAddress = async (req, res) => {
       }
     }
 
-    if (!phoneRegex.test(phone) || !phoneRegex.test(altPhone)) {
-      return res.status(400).json({ error: 'Phone numbers must be 10-digit valid numbers' });
+    // Validate phones
+    if (invalidPhone(phone) || invalidPhone(altPhone)) {
+      return res.status(400).json({
+        error: "Phone numbers must be valid 10-digit numbers starting with 6–9",
+      });
     }
 
     if (phone === altPhone) {
-      return res.status(400).json({ error: 'Phone and Alternative Phone must be different' });
+      return res.status(400).json({
+        error: "Phone and Alternative Phone must be different",
+      });
     }
 
+    // Validate pincode
     if (!pincodeRegex.test(pincode)) {
-      return res.status(400).json({ error: 'Pincode must be 6 digits' });
+      return res.status(400).json({ error: "Pincode must be a valid 6-digit Indian pincode" });
     }
 
+    // Find user doc
     const doc = await Address.findOne({ userId });
     if (!doc) {
-      return res.status(404).json({ error: 'User address record not found' });
+      return res.status(404).json({ error: "User address record not found" });
     }
 
-    const index = doc.address.findIndex(a => a._id.toString() === addrId);
+    // Find index
+    const index = doc.address.findIndex((a) => a._id.toString() === addrId);
     if (index === -1) {
-      return res.status(404).json({ error: 'Address not found' });
+      return res.status(404).json({ error: "Address not found" });
     }
-    const updatedIsDefault = isDefault === true || isDefault === 'true' || isDefault === 'on';
+
+    const updatedIsDefault =
+      isDefault === true || isDefault === "true" || isDefault === "on";
+
+    // Update
     doc.address[index] = {
-      name, phone, city, state, landMark, pincode,
-      altPhone, addressType,
-      isDefault: updatedIsDefault
+      ...doc.address[index]._doc, // keep schema fields like _id
+      name,
+      phone,
+      city,
+      state,
+      landMark,
+      pincode,
+      altPhone,
+      addressType,
+      isDefault: updatedIsDefault,
     };
 
+    // If marked default, unset others
     if (updatedIsDefault) {
       doc.address.forEach((addr, i) => {
         if (i !== index) addr.isDefault = false;
@@ -165,12 +246,13 @@ const editAddress = async (req, res) => {
 
     await doc.save();
     console.log("Address updated successfully:", doc.address[index]);
-    return res.status(200).json({ success: true, message: 'Address updated successfully' });
+    return res.status(200).json({ success: true, message: "Address updated successfully" });
   } catch (err) {
     console.error("Error updating address:", err);
-    return res.status(500).json({ error: 'Server error while updating address' });
+    return res.status(500).json({ error: "Server error while updating address" });
   }
 };
+
 
 
 const deleteAddress = async (req, res) => {

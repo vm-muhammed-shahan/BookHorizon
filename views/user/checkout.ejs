@@ -757,8 +757,7 @@
                             <div class="no-address">
                                 <h3>No Delivery Address Found</h3>
                                 <p>Please add a delivery address to continue with your order.</p>
-                              <a href="/profile/addresses?from=checkout" class="add-address-btn">ADD NEW ADDRESS</a>
-
+                                <a href="/profile/addresses?from=checkout" class="add-address-btn">ADD NEW ADDRESS</a>
                             </div>
                         <% } else { %>
                             <div id="addressList">
@@ -776,52 +775,51 @@
                                     </div>
                                 <% }) %>
                             </div>
-                           <a href="/profile/addresses?from=checkout" class="add-address-btn">ADD NEW ADDRESS</a>
+                            <a href="/profile/addresses?from=checkout" class="add-address-btn">ADD NEW ADDRESS</a>
                         <% } %>
                     </div>
                 </div>
 
-                
-<div class="payment-section">
-  <!-- Existing COD Option -->
-  <div class="payment-method <%= subtotal > 1000 ? 'disabled' : 'selected' %>" onclick="<% if (subtotal <= 1000) { %>selectPaymentMethod(this, 'cod')<% } %>">
-    <input type="radio" name="paymentMethod" value="cod" class="payment-radio" <%= subtotal <= 1000 ? 'checked' : 'disabled' %> />
-    <div class="payment-icon cod-icon">💰</div>
-    <div class="payment-details">
-      <div class="payment-name">Cash on Delivery</div>
-      <div class="payment-description">Pay when your order is delivered to your doorstep<% if (subtotal > 1000) { %> (Not available for orders above ₹1000)<% } %></div>
-    </div>
-  </div>
+                <!-- Payment Methods -->
+                <div class="payment-section">
+                    <!-- COD Option -->
+                    <div class="payment-method <%= subtotal > 1000 ? 'disabled' : 'selected' %>" onclick="<% if (subtotal <= 1000) { %>selectPaymentMethod(this, 'cod')<% } %>">
+                        <input type="radio" name="paymentMethod" value="cod" class="payment-radio" <%= subtotal <= 1000 ? 'checked' : 'disabled' %> />
+                        <div class="payment-icon cod-icon">💰</div>
+                        <div class="payment-details">
+                            <div class="payment-name">Cash on Delivery</div>
+                            <div class="payment-description">Pay when your order is delivered to your doorstep<% if (subtotal > 1000) { %> (Not available for orders above ₹1000)<% } %></div>
+                        </div>
+                    </div>
 
-  <!-- Wallet Payment Option -->
-  <div class="payment-method <%= subtotal > 1000 ? '' : '' %>" onclick="selectPaymentMethod(this, 'wallet')">
-    <input type="radio" name="paymentMethod" value="wallet" class="payment-radio" />
-    <div class="payment-icon" style="background: #17a2b8; color: white;">💳</div>
-    <div class="payment-details">
-      <div class="payment-name">Wallet Payment <span>(Balance: ₹<%= walletBalance ? walletBalance.toFixed(2) : '0.00' %>)</span></div>
-      <div class="payment-description">Use your wallet balance to pay for this order<% if (walletBalance < summaryItems.totalPrice) { %> (Partial payment will use Razorpay for remaining amount)<% } %></div>
-    </div>
-  </div>
+                    <!-- Wallet Payment Option -->
+                    <div class="payment-method <%= isWalletPaymentEnabled ? '' : 'disabled' %>" onclick="<% if (isWalletPaymentEnabled) { %>selectPaymentMethod(this, 'wallet')<% } %>">
+                        <input type="radio" name="paymentMethod" value="wallet" class="payment-radio" <%= isWalletPaymentEnabled ? '' : 'disabled' %> />
+                        <div class="payment-icon" style="background: #17a2b8; color: white;">💳</div>
+                        <div class="payment-details">
+                            <div class="payment-name">Wallet Payment <span>(Balance: ₹<%= walletBalance ? walletBalance.toFixed(2) : '0.00' %>)</span></div>
+                            <div class="payment-description">Pay using your wallet balance<% if (!isWalletPaymentEnabled) { %> (Insufficient balance)<% } %></div>
+                        </div>
+                    </div>
 
-  <!-- Razorpay Option -->
-  <div class="payment-method <%= subtotal > 1000 ? 'selected' : '' %>" onclick="selectPaymentMethod(this, 'razorpay')">
-    <input type="radio" name="paymentMethod" value="razorpay" class="payment-radio" <%= subtotal > 1000 ? 'checked' : '' %> />
-    <div class="payment-icon razorpay-logo">RZP</div>
-    <div class="payment-details">
-      <div class="payment-name">Online Payment</div>
-      <div class="payment-description">Pay securely using UPI, Cards, Net Banking via Razorpay</div>
-    </div>
-  </div>
-</div>
+                    <!-- Razorpay Option -->
+                    <div class="payment-method <%= subtotal > 1000 ? 'selected' : '' %>" onclick="selectPaymentMethod(this, 'razorpay')">
+                        <input type="radio" name="paymentMethod" value="razorpay" class="payment-radio" <%= subtotal > 1000 ? 'checked' : '' %> />
+                        <div class="payment-icon razorpay-logo">RZP</div>
+                        <div class="payment-details">
+                            <div class="payment-name">Online Payment</div>
+                            <div class="payment-description">Pay securely using UPI, Cards, Net Banking via Razorpay</div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Products in Cart -->
                 <div class="section">
                     <h2 class="section-title">Order Items</h2>
-                    
                     <% items.forEach(item => { %>
                         <div class="product-item">
                             <% if (item.productId && item.productId.productImage && item.productId.productImage.length > 0) { %>
-                                <img src="/uploads/<%= item.productId.productImage[0] %>" alt="<%= item.productId.productName || 'Product' %>" class="product-image">
+                                <img src="/Uploads/<%= item.productId.productImage[0] %>" alt="<%= item.productId.productName || 'Product' %>" class="product-image">
                             <% } else { %>
                                 <img src="/images/placeholder.png" alt="No Image Available" class="product-image">
                             <% } %>
@@ -840,7 +838,7 @@
                 <!-- Coupon Section -->
                 <div class="coupon-section">
                     <h3>Coupon</h3>
-                    <input type="text" id="couponCode" class="coupon-input" placeholder="Enter coupon code" value="<%= couponApplied ? couponName : '' %>" readonly>
+                    <input type="text" id="couponCode" class="coupon-input" placeholder="Select a coupon" value="<%= couponApplied ? couponName : '' %>" readonly>
                     <div class="coupon-buttons">
                         <button type="button" id="removeCouponBtn" class="btn-coupon btn-remove-coupon" <%= couponApplied ? '' : 'disabled="disabled"' %>>Remove</button>
                     </div>
@@ -856,10 +854,10 @@
                                 <div class="coupon-item">
                                     <div class="coupon-details">
                                         <div class="coupon-code"><%= coupon.name %></div>
-                                       <div class="coupon-info">
-    Get <%= coupon.discountPercentage.toFixed(2) %>% off on a minimum purchase of ₹<%= coupon.minimumPrice.toFixed(2) %>.<br>
-    Expires on: <%= new Date(coupon.expireOn).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }) %>
-</div>
+                                        <div class="coupon-info">
+                                            Get <%= coupon.discountPercentage.toFixed(2) %>% off on a minimum purchase of ₹<%= coupon.minimumPrice.toFixed(2) %>.<br>
+                                            Expires on: <%= new Date(coupon.expireOn).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }) %>
+                                        </div>
                                     </div>
                                     <button type="button" class="btn-apply" onclick="applyCouponFromList('<%= coupon.name %>')" <%= couponApplied ? 'disabled="disabled"' : '' %>>Apply</button>
                                 </div>
@@ -870,22 +868,18 @@
 
                 <div class="order-summary">
                     <h3 class="summary-title">Order Summary</h3>
-                    
                     <div class="summary-row">
                         <span>Subtotal</span>
                         <span id="subtotal">₹<%= summaryItems.subtotal.toFixed(2) %></span>
                     </div>
-                    
                     <div class="summary-row">
                         <span>Tax (5%)</span>
                         <span id="tax">₹<%= summaryItems.tax.toFixed(2) %></span>
                     </div>
-                    
                     <div class="summary-row">
                         <span>Shipping</span>
                         <span id="shipping">₹<%= summaryItems.shipping.toFixed(2) %></span>
                     </div>
-                    
                     <% if (summaryItems.discount > 0) { %>
                         <div class="summary-row discount" id="discountRow">
                             <span>Discount (<%= couponName %>)</span>
@@ -897,7 +891,6 @@
                             <span id="discount">-</span>
                         </div>
                     <% } %>
-                    
                     <div class="summary-row total">
                         <span>TOTAL</span>
                         <span id="total">₹<%= summaryItems.totalPrice.toFixed(2) %></span>
@@ -931,12 +924,10 @@
         <form id="editAddressForm">
             <div class="modal-body">
                 <div id="modalMessage"></div>
-                
                 <div class="form-group">
                     <label class="form-label">Full Name</label>
                     <input type="text" id="fullName" name="fullName" class="form-input" required>
                 </div>
-
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Phone</label>
@@ -947,12 +938,10 @@
                         <input type="tel" id="altPhone" name="alternatePhone" class="form-input">
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Landmark</label>
                     <input type="text" id="landmark" name="landmark" class="form-input">
                 </div>
-
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">City</label>
@@ -963,7 +952,6 @@
                         <input type="text" id="state" name="state" class="form-input" required>
                     </div>
                 </div>
-
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Pincode</label>
@@ -978,7 +966,6 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">Is Default Address</label>
                     <input type="checkbox" id="isDefault" name="isDefault" class="check-input">
@@ -993,7 +980,6 @@
 </div>
 
 <script>
-    // Store addresses data and subtotal for JavaScript access
     const addressesData = <%- JSON.stringify(addresses) %>;
     let currentSubtotal = <%= subtotal %>;
     let currentEditingIndex = -1;
@@ -1008,54 +994,50 @@
     }
 
     function selectPaymentMethod(element, method) {
-  if (currentSubtotal > 1000 && method === 'cod') {
-    return; // Prevent selecting COD if subtotal > 1000
-  }
+        if ((method === 'cod' && currentSubtotal > 1000) || (method === 'wallet' && !<%= isWalletPaymentEnabled %>)) {
+            return; // Prevent selecting disabled methods
+        }
 
-  document.querySelectorAll('.payment-method').forEach(method => {
-    method.classList.remove('selected');
-  });
+        document.querySelectorAll('.payment-method').forEach(method => {
+            method.classList.remove('selected');
+        });
 
-  element.classList.add('selected');
-  element.querySelector('.payment-radio').checked = true;
+        element.classList.add('selected');
+        element.querySelector('.payment-radio').checked = true;
 
-  updatePaymentDisplay(method);
-}
+        updatePaymentDisplay(method);
+    }
 
-function updatePaymentDisplay(method) {
-  const displayElement = document.getElementById('selectedPaymentDisplay');
-  const descriptionElement = document.getElementById('payment-details');
-  const walletBalance = <%= walletBalance || 0 %>;
-  const totalPrice = <%= summaryItems.totalPrice %>;
+    function updatePaymentDisplay(method) {
+        const displayElement = document.getElementById('selectedPaymentDisplay');
+        const descriptionElement = document.getElementById('payment-details');
 
-  if (method === 'cod') {
-    displayElement.textContent = 'Selected: Cash on Delivery';
-    descriptionElement.textContent = 'Pay when your order is delivered';
-  } else if (method === 'razorpay') {
-    displayElement.textContent = 'Selected: Online Payment';
-    descriptionElement.textContent = 'Secure payment via Razorpay';
-  } else if (method === 'wallet') {
-    displayElement.textContent = 'Selected: Wallet Payment';
-    descriptionElement.textContent = walletBalance >= totalPrice 
-      ? 'Pay using your wallet balance' 
-      : `Pay ₹${walletBalance.toFixed(2)} from wallet and ₹${(totalPrice - walletBalance).toFixed(2)} via Razorpay`;
-  }
-}
+        if (method === 'cod') {
+            displayElement.textContent = 'Selected: Cash on Delivery';
+            descriptionElement.textContent = 'Pay when your order is delivered';
+        } else if (method === 'razorpay') {
+            displayElement.textContent = 'Selected: Online Payment';
+            descriptionElement.textContent = 'Secure payment via Razorpay';
+        } else if (method === 'wallet') {
+            displayElement.textContent = 'Selected: Wallet Payment';
+            descriptionElement.textContent = 'Pay using your wallet balance';
+        }
+    }
 
     function updateCouponSection(subtotal) {
         const couponInput = document.getElementById('couponCode');
         const removeBtn = document.getElementById('removeCouponBtn');
         const applyButtons = document.querySelectorAll('.btn-apply');
         const codRadio = document.querySelector('input[value="cod"]');
+        const walletRadio = document.querySelector('input[value="wallet"]');
         const razorpayRadio = document.querySelector('input[value="razorpay"]');
         const codMethod = codRadio.closest('.payment-method');
+        const walletMethod = walletRadio.closest('.payment-method');
         const razorpayMethod = razorpayRadio.closest('.payment-method');
         
         if (subtotal > 1000) {
-            // Disable COD and select Razorpay if subtotal > 1000
             codMethod.classList.add('disabled');
             codRadio.disabled = true;
-            
             if (codRadio.checked) {
                 codRadio.checked = false;
                 razorpayRadio.checked = true;
@@ -1064,11 +1046,25 @@ function updatePaymentDisplay(method) {
                 updatePaymentDisplay('razorpay');
             }
         } else {
-            // Enable COD if subtotal <= 1000
             codMethod.classList.remove('disabled');
             codRadio.disabled = false;
         }
-        
+
+        if (!<%= isWalletPaymentEnabled %>) {
+            walletMethod.classList.add('disabled');
+            walletRadio.disabled = true;
+            if (walletRadio.checked) {
+                walletRadio.checked = false;
+                razorpayRadio.checked = true;
+                walletMethod.classList.remove('selected');
+                razorpayMethod.classList.add('selected');
+                updatePaymentDisplay('razorpay');
+            }
+        } else {
+            walletMethod.classList.remove('disabled');
+            walletRadio.disabled = false;
+        }
+
         if (couponInput.value) {
             removeBtn.disabled = false;
             applyButtons.forEach(btn => btn.disabled = true);
@@ -1149,7 +1145,7 @@ function updatePaymentDisplay(method) {
     }
 
     function updateSummary(subtotal, tax, shipping, discount, total, couponName = '') {
-        currentSubtotal = subtotal; // Update currentSubtotal
+        currentSubtotal = subtotal;
         document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
         document.getElementById('tax').textContent = `₹${tax.toFixed(2)}`;
         document.getElementById('shipping').textContent = `₹${shipping.toFixed(2)}`;
@@ -1164,7 +1160,7 @@ function updatePaymentDisplay(method) {
             discountSpan.textContent = '-';
         }
         document.getElementById('total').textContent = `₹${total.toFixed(2)}`;
-        updateCouponSection(subtotal); // Update payment methods based on new subtotal
+        updateCouponSection(subtotal);
     }
 
     async function applyCouponFromList(couponCode) {
@@ -1313,132 +1309,132 @@ function updatePaymentDisplay(method) {
     });
 
     document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
+        e.preventDefault();
 
-  const selectedAddress = document.querySelector('input[name="selectedAddressIndex"]:checked');
-  const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
-  const submitBtn = document.getElementById('placeOrderBtn');
-  const form = this;
+        const selectedAddress = document.querySelector('input[name="selectedAddressIndex"]:checked');
+        const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
+        const submitBtn = document.getElementById('placeOrderBtn');
+        const form = this;
 
-  if (!selectedAddress) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'Please select a delivery address',
-      confirmButtonColor: '#000'
-    });
-    return;
-  }
-
-  if (!selectedPayment) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'Please select a payment method',
-      confirmButtonColor: '#000'
-    });
-    return;
-  }
-
-  const originalText = submitBtn.textContent;
-  submitBtn.disabled = true;
-  submitBtn.textContent = selectedPayment.value === 'cod' ? 'PROCESSING ORDER...' : 
-                         selectedPayment.value === 'wallet' ? 'PROCESSING WALLET PAYMENT...' : 
-                         'REDIRECTING TO PAYMENT...';
-  form.classList.add('loading');
-
-  try {
-    const response = await fetch('/checkout/place-order', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        selectedAddressIndex: selectedAddress.value,
-        paymentMethod: selectedPayment.value
-      })
-    });
-
-    const result = await response.json();
-
-    if (result.error) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: result.error,
-        confirmButtonColor: '#000'
-      });
-      return;
-    }
-
-    if (selectedPayment.value === 'cod' || selectedPayment.value === 'wallet') {
-      Swal.fire({
-        icon: 'success',
-        title: 'Order Placed',
-        text: 'Your order has been successfully placed!',
-        confirmButtonColor: '#000'
-      }).then(() => {
-        window.location.href = result.redirect;
-      });
-    } else if (selectedPayment.value === 'razorpay') {
-      const options = {
-        key: '<%= razorpayKeyId %>',
-        amount: result.amount,
-        currency: result.currency,
-        name: 'BookHorizon',
-        description: 'Order Payment',
-        order_id: result.razorpayOrderId,
-        handler: async function(response) {
-          try {
-            const verifyResponse = await fetch('/checkout/verify-payment', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                orderId: result.orderId,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature
-              })
-            });
-
-            const verifyResult = await verifyResponse.json();
-
-            if (verifyResult.success) {
-              Swal.fire({
-                icon: 'success',
-                title: 'Payment Successful',
-                text: 'Your order has been placed!',
-                confirmButtonColor: '#000'
-              }).then(() => {
-                window.location.href = verifyResult.redirect;
-              });
-            } else {
-              Swal.fire({
-                icon: 'error',
-                title: 'Payment Failed',
-                text: 'Payment verification failed. Please try again.',
-                confirmButtonColor: '#333'
-              }).then(() => {
-                window.location.href = verifyResult.redirect;
-              });
-            }
-          } catch (error) {
-            console.error('Error verifying payment:', error);
+        if (!selectedAddress) {
             Swal.fire({
-              icon: 'error',
-              title: 'Error',
-              text: 'Failed to verify payment. Please try again.',
-              confirmButtonColor: '#333'
+                icon: 'error',
+                title: 'Error',
+                text: 'Please select a delivery address',
+                confirmButtonColor: '#000'
             });
-          }
-        },
-        prefill: {
-          name: '<%= user.name %>',
-          email: '<%= user.email %>',
-          contact: addressesData[0]?.phone || ''
-        },
-        theme: { color: '#333' },
-      };
+            return;
+        }
 
-      const rzp = new Razorpay(options);
+        if (!selectedPayment) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Please select a payment method',
+                confirmButtonColor: '#000'
+            });
+            return;
+        }
+
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = selectedPayment.value === 'cod' ? 'PROCESSING ORDER...' : 
+                               selectedPayment.value === 'wallet' ? 'PROCESSING WALLET PAYMENT...' : 
+                               'REDIRECTING TO PAYMENT...';
+        form.classList.add('loading');
+
+        try {
+            const response = await fetch('/checkout/place-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    selectedAddressIndex: selectedAddress.value,
+                    paymentMethod: selectedPayment.value
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: result.error,
+                    confirmButtonColor: '#000'
+                });
+                return;
+            }
+
+            if (selectedPayment.value === 'cod' || selectedPayment.value === 'wallet') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Order Placed',
+                    text: 'Your order has been successfully placed!',
+                    confirmButtonColor: '#000'
+                }).then(() => {
+                    window.location.href = result.redirect;
+                });
+            } else if (selectedPayment.value === 'razorpay') {
+                const options = {
+                    key: '<%= razorpayKeyId %>',
+                    amount: result.amount,
+                    currency: result.currency,
+                    name: 'BookHorizon',
+                    description: 'Order Payment',
+                    order_id: result.razorpayOrderId,
+                    handler: async function(response) {
+                        try {
+                            const verifyResponse = await fetch('/checkout/verify-payment', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    orderId: result.orderId,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            });
+
+                            const verifyResult = await verifyResponse.json();
+
+                            if (verifyResult.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Payment Successful',
+                                    text: 'Your order has been placed!',
+                                    confirmButtonColor: '#000'
+                                }).then(() => {
+                                    window.location.href = verifyResult.redirect;
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Payment Failed',
+                                    text: 'Payment verification failed. Please try again.',
+                                    confirmButtonColor: '#333'
+                                }).then(() => {
+                                    window.location.href = verifyResult.redirect;
+                                });
+                            }
+                        } catch (error) {
+                            console.error('Error verifying payment:', error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'Failed to verify payment. Please try again.',
+                                confirmButtonColor: '#333'
+                            });
+                        }
+                    },
+                    prefill: {
+                        name: '<%= user.name %>',
+                        email: '<%= user.email %>',
+                        contact: addressesData[0]?.phone || ''
+                    },
+                    theme: { color: '#333' },
+                };
+
+                const rzp = new Razorpay(options);
       rzp.on('payment.failed', async function(response) {
         try {
           await fetch('/checkout/payment-failed', {
