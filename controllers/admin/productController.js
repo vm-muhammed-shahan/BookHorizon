@@ -34,20 +34,43 @@ const addProducts = async (req, res) => {
       quantity,
     } = req.body;
 
-    if (!productName || !description || !category || !regularPrice || !quantity) {
+    // 1) All fields required
+    if (!productName || !description || !category || !regularPrice || quantity === undefined) {
       return res.status(400).json({
         success: false,
         message: "All required fields must be filled",
       });
     }
 
-    if (!req.files || req.files.length !== 3) {
+    // 2) Product Name: alphabets & spaces only, length 2–75
+    if (!/^[A-Za-z\s]+$/.test(productName.trim())) {
       return res.status(400).json({
         success: false,
-        message: "Exactly 3 product images are required",
+        message: "Product name should contain alphabets and spaces only",
+      });
+    }
+    if (productName.trim().length < 2 || productName.trim().length > 75) {
+      return res.status(400).json({
+        success: false,
+        message: "Product name length must be between 2 and 75 characters",
       });
     }
 
+    // 3) Description: alphabets & spaces only, max 1000 chars
+    if (!/^[A-Za-z\s]+$/.test(description.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: "Description should contain alphabets and spaces only",
+      });
+    }
+    if (description.trim().length > 1000) {
+      return res.status(400).json({
+        success: false,
+        message: "Description cannot exceed 1000 characters",
+      });
+    }
+
+    // 4) Regular price: must be > 0
     const regPrice = parseFloat(regularPrice);
     if (isNaN(regPrice) || regPrice <= 0) {
       return res.status(400).json({
@@ -56,15 +79,25 @@ const addProducts = async (req, res) => {
       });
     }
 
+    // 5) Quantity: must be >= 0
     const productQty = parseInt(quantity);
-    if (isNaN(productQty)) {
+    if (isNaN(productQty) || productQty < 0) {
       return res.status(400).json({
         success: false,
-        message: "Quantity must be a valid number",
+        message: "Quantity must be a number greater than or equal to zero",
       });
     }
 
-    const productExist = await Product.findOne({ productName });
+    // Check images (must be exactly 3)
+    if (!req.files || req.files.length !== 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Exactly 3 product images are required",
+      });
+    }
+
+    // Check for duplicate product name
+    const productExist = await Product.findOne({ productName: productName.trim() });
     if (productExist) {
       return res.status(400).json({
         success: false,
@@ -72,6 +105,7 @@ const addProducts = async (req, res) => {
       });
     }
 
+    // Validate category exists
     const categoryId = await Category.findOne({ _id: category });
     if (!categoryId) {
       return res.status(400).json({
@@ -80,21 +114,20 @@ const addProducts = async (req, res) => {
       });
     }
 
+    // Save images
     const images = [];
     const imageDir = path.join(__dirname, '../../public/uploads');
     if (!fs.existsSync(imageDir)) {
       fs.mkdirSync(imageDir, { recursive: true });
     }
-
-    if (req.files && req.files.length > 0) {
-      for (let i = 0; i < req.files.length; i++) {
-        images.push(req.files[i].filename);
-      }
+    for (let i = 0; i < req.files.length; i++) {
+      images.push(req.files[i].filename);
     }
 
+    // Create product
     const newProduct = new Product({
-      productName,
-      description,
+      productName: productName.trim(),
+      description: description.trim(),
       category: categoryId._id,
       regularPrice: regPrice,
       quantity: productQty,
@@ -102,11 +135,13 @@ const addProducts = async (req, res) => {
       status: 'Available',
     });
 
+    // Apply best offer for sale price
     const { discountedPrice } = await applyBestOffer(newProduct, null, categoryId._id);
     newProduct.salePrice = discountedPrice;
 
     await newProduct.save();
     return res.status(200).json({ success: true, message: "Product added successfully" });
+
   } catch (error) {
     console.error("Error saving product", error);
     return res.status(500).json({
@@ -115,6 +150,7 @@ const addProducts = async (req, res) => {
     });
   }
 };
+
 
 
 const getAllProducts = async (req, res) => {
@@ -359,6 +395,39 @@ const editProduct = async (req, res) => {
     
     const data = req.body;
     
+    // 🔒 Validation rules
+    if (!data.productName || !data.description || !data.category || data.regularPrice === undefined || data.quantity === undefined) {
+      return res.status(400).json({ error: "All required fields must be filled" });
+    }
+
+    // Product name: alphabets only, 2–75 chars
+    if (!/^[A-Za-z\s]+$/.test(data.productName)) {
+      return res.status(400).json({ error: "Product name should contain alphabets and spaces only" });
+    }
+    if (data.productName.trim().length < 2 || data.productName.trim().length > 75) {
+      return res.status(400).json({ error: "Product name length must be between 2 and 75 characters" });
+    }
+
+    // Description: alphabets only, max 1000 chars
+    if (!/^[A-Za-z\s]+$/.test(data.description)) {
+      return res.status(400).json({ error: "Description should contain alphabets and spaces only" });
+    }
+    if (data.description.length > 1000) {
+      return res.status(400).json({ error: "Description cannot exceed 1000 characters" });
+    }
+
+    // Regular price > 0
+    const regPrice = parseFloat(data.regularPrice);
+    if (isNaN(regPrice) || regPrice <= 0) {
+      return res.status(400).json({ error: "Regular price must be greater than zero" });
+    }
+
+    // Quantity ≥ 0
+    const qty = parseInt(data.quantity);
+    if (isNaN(qty) || qty < 0) {
+      return res.status(400).json({ error: "Quantity must be zero or a positive number" });
+    }
+
     const existingProduct = await Product.findOne({
       productName: data.productName,
       _id: { $ne: id }

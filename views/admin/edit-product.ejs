@@ -457,47 +457,63 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Form validation
   function validateForm() {
-    const productName = document.querySelector('input[name="productName"]').value;
-    const category = document.querySelector('select[name="category"]').value;
-    const imageCount = document.querySelectorAll('.img-preview').length;
-    const regularPrice = parseFloat(document.querySelector('input[name="regularPrice"]').value);
-    
-    // Check required fields
-    if (!productName || !category) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Validation Error',
-        text: 'Please fill in all required fields',
-        confirmButtonColor: '#3085d6'
-      });
-      return false;
-    }
-    
-    // Check image count
-    if (imageCount < 3) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Image Validation Error',
-        text: 'Product must have exactly 3 images',
-        confirmButtonColor: '#3085d6'
-      });
-      return false;
-    }
-    
-    // Check regular price is greater than zero
-    if (regularPrice <= 0) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Price Validation Error',
-        text: 'Regular price must be greater than zero',
-        confirmButtonColor: '#3085d6'
-      });
-      regularPriceInput.focus();
-      return false;
-    }
-    
-    return true;
+  const productName = document.querySelector('input[name="productName"]').value.trim();
+  const description = document.querySelector('textarea[name="description"]').value.trim();
+  const category = document.querySelector('select[name="category"]').value;
+  const imageCount = document.querySelectorAll('.img-preview').length;
+  const regularPrice = parseFloat(document.querySelector('input[name="regularPrice"]').value);
+  const quantity = document.querySelector('input[name="quantity"]').value.trim();
+
+  // Product Name
+  if (!productName) {
+    Swal.fire({ icon: 'error', title: 'Validation Error', text: 'Product name is required' });
+    return false;
+  } else if (!/^[A-Za-z\s]+$/.test(productName)) {
+    Swal.fire({ icon: 'error', title: 'Validation Error', text: 'Product name must contain alphabets and spaces only' });
+    return false;
+  } else if (productName.length < 2 || productName.length > 75) {
+    Swal.fire({ icon: 'error', title: 'Validation Error', text: 'Product name must be 2–75 characters long' });
+    return false;
   }
+
+  // Description
+  if (!description) {
+    Swal.fire({ icon: 'error', title: 'Validation Error', text: 'Description is required' });
+    return false;
+  } else if (!/^[A-Za-z\s]+$/.test(description)) {
+    Swal.fire({ icon: 'error', title: 'Validation Error', text: 'Description must contain alphabets and spaces only' });
+    return false;
+  } else if (description.length > 1000) {
+    Swal.fire({ icon: 'error', title: 'Validation Error', text: 'Description must not exceed 1000 characters' });
+    return false;
+  }
+
+  // Category
+  if (!category) {
+    Swal.fire({ icon: 'error', title: 'Validation Error', text: 'Category is required' });
+    return false;
+  }
+
+  // Images
+  if (imageCount !== 3) {
+    Swal.fire({ icon: 'error', title: 'Image Validation Error', text: 'Product must have exactly 3 images' });
+    return false;
+  }
+
+  // Regular Price
+  if (isNaN(regularPrice) || regularPrice <= 0) {
+    Swal.fire({ icon: 'error', title: 'Price Validation Error', text: 'Regular price must be greater than zero' });
+    return false;
+  }
+
+  // Quantity
+  if (quantity === "" || isNaN(quantity) || parseInt(quantity) < 0) {
+    Swal.fire({ icon: 'error', title: 'Quantity Validation Error', text: 'Quantity must be zero or a positive number' });
+    return false;
+  }
+
+  return true;
+}
 
   // Form submission handler
   document.getElementById('edit-product-form').addEventListener('submit', async function(e) {

@@ -271,7 +271,6 @@ async function handleFormSubmit(e) {
             body: formData
         });
         const data = await response.json();
-        console.log(data);
 
         if (data.success) {
             Swal.fire({
@@ -512,52 +511,60 @@ function saveCroppedImage() {
 
 function validateForm() {
     clearErrorMessages();
-    const name = document.getElementsByName('productName')[0].value;
-    const description = document.getElementById('descriptionid').value;
-    const price = document.getElementsByName('regularPrice')[0].value;
-    const quantity = document.getElementsByName('quantity')[0].value;
+    const name = document.getElementsByName('productName')[0].value.trim();
+    const description = document.getElementById('descriptionid').value.trim();
+    const price = document.getElementsByName('regularPrice')[0].value.trim();
+    const quantity = document.getElementsByName('quantity')[0].value.trim();
     let isValid = true;
 
-    if (name.trim() === "") {
-        displayErrorMessage('productName-error', 'Please enter a product name.');
+    // Product Name
+    if (!name) {
+        displayErrorMessage('productName-error', 'Product name is required.');
         isValid = false;
-    } else if (!/^[a-zA-Z0-9\s!@#$%^&*()_+\-=\[\]{};:'",.<>?/\\|`~]*$/.test(name.trim())) {
-        displayErrorMessage('productName-error', 'Product name contains invalid characters.');
+    } else if (!/^[A-Za-z\s]+$/.test(name)) {
+        displayErrorMessage('productName-error', 'Product name must contain alphabets and spaces only.');
         isValid = false;
-    }
-    
-    if (description.trim() === "") {
-        displayErrorMessage('description-error', 'Please enter a product description.');
-        isValid = false;
-    } else if (!/^[a-zA-Z0-9\s.,!?()-]*$/.test(description.trim())) {
-        displayErrorMessage('description-error', 'Product description contains invalid characters.');
+    } else if (name.length < 2 || name.length > 75) {
+        displayErrorMessage('productName-error', 'Product name must be 2–75 characters long.');
         isValid = false;
     }
-    
-    if (quantity.trim() === "" || isNaN(parseInt(quantity))) {
-        displayErrorMessage('quantity-error', 'Please enter a valid quantity.');
+
+    // Description
+    if (!description) {
+        displayErrorMessage('description-error', 'Description is required.');
+        isValid = false;
+    } else if (!/^[A-Za-z\s]+$/.test(description)) {
+        displayErrorMessage('description-error', 'Description must contain alphabets and spaces only.');
+        isValid = false;
+    } else if (description.length > 1000) {
+        displayErrorMessage('description-error', 'Description must not exceed 1000 characters.');
         isValid = false;
     }
-    
-    if (!price.trim()) {
-        displayErrorMessage('regularPrice-error', 'Please enter a regular price.');
+
+    // Regular Price
+    if (!price) {
+        displayErrorMessage('regularPrice-error', 'Regular price is required.');
         isValid = false;
-    } else if (!/^\d+(\.\d{1,2})?$/.test(price)) {
-        displayErrorMessage('regularPrice-error', 'Please enter a valid price format (e.g., 19.99).');
-        isValid = false;
-    } else if (parseFloat(price) <= 0) {
+    } else if (isNaN(price) || parseFloat(price) <= 0) {
         displayErrorMessage('regularPrice-error', 'Regular price must be greater than zero.');
         isValid = false;
     }
-    
-    if (selectedImages.length === 0) {
-        displayErrorMessage('images-error', 'Please select product images.');
+
+    // Quantity
+    if (quantity === "") {
+        displayErrorMessage('quantity-error', 'Quantity is required.');
         isValid = false;
-    } else if (selectedImages.length !== 3) {
-        displayErrorMessage('images-error', `Exactly 3 product images are required. You have ${selectedImages.length}.`);
+    } else if (isNaN(quantity) || parseInt(quantity) < 0) {
+        displayErrorMessage('quantity-error', 'Quantity must be zero or a positive number.');
         isValid = false;
     }
-    
+
+    // Images
+    if (selectedImages.length !== MAX_IMAGES) {
+        displayErrorMessage('images-error', `Exactly ${MAX_IMAGES} product images are required. You have ${selectedImages.length}.`);
+        isValid = false;
+    }
+
     return isValid;
 }
 

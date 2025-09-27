@@ -199,97 +199,97 @@
         }
 
         /* Edit Coupon Modal */
-#editCouponModal .modal-content {
-  background: #fff;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 500px;
-  padding: 1.5rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  animation: slideIn 0.3s ease;
-}
+        #editCouponModal .modal-content {
+            background: #fff;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+        }
 
-#editCouponModal h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  color: #000;
-}
+        #editCouponModal h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #000;
+        }
 
-#editCouponModal label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #333;
-}
+        #editCouponModal label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
 
-#editCouponModal input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 4px;
-  font-size: 1rem;
-  margin-bottom: 1rem;
-  transition: border-color 0.3s ease;
-}
+        #editCouponModal input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.3s ease;
+        }
 
-#editCouponModal input:focus {
-  outline: none;
-  border-color: #000;
-}
+        #editCouponModal input:focus {
+            outline: none;
+            border-color: #000;
+        }
 
-#editCouponModal .close {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #666;
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-}
+        #editCouponModal .close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
 
-#editCouponModal .close:hover {
-  background: #f0f0f0;
-  color: #000;
-}
+        #editCouponModal .close:hover {
+            background: #f0f0f0;
+            color: #000;
+        }
 
-#editCouponModal button {
-  padding: 0.6rem 1.2rem;
-  border-radius: 4px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
+        #editCouponModal button {
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
 
-#editCouponModal #updateCouponBtn {
-  background-color: #007bff;
-  color: white;
-  border: 1px solid #007bff;
-}
+        #editCouponModal #updateCouponBtn {
+            background-color: #007bff;
+            color: white;
+            border: 1px solid #007bff;
+        }
 
-#editCouponModal #updateCouponBtn:hover {
-  background-color: #0056b3;
-  border-color: #004085;
-}
+        #editCouponModal #updateCouponBtn:hover {
+            background-color: #0056b3;
+            border-color: #004085;
+        }
 
-#editCouponModal .btn-secondary {
-  background-color: #6c757d;
-  color: white;
-  border: 1px solid #6c757d;
-}
-#editCouponModal .btn-secondary:hover {
-  background-color: #5a6268;
-  border-color: #545b62;
-}
+        #editCouponModal .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            border: 1px solid #6c757d;
+        }
 
+        #editCouponModal .btn-secondary:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+        }
     </style>
 
     <div class="container-fluid mt-4">
@@ -405,49 +405,49 @@
         </div>
     </div>
 
- <!--Edit Coupon Modal -->
+    <!--Edit Coupon Modal -->
     <div id="editCouponModal" class="modal">
-  <div class="modal-content relative">
-    <button type="button" class="close" id="closeEditCouponModalBtn">&times;</button>
-    <h2 class="modal-title">Edit Coupon</h2>
-    <form id="editCouponForm">
-      <input type="hidden" id="editCouponId" name="couponId">
+        <div class="modal-content relative">
+            <button type="button" class="close" id="closeEditCouponModalBtn">&times;</button>
+            <h2 class="modal-title">Edit Coupon</h2>
+            <form id="editCouponForm">
+                <input type="hidden" id="editCouponId" name="couponId">
 
-      <div class="form-group">
-        <label for="editCouponName">Coupon Code:</label>
-        <input type="text" id="editCouponName" name="name" required>
-      </div>
+                <div class="form-group">
+                    <label for="editCouponName">Coupon Code:</label>
+                    <input type="text" id="editCouponName" name="name" required>
+                </div>
 
-      <div class="form-group">
-        <label for="editDiscountPercentage">Discount %:</label>
-        <input type="number" id="editDiscountPercentage" name="discountPercentage" required>
-      </div>
+                <div class="form-group">
+                    <label for="editDiscountPercentage">Discount %:</label>
+                    <input type="number" id="editDiscountPercentage" name="discountPercentage" required>
+                </div>
 
-      <div class="form-group">
-        <label for="editMinimumPrice">Minimum Price:</label>
-        <input type="number" id="editMinimumPrice" name="minimumPrice" required>
-      </div>
+                <div class="form-group">
+                    <label for="editMinimumPrice">Minimum Price:</label>
+                    <input type="number" id="editMinimumPrice" name="minimumPrice" required>
+                </div>
 
-      <div class="form-group">
-        <label for="editExpireOn">Expiry Date:</label>
-        <input type="date" id="editExpireOn" name="expireOn" required>
-      </div>
+                <div class="form-group">
+                    <label for="editExpireOn">Expiry Date:</label>
+                    <input type="date" id="editExpireOn" name="expireOn" required>
+                </div>
 
-      <div id="editModalMessage"></div>
+                <div id="editModalMessage"></div>
 
-      <div class="modal-footer" style="margin-top: 1rem; text-align: right;">
-        <button type="submit" id="updateCouponBtn">Update Coupon</button>
-        <button type="button" class="btn btn-secondary" id="cancelEditCouponBtn">Cancel</button>
-      </div>
-    </form>
-  </div>
-</div>
+                <div class="modal-footer" style="margin-top: 1rem; text-align: right;">
+                    <button type="submit" id="updateCouponBtn">Update Coupon</button>
+                    <button type="button" class="btn btn-secondary" id="cancelEditCouponBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Function to format date as DD/MM/YYYY
+        
         function formatDate(dateString) {
             const date = new Date(dateString);
             const day = String(date.getDate()).padStart(2, '0');
@@ -456,7 +456,7 @@
             return `${day}/${month}/${year}`;
         }
 
-        // Function to filter coupons based on exact match of search input
+        
         function filterCoupons() {
             const searchValue = document.getElementById('searchInput').value.trim().toLowerCase();
             const rows = document.querySelectorAll('#couponTable tr');
@@ -492,7 +492,7 @@
             clearButton.disabled = false;
         }
 
-        // Function to clear the search input and reload the page
+        
         function clearSearch() {
             const searchInput = document.getElementById('searchInput');
             const clearButton = document.getElementById('clearButton');
@@ -502,11 +502,11 @@
             window.location.reload();
         }
 
-        // Event listeners for Search and Clear buttons
+        
         document.getElementById('searchButton').addEventListener('click', filterCoupons);
         document.getElementById('clearButton').addEventListener('click', clearSearch);
 
-        // Modal control
+        
         const modal = document.getElementById('couponModal');
         const openModalBtn = document.getElementById('openCouponModalBtn');
         const closeModalBtn = document.getElementById('closeCouponModalBtn');
@@ -534,7 +534,7 @@
             document.getElementById('modalMessage').innerHTML = '';
         }
 
-        // Validation functions
+        
         function validateField(inputId, value, rules) {
             const input = document.getElementById(inputId);
             const errorElement = document.getElementById(`${inputId}Error`);
@@ -594,7 +594,7 @@
             errorElement.style.display = 'block';
         }
 
-        // Form submission with validation
+    
         document.getElementById('createCouponForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.target;
@@ -604,7 +604,7 @@
             const expireOn = document.getElementById('expireOn').value;
             let isValid = true;
 
-            // Clear previous errors
+            /
             document.querySelectorAll('.form-input').forEach(input => {
                 input.classList.remove('error', 'success');
             });
@@ -613,7 +613,7 @@
             });
             document.getElementById('modalMessage').innerHTML = '';
 
-            // Validate fields
+    
             isValid &= validateField('couponName', couponName, { required: true });
             isValid &= validateField('discountPercentage', discountPercentage, { required: true });
             isValid &= validateField('minimumPrice', minimumPrice, { required: true });
@@ -663,7 +663,7 @@
             }
         });
 
-        // Real-time validation
+        
         ['couponName', 'discountPercentage', 'minimumPrice', 'expireOn'].forEach(field => {
             document.getElementById(field).addEventListener('input', () => {
                 const value = field === 'couponName' ? document.getElementById(field).value.trim().toUpperCase() : document.getElementById(field).value;
@@ -725,80 +725,80 @@
             }
         }
 
-        // Edit modal controls
-const editModal = document.getElementById('editCouponModal');
-const closeEditModalBtn = document.getElementById('closeEditCouponModalBtn');
 
-function openEditModal(id, name, discount, minPrice, expiry) {
-    editModal.classList.add('show');
-    document.body.style.overflow = 'hidden';
+        const editModal = document.getElementById('editCouponModal');
+        const closeEditModalBtn = document.getElementById('closeEditCouponModalBtn');
 
-    document.getElementById('editCouponId').value = id;
-    document.getElementById('editCouponName').value = name;
-    document.getElementById('editDiscountPercentage').value = discount;
-    document.getElementById('editMinimumPrice').value = minPrice;
-    document.getElementById('editExpireOn').value = expiry;
-}
+        function openEditModal(id, name, discount, minPrice, expiry) {
+            editModal.classList.add('show');
+            document.body.style.overflow = 'hidden';
 
-closeEditModalBtn.addEventListener('click', closeEditModal);
-
-function closeEditModal() {
-    editModal.classList.remove('show');
-    document.body.style.overflow = 'auto';
-    document.getElementById('editCouponForm').reset();
-    document.getElementById('editModalMessage').innerHTML = '';
-}
-
-const cancelEditBtn = document.getElementById('cancelEditCouponBtn');
-cancelEditBtn.addEventListener('click', closeEditModal);
-
-
-// Handle Edit form submission
-document.getElementById('editCouponForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const id = document.getElementById('editCouponId').value;
-    const updatedData = {
-        name: document.getElementById('editCouponName').value.trim().toUpperCase(),
-        discountPercentage: document.getElementById('editDiscountPercentage').value,
-        minimumPrice: document.getElementById('editMinimumPrice').value,
-        expireOn: document.getElementById('editExpireOn').value
-    };
-
-    const submitBtn = document.getElementById('updateCouponBtn');
-    const originalText = submitBtn.textContent;
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Updating...';
-    const messageDiv = document.getElementById('editModalMessage');
-    messageDiv.innerHTML = '';
-
-    try {
-        const response = await fetch(`/admin/coupons/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatedData)
-        });
-        const result = await response.json();
-
-        if (result.success) {
-            await Swal.fire({
-                icon: 'success',
-                title: 'Updated',
-                text: 'Coupon updated successfully!',
-                confirmButtonColor: '#3085d6'
-            });
-            closeEditModal();
-            window.location.reload();
-        } else {
-            messageDiv.innerHTML = `<div class="alert alert-danger">${result.error}</div>`;
+            document.getElementById('editCouponId').value = id;
+            document.getElementById('editCouponName').value = name;
+            document.getElementById('editDiscountPercentage').value = discount;
+            document.getElementById('editMinimumPrice').value = minPrice;
+            document.getElementById('editExpireOn').value = expiry;
         }
-    } catch (error) {
-        console.error('Error updating coupon:', error);
-        messageDiv.innerHTML = `<div class="alert alert-danger">Server error. Please try again.</div>`;
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = originalText;
-    }
-});
+
+        closeEditModalBtn.addEventListener('click', closeEditModal);
+
+        function closeEditModal() {
+            editModal.classList.remove('show');
+            document.body.style.overflow = 'auto';
+            document.getElementById('editCouponForm').reset();
+            document.getElementById('editModalMessage').innerHTML = '';
+        }
+
+        const cancelEditBtn = document.getElementById('cancelEditCouponBtn');
+        cancelEditBtn.addEventListener('click', closeEditModal);
+
+
+        // Handle Edit form submission
+        document.getElementById('editCouponForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editCouponId').value;
+            const updatedData = {
+                name: document.getElementById('editCouponName').value.trim().toUpperCase(),
+                discountPercentage: document.getElementById('editDiscountPercentage').value,
+                minimumPrice: document.getElementById('editMinimumPrice').value,
+                expireOn: document.getElementById('editExpireOn').value
+            };
+
+            const submitBtn = document.getElementById('updateCouponBtn');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Updating...';
+            const messageDiv = document.getElementById('editModalMessage');
+            messageDiv.innerHTML = '';
+
+            try {
+                const response = await fetch(`/admin/coupons/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedData)
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Updated',
+                        text: 'Coupon updated successfully!',
+                        confirmButtonColor: '#3085d6'
+                    });
+                    closeEditModal();
+                    window.location.reload();
+                } else {
+                    messageDiv.innerHTML = `<div class="alert alert-danger">${result.error}</div>`;
+                }
+            } catch (error) {
+                console.error('Error updating coupon:', error);
+                messageDiv.innerHTML = `<div class="alert alert-danger">Server error. Please try again.</div>`;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        });
 
     </script>
 
