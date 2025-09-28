@@ -819,7 +819,7 @@
                     <% items.forEach(item => { %>
                         <div class="product-item">
                             <% if (item.productId && item.productId.productImage && item.productId.productImage.length > 0) { %>
-                                <img src="/Uploads/<%= item.productId.productImage[0] %>" alt="<%= item.productId.productName || 'Product' %>" class="product-image">
+                                <img src="/uploads/<%= item.productId.productImage[0] %>" alt="<%= item.productId.productName || 'Product' %>" class="product-image">
                             <% } else { %>
                                 <img src="/images/placeholder.png" alt="No Image Available" class="product-image">
                             <% } %>
