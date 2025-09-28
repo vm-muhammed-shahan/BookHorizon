@@ -232,6 +232,17 @@
       toggleCustomDate(document.getElementById('filterSelect'));
     }
   })
+
+function downloadReport(format) {
+      const filter = '<%= filter %>';
+      const startDate = '<%= startDate || '' %>';
+      const endDate = '<%= endDate || '' %>';
+      const status = '<%= status || '' %>';
+      let url = `/admin/sales-report/download?format=${format}&filter=${filter}`;
+      if (startDate && endDate) url += `&startDate=${startDate}&endDate=${endDate}`;
+      if (status) url += `&status=${status}`;
+      window.location.href = url;
+    }
   </script>
 
   <style>

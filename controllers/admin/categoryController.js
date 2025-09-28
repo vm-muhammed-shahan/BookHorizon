@@ -46,6 +46,27 @@ const categoryInfo = async (req, res) => {
 const addCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
+
+    if (!name || !description) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+
+    if (!/^[A-Za-z\s]+$/.test(name)) {
+      return res.status(400).json({ error: "Category name should contain only alphabets and spaces" });
+    }
+    if (name.trim().length < 2 || name.trim().length > 50) {
+      return res.status(400).json({ error: "Category name must be 2–50 characters long" });
+    }
+
+    
+    if (!/^[A-Za-z\s]+$/.test(description)) {
+      return res.status(400).json({ error: "Description should contain only alphabets and spaces" });
+    }
+    if (description.trim().length < 2 || description.trim().length > 50) {
+      return res.status(400).json({ error: "Description must be 2–50 characters long" });
+    }
+    
     const existingCategory = await Category.findOne({ name: { $regex: new RegExp('^' + name + '$', 'i') } });
 
     if (existingCategory) {
@@ -248,3 +269,6 @@ module.exports = {
   editCategory,
 
 };
+
+
+

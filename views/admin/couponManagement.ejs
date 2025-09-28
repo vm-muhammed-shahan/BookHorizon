@@ -347,13 +347,20 @@
                                     <%= coupon.islist ? 'Active' : 'Inactive' %>
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-danger" onclick="deleteCoupon('<%= coupon._id %>')">
-                                        <%= coupon.islist ? 'Delete' : 'Restore' %>
-                                    </button>
-                                    <button class="btn btn-sm btn-warning"
-                                        onclick="openEditModal('<%= coupon._id %>','<%= coupon.name %>','<%= coupon.discountPercentage %>','<%= coupon.minimumPrice %>','<%= coupon.expireOn.toISOString().split('T')[0] %>')">Edit</button>
-
+                                    <% if (new Date(coupon.expireOn)> new Date()) { %>
+                                        <button class="btn btn-sm btn-danger"
+                                            onclick="deleteCoupon('<%= coupon._id %>')">
+                                            <%= coupon.islist ? 'Delete' : 'Restore' %>
+                                        </button>
+                                        <button class="btn btn-sm btn-warning"
+                                            onclick="openEditModal('<%= coupon._id %>','<%= coupon.name %>','<%= coupon.discountPercentage %>','<%= coupon.minimumPrice %>','<%= coupon.expireOn.toISOString().split('T')[0] %>')">
+                                            Edit
+                                        </button>
+                                        <% } else { %>
+                                            <span class="text-muted">Expired</span>
+                                            <% } %>
                                 </td>
+
                             </tr>
                             <% }) %>
                     </tbody>
@@ -447,7 +454,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        
+
         function formatDate(dateString) {
             const date = new Date(dateString);
             const day = String(date.getDate()).padStart(2, '0');
@@ -456,7 +463,7 @@
             return `${day}/${month}/${year}`;
         }
 
-        
+
         function filterCoupons() {
             const searchValue = document.getElementById('searchInput').value.trim().toLowerCase();
             const rows = document.querySelectorAll('#couponTable tr');
@@ -492,7 +499,7 @@
             clearButton.disabled = false;
         }
 
-        
+
         function clearSearch() {
             const searchInput = document.getElementById('searchInput');
             const clearButton = document.getElementById('clearButton');
@@ -502,11 +509,11 @@
             window.location.reload();
         }
 
-        
+
         document.getElementById('searchButton').addEventListener('click', filterCoupons);
         document.getElementById('clearButton').addEventListener('click', clearSearch);
 
-        
+
         const modal = document.getElementById('couponModal');
         const openModalBtn = document.getElementById('openCouponModalBtn');
         const closeModalBtn = document.getElementById('closeCouponModalBtn');
@@ -534,7 +541,7 @@
             document.getElementById('modalMessage').innerHTML = '';
         }
 
-        
+
         function validateField(inputId, value, rules) {
             const input = document.getElementById(inputId);
             const errorElement = document.getElementById(`${inputId}Error`);
@@ -594,7 +601,7 @@
             errorElement.style.display = 'block';
         }
 
-    
+
         document.getElementById('createCouponForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.target;
@@ -604,7 +611,7 @@
             const expireOn = document.getElementById('expireOn').value;
             let isValid = true;
 
-            /
+
             document.querySelectorAll('.form-input').forEach(input => {
                 input.classList.remove('error', 'success');
             });
@@ -613,7 +620,7 @@
             });
             document.getElementById('modalMessage').innerHTML = '';
 
-    
+
             isValid &= validateField('couponName', couponName, { required: true });
             isValid &= validateField('discountPercentage', discountPercentage, { required: true });
             isValid &= validateField('minimumPrice', minimumPrice, { required: true });
@@ -663,7 +670,7 @@
             }
         });
 
-        
+
         ['couponName', 'discountPercentage', 'minimumPrice', 'expireOn'].forEach(field => {
             document.getElementById(field).addEventListener('input', () => {
                 const value = field === 'couponName' ? document.getElementById(field).value.trim().toUpperCase() : document.getElementById(field).value;
