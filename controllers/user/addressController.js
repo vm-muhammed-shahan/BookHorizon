@@ -34,6 +34,7 @@ const addAddress = async (req, res) => {
       pincode,
       altPhone,
       addressType,
+      isDefault
     } = req.body;
 
     const nameCityRegex = /^[A-Za-z\s.,'-]{2,50}$/;
@@ -41,50 +42,55 @@ const addAddress = async (req, res) => {
     const pincodeRegex = /^[1-9][0-9]{5}$/;
     const invalidPhone = (num) =>
       !phoneRegex.test(num) || /^(\d)\1{9}$/.test(num) || num === "1234567890";
+    const isOnlyUnderscoresOrHyphens = (val) =>
+      /^_+$/.test(val) || /^-+$/.test(val);
 
-    if (
-      !name ||
-      !phone ||
-      !city ||
-      !state ||
-      !landMark ||
-      !pincode ||
-      !altPhone ||
-      !addressType
-    ) {
-      return res.redirect(
-        "/profile/addresses?error=All+fields+are+required"
-      );
+    // Validate required fields
+    if (!name || !phone || !city || !state || !landMark || !pincode || !altPhone || !addressType) {
+      return res.status(400).json({ error: "All fields are required" });
     }
 
+    // Validate text fields format
     if (
       !nameCityRegex.test(name) ||
       !nameCityRegex.test(city) ||
       !nameCityRegex.test(state) ||
       !nameCityRegex.test(landMark)
     ) {
-      return res.redirect(
-        "/profile/addresses?error=Invalid+characters+in+text+fields"
-      );
+      return res.status(400).json({
+        error: "Text fields must be 2–50 characters and valid format",
+      });
     }
 
+    // Validate text fields for underscores or hyphens
+    const fieldsToCheck = { name, city, state, landMark };
+    for (const [key, value] of Object.entries(fieldsToCheck)) {
+      if (isOnlyUnderscoresOrHyphens(value)) {
+        return res.status(400).json({ error: `${key} cannot be only underscores or hyphens` });
+      }
+    }
+
+    // Validate phone numbers
     if (invalidPhone(phone) || invalidPhone(altPhone)) {
-      return res.redirect(
-        "/profile/addresses?error=Phone+numbers+must+be+valid+10-digit+numbers"
-      );
+      return res.status(400).json({
+        error: "Phone numbers must be valid 10-digit numbers starting with 6–9",
+      });
     }
 
     if (phone === altPhone) {
-      return res.redirect(
-        "/profile/addresses?error=Phone+and+AltPhone+must+be+different"
-      );
+      return res.status(400).json({
+        error: "Phone and Alternative Phone must be different",
+      });
     }
 
+    // Validate pincode
     if (!pincodeRegex.test(pincode)) {
-      return res.redirect("/profile/addresses?error=Invalid+pincode");
+      return res.status(400).json({ error: "Pincode must be a valid 6-digit Indian pincode" });
     }
 
     let doc = await Address.findOne({ userId });
+    const updatedIsDefault = isDefault === true || isDefault === "true" || isDefault === "on";
+
     const newAddr = {
       name,
       phone,
@@ -94,7 +100,7 @@ const addAddress = async (req, res) => {
       pincode,
       altPhone,
       addressType,
-      isDefault: !doc || doc.address.length === 0,
+      isDefault: updatedIsDefault || !doc || doc.address.length === 0,
     };
 
     if (!doc) {
@@ -107,17 +113,15 @@ const addAddress = async (req, res) => {
     }
 
     await doc.save();
-    if (req.headers["content-type"]?.includes("application/json")) {
-      return res
-        .status(200)
-        .json({ success: true, message: "Address saved successfully" });
-    } else {
-      if (req.body.from === "checkout") {
-        return res.redirect("/checkout");
-      } else {
-        return res.redirect("/profile/addresses");
-      }
-    }
+    if (req.xhr || req.headers.accept?.includes("application/json")) {
+  return res.status(200).json({ success: true, message: "Address saved successfully" });
+}
+
+if (req.body.from === "checkout") {
+  return res.redirect("/checkout");
+} else {
+  return res.redirect("/profile/addresses");
+}
   } catch (err) {
     console.error("Address Error:", err);
     return res
@@ -156,21 +160,21 @@ const editAddress = async (req, res) => {
       landMark, pincode, altPhone, addressType, isDefault
     } = req.body;
 
-    // Regex scoped inside controller
+    
     const nameCityRegex = /^[A-Za-z\s.,'-]{2,50}$/;
     const phoneRegex = /^[6-9]\d{9}$/;
-    const pincodeRegex = /^[1-9][0-9]{5}$/; // 6 digits, not starting with 0
+    const pincodeRegex = /^[1-9][0-9]{5}$/; 
     const invalidPhone = (num) =>
       !phoneRegex.test(num) || /^(\d)\1{9}$/.test(num) || num === "1234567890";
     const isOnlyUnderscoresOrHyphens = (val) =>
       /^_+$/.test(val) || /^-+$/.test(val);
 
-    // Empty fields
+    
     if (!name || !phone || !city || !state || !landMark || !pincode || !altPhone || !addressType) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
-    // Check text fields
+    
     if (
       !nameCityRegex.test(name) ||
       !nameCityRegex.test(city) ||
@@ -182,7 +186,7 @@ const editAddress = async (req, res) => {
       });
     }
 
-    // Reject only underscores/hyphens
+    
     const fieldsToCheck = { name, city, state, landMark };
     for (const [key, value] of Object.entries(fieldsToCheck)) {
       if (isOnlyUnderscoresOrHyphens(value)) {
@@ -190,7 +194,7 @@ const editAddress = async (req, res) => {
       }
     }
 
-    // Validate phones
+    
     if (invalidPhone(phone) || invalidPhone(altPhone)) {
       return res.status(400).json({
         error: "Phone numbers must be valid 10-digit numbers starting with 6–9",
@@ -203,18 +207,18 @@ const editAddress = async (req, res) => {
       });
     }
 
-    // Validate pincode
+    
     if (!pincodeRegex.test(pincode)) {
       return res.status(400).json({ error: "Pincode must be a valid 6-digit Indian pincode" });
     }
 
-    // Find user doc
+    
     const doc = await Address.findOne({ userId });
     if (!doc) {
       return res.status(404).json({ error: "User address record not found" });
     }
 
-    // Find index
+  
     const index = doc.address.findIndex((a) => a._id.toString() === addrId);
     if (index === -1) {
       return res.status(404).json({ error: "Address not found" });
@@ -223,9 +227,9 @@ const editAddress = async (req, res) => {
     const updatedIsDefault =
       isDefault === true || isDefault === "true" || isDefault === "on";
 
-    // Update
+    
     doc.address[index] = {
-      ...doc.address[index]._doc, // keep schema fields like _id
+      ...doc.address[index]._doc, 
       name,
       phone,
       city,
@@ -237,7 +241,7 @@ const editAddress = async (req, res) => {
       isDefault: updatedIsDefault,
     };
 
-    // If marked default, unset others
+    
     if (updatedIsDefault) {
       doc.address.forEach((addr, i) => {
         if (i !== index) addr.isDefault = false;

@@ -875,6 +875,50 @@
             });
           });
       }
+
+
+
+
+      // Handle Add Address Form with SweetAlert
+      document.getElementById("add-address-form").addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new URLSearchParams(new FormData(form));
+
+        fetch("/profile/addresses/add", {
+  method: "POST",
+  headers: { 
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Accept": "application/json"  
+  },
+  body: formData,
+})
+
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              Toast.fire({ icon: "success", title: "Address Added" });
+              setTimeout(() => {
+                window.location.href = "/profile/addresses";
+              }, 2000);
+            } else {
+              Swal.fire({
+                title: "Error",
+                text: data.error || "Failed to add address",
+                icon: "error",
+              });
+            }
+          })
+          .catch((err) => {
+            console.error("Fetch error:", err);
+            Swal.fire({
+              title: "Error",
+              text: "Unexpected error: " + err.message,
+              icon: "error",
+            });
+          });
+      });
     </script>
 
 
