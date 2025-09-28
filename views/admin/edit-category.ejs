@@ -169,26 +169,37 @@
   }
 
   function validateEditForm() {
-    clearErrorMessages();
-    const name = document.getElementById("category_name").value.trim();
-    const description = document.getElementById("descriptionId").value.trim();
-    let isValid = true;
+  clearErrorMessages();
+  const name = document.getElementById("category_name").value.trim();
+  const description = document.getElementById("descriptionId").value.trim();
+  let isValid = true;
 
-    if (name === "") {
-      displayErrorMessage("name-error", "Please enter a name");
-      isValid = false;
-    } else if (!/^[a-zA-Z\s]+$/.test(name)) {
-      displayErrorMessage("name-error", "Category name should contain only alphabetic characters");
-      isValid = false;
-    }
-
-    if (description === "") {
-      displayErrorMessage("description-error", "Please enter a description");
-      isValid = false;
-    }
-    
-    return isValid;
+  
+  if (name === "") {
+    displayErrorMessage("name-error", "Please enter a name");
+    isValid = false;
+  } else if (!/^[A-Za-z\s]+$/.test(name)) {
+    displayErrorMessage("name-error", "Category name should contain only alphabets and spaces");
+    isValid = false;
+  } else if (name.length < 2 || name.length > 50) {
+    displayErrorMessage("name-error", "Category name must be 2–50 characters long");
+    isValid = false;
   }
+
+  
+  if (description === "") {
+    displayErrorMessage("description-error", "Please enter a description");
+    isValid = false;
+  } else if (!/^[A-Za-z\s]+$/.test(description)) {
+    displayErrorMessage("description-error", "Description should contain only alphabets and spaces");
+    isValid = false;
+  } else if (description.length < 2 || description.length > 50) {
+    displayErrorMessage("description-error", "Description must be 2–50 characters long");
+    isValid = false;
+  }
+
+  return isValid;
+}
 
   function displayErrorMessage(elementId, message) {
     let errorElement = document.getElementById(elementId);

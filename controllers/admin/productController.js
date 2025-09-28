@@ -227,15 +227,21 @@ const addProductOffer = async (req, res) => {
       return res.status(404).json({ status: false, message: "Product not found" });
     }
 
-    const existingOffer = await Offer.findOne({
+    const existingProductOffer = await Offer.findOne({
       offerType: 'product',
       applicableId: productId,
       isActive: true,
+      $or: [
+        {
+          startDate: { $lte: endDate },
+          endDate: { $gte: startDate }
+        }
+      ]
     });
-    if (existingOffer) {
+    if (existingProductOffer) {
       return res.status(400).json({
         status: false,
-        message: "An active offer already exists for this product",
+        message: "An active product offer already exists for this date range",
       });
     }
 
@@ -359,20 +365,20 @@ const getEditProduct = async (req, res) => {
   try {
     const id = req.query.id;
     const product = await Product.findOne({ _id: id });
-    
-    
+
+
     if (!product) {
       console.error("Product not found with ID:", id);
       return res.redirect("/pageerror");
     }
-    
+
     const category = await Category.find({});
-    
-    
+
+
     if (!product.productImage) {
       product.productImage = [];
     }
-    
+
     res.render("edit-product", {
       product: product,
       cat: category
@@ -388,13 +394,13 @@ const editProduct = async (req, res) => {
   try {
     const id = req.params.id;
     const product = await Product.findOne({ _id: id });
-    
+
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
-    
+
     const data = req.body;
-    
+
     // 🔒 Validation rules
     if (!data.productName || !data.description || !data.category || data.regularPrice === undefined || data.quantity === undefined) {
       return res.status(400).json({ error: "All required fields must be filled" });
@@ -432,15 +438,15 @@ const editProduct = async (req, res) => {
       productName: data.productName,
       _id: { $ne: id }
     });
-    
+
     if (existingProduct) {
-      return res.status(400).json({ 
-        error: "Product with this name already exists. Please try with another name" 
+      return res.status(400).json({
+        error: "Product with this name already exists. Please try with another name"
       });
     }
-   
+
     let finalImages = [];
-    
+
     if (data.existingImages) {
       for (const index in data.existingImages) {
         const imageName = data.existingImages[index];
@@ -449,13 +455,13 @@ const editProduct = async (req, res) => {
         }
       }
     }
-    
+
     if (req.files) {
       for (let i = 0; i < 3; i++) {
         const fieldName = `images[${i}]`;
         if (req.files[fieldName] && req.files[fieldName].length > 0) {
           const file = req.files[fieldName][0];
-          
+
           if (finalImages[i]) {
             const oldImagePath = path.join(__dirname, '../../public/uploads/', finalImages[i]);
             if (fs.existsSync(oldImagePath)) {
@@ -471,7 +477,7 @@ const editProduct = async (req, res) => {
         }
       }
     }
-   
+
     if (data.croppedImages) {
       for (const index in data.croppedImages) {
         const imageData = data.croppedImages[index];
@@ -481,7 +487,7 @@ const editProduct = async (req, res) => {
           const buffer = Buffer.from(base64Data, 'base64');
           const filename = `${Date.now()}_${getRandomNumber(0, 10)}_cropped.jpeg`;
           const filePath = path.join(__dirname, '../../public/uploads/', filename);
-          
+
           if (finalImages[i]) {
             const oldImagePath = path.join(__dirname, '../../public/uploads/', finalImages[i]);
             if (fs.existsSync(oldImagePath)) {
@@ -498,13 +504,13 @@ const editProduct = async (req, res) => {
         }
       }
     }
-    
+
     finalImages = finalImages.filter(img => img !== undefined);
-    
+
     if (finalImages.length < 3) {
       return res.status(400).json({ error: "Product must have exactly 3 images" });
     }
-    
+
     product.productName = data.productName;
     product.description = data.description;
     product.category = data.category;
@@ -520,16 +526,16 @@ const editProduct = async (req, res) => {
     });
     const { discountedPrice } = await applyBestOffer(product, offers);
     product.salePrice = discountedPrice;
-    
+
     await product.save();
-    return res.status(200).json({ 
-      success: true, 
-      message: "Product updated successfully" 
+    return res.status(200).json({
+      success: true,
+      message: "Product updated successfully"
     });
   } catch (error) {
     console.error("Error in editProduct:", error);
-    return res.status(500).json({ 
-      error: "An error occurred while updating the product" 
+    return res.status(500).json({
+      error: "An error occurred while updating the product"
     });
   }
 };
@@ -538,15 +544,15 @@ const editProduct = async (req, res) => {
 const deleteSingleImage = async (req, res) => {
   try {
     const { imageNameToServer, productIdToServer } = req.body;
-    const product = await Product.findByIdAndUpdate(productIdToServer, 
+    const product = await Product.findByIdAndUpdate(productIdToServer,
       { $pull: { productImage: imageNameToServer } });
-    
+
     const imagePath = path.join("public", "uploads", "product-images", imageNameToServer);
     if (fs.existsSync(imagePath)) {
       await fs.unlinkSync(imagePath);
     } else {
     }
-    
+
     res.send({ status: true });
   } catch (error) {
     console.error("Error in deleteSingleImage:", error);
@@ -560,19 +566,19 @@ const applyBestOffer = async (product, offers, categoryId) => {
     const catId = categoryId || (product.category && product.category._id ? product.category._id.toString() : null);
 
     const productOffers = offers ? offers.filter(
-      offer => offer.offerType === 'product' && 
-      offer.applicableId.toString() === product._id.toString() &&
-      offer.isActive &&
-      offer.startDate <= new Date() &&
-      offer.endDate >= new Date()
+      offer => offer.offerType === 'product' &&
+        offer.applicableId.toString() === product._id.toString() &&
+        offer.isActive &&
+        offer.startDate <= new Date() &&
+        offer.endDate >= new Date()
     ) : [];
 
     const categoryOffers = offers ? offers.filter(
-      offer => offer.offerType === 'category' && 
-      offer.applicableId.toString() === catId &&
-      offer.isActive &&
-      offer.startDate <= new Date() &&
-      offer.endDate >= new Date()
+      offer => offer.offerType === 'category' &&
+        offer.applicableId.toString() === catId &&
+        offer.isActive &&
+        offer.startDate <= new Date() &&
+        offer.endDate >= new Date()
     ) : [];
 
     let bestDiscount = 0;

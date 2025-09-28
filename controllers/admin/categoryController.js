@@ -59,14 +59,14 @@ const addCategory = async (req, res) => {
       return res.status(400).json({ error: "Category name must be 2–50 characters long" });
     }
 
-    
+
     if (!/^[A-Za-z\s]+$/.test(description)) {
       return res.status(400).json({ error: "Description should contain only alphabets and spaces" });
     }
     if (description.trim().length < 2 || description.trim().length > 50) {
       return res.status(400).json({ error: "Description must be 2–50 characters long" });
     }
-    
+
     const existingCategory = await Category.findOne({ name: { $regex: new RegExp('^' + name + '$', 'i') } });
 
     if (existingCategory) {
@@ -118,17 +118,24 @@ const addCategoryOffer = async (req, res) => {
       return res.status(404).json({ status: false, message: "Category not found" });
     }
 
-    const existingOffer = await Offer.findOne({
+    const existingCategoryOffer = await Offer.findOne({
       offerType: 'category',
       applicableId: categoryId,
       isActive: true,
+      $or: [
+        {
+          startDate: { $lte: endDate },
+          endDate: { $gte: startDate }
+        }
+      ]
     });
-    if (existingOffer) {
+    if (existingCategoryOffer) {
       return res.status(400).json({
         status: false,
-        message: "An active offer already exists for this category",
+        message: "An active category offer already exists for this date range",
       });
     }
+
 
     const products = await Product.find({ category: category._id });
     const hasProductOffer = products.some(product => product.productOffer > percentage);
@@ -158,7 +165,7 @@ const addCategoryOffer = async (req, res) => {
       product.salePrice = discountedPrice;
       product.productOffer = 0;
       product.categoryOffer = percentage;
-      product.productOffer = 0; 
+      product.productOffer = 0;
       product.salePrice = product.regularPrice - Math.floor(product.regularPrice * (percentage / 100));
       await product.save();
     }
@@ -233,6 +240,28 @@ const editCategory = async (req, res) => {
   try {
     const id = req.params.id;
     const { categoryName, description } = req.body;
+
+
+    if (!categoryName || !description) {
+      return res.status(400).json({ success: false, message: "All fields are required" });
+    }
+
+    if (!/^[A-Za-z\s]+$/.test(categoryName)) {
+      return res.status(400).json({ success: false, message: "Category name should contain only alphabets and spaces" });
+    }
+    if (categoryName.trim().length < 2 || categoryName.trim().length > 50) {
+      return res.status(400).json({ success: false, message: "Category name must be 2–50 characters long" });
+    }
+
+
+    if (!/^[A-Za-z\s]+$/.test(description)) {
+      return res.status(400).json({ success: false, message: "Description should contain only alphabets and spaces" });
+    }
+    if (description.trim().length < 2 || description.trim().length > 50) {
+      return res.status(400).json({ success: false, message: "Description must be 2–50 characters long" });
+    }
+
+
     const duplicate = await Category.findOne({
       name: { $regex: `^${categoryName}$`, $options: 'i' },
       _id: { $ne: id }
@@ -242,7 +271,7 @@ const editCategory = async (req, res) => {
     }
     const updated = await Category.findByIdAndUpdate(
       id,
-      { name: categoryName, description },
+      { name: categoryName.trim(), description: description.trim() },
       { new: true }
     );
     if (updated) {
