@@ -18,7 +18,16 @@ const razorpay = new Razorpay({
 const checkoutPage = async (req, res) => {
   try {
     const userId = req.session.user._id;
-    const cart = await Cart.findOne({ userId }).populate("items.productId");
+    const cart = await Cart.findOne({ userId }).populate({
+    path: "items.productId",
+    populate: { path: "category" } // populate category here
+  });
+
+
+    if (!cart || cart.items.length === 0) {
+      return res.redirect("/cart");
+    }
+
 
     if (!cart || cart.items.length === 0) {
       const userData = await User.findOne({ _id: userId });
@@ -37,7 +46,8 @@ const checkoutPage = async (req, res) => {
         !item.productId.isBlocked &&
         item.productId.status === "Available" &&
         item.productId.quantity > 0 &&
-        item.quantity > 0
+        item.quantity > 0 &&
+        item.productId.category?.isListed !== false 
     );
 
     if (validItems.length === 0) {
@@ -371,9 +381,8 @@ const createRazorpayOrder = async (req, res) => {
       } catch (razorpayError) {
         console.error("Razorpay error:", razorpayError);
         return res.status(400).json({
-          error: `Failed to create Razorpay order: ${
-            razorpayError.error?.description || "Unknown error"
-          }`,
+          error: `Failed to create Razorpay order: ${razorpayError.error?.description || "Unknown error"
+            }`,
         });
       }
     }
@@ -399,8 +408,8 @@ const createRazorpayOrder = async (req, res) => {
         effectivePaymentMethod === "cod"
           ? "Pending"
           : effectivePaymentMethod === "wallet"
-          ? "Completed"
-          : "Pending",
+            ? "Completed"
+            : "Pending",
       shippingCharge: shipping,
       razorpayOrderId: razorpayOrder ? razorpayOrder.id : null,
     });
@@ -570,9 +579,8 @@ const retryPayment = async (req, res) => {
     } catch (razorpayError) {
       console.error("Razorpay retry error:", razorpayError);
       return res.status(400).json({
-        error: `Failed to create Razorpay order: ${
-          razorpayError.error?.description || "Unknown error"
-        }`,
+        error: `Failed to create Razorpay order: ${razorpayError.error?.description || "Unknown error"
+          }`,
       });
     }
 

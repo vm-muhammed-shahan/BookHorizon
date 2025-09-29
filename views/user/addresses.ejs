@@ -897,19 +897,47 @@
 
           .then((res) => res.json())
           .then((data) => {
-            if (data.success) {
-              Toast.fire({ icon: "success", title: "Address Added" });
-              setTimeout(() => {
-                window.location.href = "/profile/addresses";
-              }, 2000);
-            } else {
-              Swal.fire({
-                title: "Error",
-                text: data.error || "Failed to add address",
-                icon: "error",
-              });
-            }
-          })
+  if (data.success) {
+    Toast.fire({ icon: "success", title: "Address Added" });
+
+    // Create new address card
+    const savedAddresses = document.querySelector(".saved-addresses");
+    const newCard = document.createElement("div");
+    newCard.classList.add("address-card");
+    newCard.setAttribute("data-address-id", data.newAddress._id);
+    newCard.innerHTML = `
+      <div class="address-header">
+        <div class="address-name">${data.newAddress.name} | ${data.newAddress.phone}</div>
+      </div>
+      <div class="address-details">
+        <p>${data.newAddress.landMark}, ${data.newAddress.city}, ${data.newAddress.state} - ${data.newAddress.pincode}</p>
+      </div>
+      <div class="address-actions">
+        ${!data.newAddress.isDefault ? 
+          `<span class="action-link set-default-link" onclick="setDefaultAddress('${data.newAddress._id}')">Set Default</span>` 
+          : ""}
+        <span class="action-link edit-link"
+          onclick="openEditForm('${data.newAddress._id}', '${data.newAddress.name}', '${data.newAddress.phone}', '${data.newAddress.city}', '${data.newAddress.state}', '${data.newAddress.landMark}', '${data.newAddress.pincode}', '${data.newAddress.altPhone}', '${data.newAddress.addressType}', ${data.newAddress.isDefault})">
+          Edit
+        </span>
+        <span class="delete-link" onclick="confirmDelete('${data.newAddress._id}')">Delete</span>
+      </div>
+    `;
+
+    savedAddresses.appendChild(newCard);
+
+    // Close modal & reset form
+    closeAddForm();
+    form.reset();
+  } else {
+    Swal.fire({
+      title: "Error",
+      text: data.error || "Failed to add address",
+      icon: "error",
+    });
+  }
+})
+
           .catch((err) => {
             console.error("Fetch error:", err);
             Swal.fire({

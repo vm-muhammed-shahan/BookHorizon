@@ -97,7 +97,9 @@ const addProducts = async (req, res) => {
     }
 
     // Check for duplicate product name
-    const productExist = await Product.findOne({ productName: productName.trim() });
+    const productExist = await Product.findOne({
+  productName: { $regex: new RegExp(`^${productName.trim()}$`, "i") }
+});
     if (productExist) {
       return res.status(400).json({
         success: false,

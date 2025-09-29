@@ -4,16 +4,22 @@ const Wishlist = require("../../models/wishlistSchema");
 const User = require("../../models/userSchema");
 const cleanCartItems = async (userId) => {
   try {
-    const cart = await Cart.findOne({ userId }).populate('items.productId');
+    const cart = await Cart.findOne({ userId }).populate({
+      path: "items.productId",
+      populate: { path: "category", select: "isBlocked" }
+    });
     if (!cart) return;
-
     const itemsToRemove = [];
     for (const item of cart.items) {
-      if (!item.productId || item.productId.isBlocked || item.productId.status !== 'Available') {
+      if (
+        !item.productId ||
+        item.productId.isBlocked ||
+        item.productId.status !== 'Available' ||
+        (item.productId.category && item.productId.category.isBlocked)
+      ) {
         itemsToRemove.push(item.productId._id);
       }
     }
-
     if (itemsToRemove.length > 0) {
       await Cart.updateOne(
         { userId },
@@ -185,50 +191,53 @@ const viewCart = async (req, res) => {
     if (!userId) {
       return res.redirect('/login');
     }
-
     await cleanCartItems(userId);
-
-    const cart = await Cart.findOne({ userId: userId }).populate({
+    const cart = await Cart.findOne({ userId }).populate({
       path: 'items.productId',
-      select: 'productName regularPrice salePrice productImage quantity status isBlocked'
+      populate: { path: "category", select: "isBlocked" },
+      select: 'productName regularPrice salePrice productImage quantity status isBlocked category'
     });
-
     let items = cart?.items || [];
-
     for (const item of items) {
-      if (item.productId && !item.productId.isBlocked && item.productId.status === 'Available') {
+      if (
+        item.productId &&
+        !item.productId.isBlocked &&
+        item.productId.status === 'Available' &&
+        !(item.productId.category && item.productId.category.isBlocked)
+      ) {
         const product = await Product.findById(item.productId._id).select('salePrice quantity');
         if (product) {
           item.price = product.salePrice;
           item.totalPrice = item.quantity * product.salePrice;
-          item.productId.quantity = product.quantity; 
+          item.productId.quantity = product.quantity;
         }
       }
     }
-
     if (cart) {
       await cart.save();
     }
-
+    // filter only valid items
     const validItems = [];
     for (const item of items) {
-      if (!item.productId || item.productId.isBlocked || item.productId.status !== 'Available') {
-        continue; 
+      if (
+        item.productId &&
+        !item.productId.isBlocked &&
+        item.productId.status === "Available" &&
+        !(item.productId.category && item.productId.category.isBlocked)
+      ) {
+        validItems.push({
+          ...item.toObject(),
+          isOutOfStock: item.productId.quantity === 0
+        });
       }
-      validItems.push({
-        ...item.toObject(),
-        isOutOfStock: item.productId.quantity === 0
-      });
     }
-
     const userData = await User.findOne({ _id: userId }).select('name email');
     if (!userData) {
       console.warn(`User not found for userId: ${userId}`);
       return res.redirect('/');
     }
-
-    res.render('cart', { 
-      items: validItems, 
+    res.render('cart', {
+      items: validItems,
       user: userData,
       hasValidItems: validItems.length > 0
     });
@@ -241,12 +250,11 @@ const viewCart = async (req, res) => {
 
 
 
-
-module.exports = {
-  addToCart,
-  updateQuantity,
-  removeItem,
-  removeItemPost,
-  viewCart,
-  cleanCartItems
-};
+  module.exports = {
+    addToCart,
+    updateQuantity,
+    removeItem,
+    removeItemPost,
+    viewCart,
+    cleanCartItems
+  };

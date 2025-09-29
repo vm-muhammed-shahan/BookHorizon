@@ -55,5 +55,17 @@
     </div>
   </div>
 
+
+  <script>
+  if (window.history && window.history.replaceState) {
+    window.history.replaceState(null, "", "/cart");
+  }
+
+  // Handle back navigation explicitly
+  window.addEventListener("popstate", function () {
+    window.location.href = "/cart";
+  });
+</script>
+
 </body>
 </html>

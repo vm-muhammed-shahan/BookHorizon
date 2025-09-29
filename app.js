@@ -48,6 +48,28 @@ app.use("/", userRouter);
 app.use("/admin", adminRouter);
 
 
+app.use("/", userRouter);
+app.use("/admin", adminRouter);
+
+
+app.use((req, res, next) => {
+  res.status(404);
+  return res.render("error", { message: "Page not found" });
+});
+
+
+app.use((err, req, res, next) => {
+  console.error("Unhandled Error:", err);
+  res.status(err.status || 500);
+
+  if (req.xhr || req.headers.accept.indexOf("json") > -1) {
+    return res.json({ success: false, error: err.message || "Server error" });
+  }
+
+  res.render("error", { message: err.message || "Something went wrong" });
+});
+
+
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

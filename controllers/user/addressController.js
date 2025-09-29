@@ -113,6 +113,7 @@ const addAddress = async (req, res) => {
     }
 
     await doc.save();
+    const savedAddr = doc.address[doc.address.length - 1]; 
     if (req.xhr || req.headers.accept?.includes("application/json")) {
   return res.status(200).json({ success: true, message: "Address saved successfully" });
 }
