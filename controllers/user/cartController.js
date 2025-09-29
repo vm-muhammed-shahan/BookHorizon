@@ -6,7 +6,7 @@ const cleanCartItems = async (userId) => {
   try {
     const cart = await Cart.findOne({ userId }).populate({
       path: "items.productId",
-      populate: { path: "category", select: "isBlocked" }
+      populate: { path: "category", select: "isListed" }
     });
     if (!cart) return;
     const itemsToRemove = [];
@@ -15,7 +15,7 @@ const cleanCartItems = async (userId) => {
         !item.productId ||
         item.productId.isBlocked ||
         item.productId.status !== 'Available' ||
-        (item.productId.category && item.productId.category.isBlocked)
+        (item.productId.category && item.productId.category.isListed === false)
       ) {
         itemsToRemove.push(item.productId._id);
       }
@@ -203,7 +203,7 @@ const viewCart = async (req, res) => {
         item.productId &&
         !item.productId.isBlocked &&
         item.productId.status === 'Available' &&
-        !(item.productId.category && item.productId.category.isBlocked)
+        !(item.productId.category && item.productId.category.isListed ===  false)
       ) {
         const product = await Product.findById(item.productId._id).select('salePrice quantity');
         if (product) {
