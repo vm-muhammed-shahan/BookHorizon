@@ -208,6 +208,11 @@ const viewCart = async (req, res) => {
         const product = await Product.findById(item.productId._id).select('salePrice quantity');
         if (product) {
           item.price = product.salePrice;
+
+          if (item.quantity > product.quantity) {
+            item.quantity = product.quantity;
+          }
+
           item.totalPrice = item.quantity * product.salePrice;
           item.productId.quantity = product.quantity;
         }

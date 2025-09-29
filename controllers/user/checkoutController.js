@@ -29,26 +29,30 @@ const checkoutPage = async (req, res) => {
     }
 
 
-    if (!cart || cart.items.length === 0) {
-      const userData = await User.findOne({ _id: userId });
-      return res.render("checkout", {
-        user: userData,
-        message: "Your cart is empty.",
-        subtotal: 0,
-        walletBalance: 0,
-        isWalletPaymentEnabled: false,
-      });
-    }
+   const validItems = [];
 
-    const validItems = cart.items.filter(
-      (item) =>
+    let stockAdjusted = false;
+
+    for (const item of cart.items) {
+      if (
         item.productId &&
         !item.productId.isBlocked &&
         item.productId.status === "Available" &&
         item.productId.quantity > 0 &&
         item.quantity > 0 &&
-        item.productId.category?.isListed !== false 
-    );
+        item.productId.category?.isListed !== false
+      ) {
+        // force cart quantity <= available stock
+        if (item.quantity > item.productId.quantity) {
+          item.quantity = item.productId.quantity;
+          item.totalPrice =
+            item.quantity * (item.price || item.productId.salePrice);
+            stockAdjusted = true;   
+        }
+
+        validItems.push(item);
+      }
+    }
 
     if (validItems.length === 0) {
       const userData = await User.findOne({ _id: userId });
@@ -122,6 +126,7 @@ const checkoutPage = async (req, res) => {
       subtotal: subTotal,
       walletBalance: wallet.balance,
       isWalletPaymentEnabled,
+      stockAdjusted 
     });
   } catch (error) {
     console.error("Checkout page error:", error);

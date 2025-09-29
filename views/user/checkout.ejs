@@ -745,7 +745,12 @@
     <div class="header">
         <h1>CHECKOUT</h1>
     </div>
-
+     <% if (typeof stockAdjusted !== "undefined" && stockAdjusted) { %>
+      <div class="stock-adjusted-message" style="background:#fff3cd; color:#856404; padding:10px; border-radius:5px; margin-bottom:15px;">
+        ⚠️ Some item quantities were adjusted based on current stock availability.
+      </div>
+    <% } %>
+    
     <form id="checkoutForm">
         <div class="checkout-form">
             <div class="main-content">
