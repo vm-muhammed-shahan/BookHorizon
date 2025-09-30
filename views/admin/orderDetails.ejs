@@ -253,14 +253,16 @@ celled { background:#025b25; color:#991b1b; }
 
             <div class="mb-8">
               <h2 class="text-lg font-semibold mb-3 text-gray-700">Update Order Status</h2>
-              <form action="/admin/orders/<%= order.orderId %>/status" method="POST" class="flex gap-4 items-center">
-                <select name="status"
+              <form action="/admin/orders/<%= order.orderId %>/status" method="POST" class="flex gap-4 items-center" id="statusForm">
+                <select name="status"  id="statusSelect"
                   class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 <%= (order.status === 'Delivered' || order.status === 'Return Request') ? 'opacity-50 cursor-not-allowed' : '' %>"
                   <%=(order.status==='Delivered' || order.status==='Return Request' ) ? 'disabled' : '' %>>
+
                   <% const allowedStatuses={ 'Pending' : ['Processing', 'Cancelled' ], 'Processing' :
                     ['Shipped', 'Cancelled' ], 'Shipped' : ['Out for Delivery'], 'Out for Delivery' :
                     ['Delivered'], 'Delivered' : ['Return Request'], 'Return Request' : ['Delivered', 'Returned'
                     ], 'Cancelled' : [], 'Returned' : [] }[order.status] || []; %>
+
                     <% ['Pending', 'Processing' , 'Shipped' , 'Out for Delivery' , 'Delivered' ].forEach(status=> { %>
                       <% if (status !=='Return Request' && status !=='Returned' && status !=='Cancelled' ) { %>
                         <option value="<%= status %>" <%=order.status===status ? 'selected' : '' %>
@@ -269,7 +271,8 @@ celled { background:#025b25; color:#991b1b; }
                         <% } %>
                           <% }) %>
                 </select>
-                <button type="submit"
+
+                <button type="submit"  id="updateBtn"
                   class="bg-blue-500 text-black p-2 rounded hover:bg-blue-600 action-btn <%= (order.status === 'Delivered' || order.status === 'Return Request') ? 'opacity-50 cursor-not-allowed' : '' %>"
                   <%=(order.status==='Delivered' || order.status==='Return Request' ) ? 'disabled' : '' %>>Update
                   Status</button>
@@ -397,6 +400,30 @@ celled { background:#025b25; color:#991b1b; }
         }
       }
     </script>
+    <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const statusSelect = document.getElementById("statusSelect");
+    const updateBtn = document.getElementById("updateBtn");
+    const initialStatus = statusSelect.value;
+
+    function toggleButton() {
+      if (statusSelect.value === initialStatus) {
+        updateBtn.disabled = true;
+        updateBtn.classList.add("opacity-50", "cursor-not-allowed");
+      } else {
+        updateBtn.disabled = false;
+        updateBtn.classList.remove("opacity-50", "cursor-not-allowed");
+      }
+    }
+
+    // Initialize on load
+    toggleButton();
+
+    // Watch for changes
+    statusSelect.addEventListener("change", toggleButton);
+  });
+</script>
+
 </body>
 
 </html>
