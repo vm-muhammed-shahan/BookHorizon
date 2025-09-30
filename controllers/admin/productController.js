@@ -1,13 +1,9 @@
 const Product = require("../../models/productSchema");
 const Category = require("../../models/categorySchema");
 const Offer = require('../../models/offerSchema');
-const cloudinary = require("../../helpers/cloudinary");
 
 const fs = require("fs");
 const path = require("path");
-// const { session } = require("passport");
-const { getRandomNumber } = require("../../helpers/multer");
-
 
 
 
