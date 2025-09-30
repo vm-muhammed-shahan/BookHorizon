@@ -134,112 +134,92 @@ const drawTable = (doc, data, headers, startX, startY, colWidths, options = {}) 
 
 const getSalesReportPage = async (req, res) => {
   try {
-    const { filter, startDate, endDate, status } = req.query;
+    const { filter, startDate, endDate, status, page = 1 } = req.query;
     let dateFilter = {};
 
     const now = new Date();
-    
+    const istOffset = 5.5 * 60 * 60 * 1000;
+
+    // 🔹 Date filter logic
     if (filter === "daily") {
-  
-      const today = new Date();
-      const istOffset = 5.5 * 60 * 60 * 1000; 
-      const istDate = new Date(today.getTime() + istOffset);
-      
-      const startOfDay = new Date(istDate.getFullYear(), istDate.getMonth(), istDate.getDate());
-      const endOfDay = new Date(istDate.getFullYear(), istDate.getMonth(), istDate.getDate(), 23, 59, 59, 999);
-      
-      const startUTC = new Date(startOfDay.getTime() - istOffset);
-      const endUTC = new Date(endOfDay.getTime() - istOffset);
-      
-      dateFilter.createdOn = { $gte: startUTC, $lte: endUTC };
-      console.log("Applying daily filter range:", { start: startUTC, end: endUTC });
+      const today = new Date(now.getTime() + istOffset);
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+      dateFilter.createdOn = { $gte: new Date(startOfDay.getTime() - istOffset), $lte: new Date(endOfDay.getTime() - istOffset) };
+
     } else if (filter === "weekly") {
-      const today = new Date();
-      const istOffset = 5.5 * 60 * 60 * 1000;
-      const istDate = new Date(today.getTime() + istOffset);
-      
-      const startOfWeek = new Date(istDate);
-      startOfWeek.setDate(istDate.getDate() - istDate.getDay());
+      const today = new Date(now.getTime() + istOffset);
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - today.getDay());
       startOfWeek.setHours(0, 0, 0, 0);
-      
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(startOfWeek.getDate() + 6);
       endOfWeek.setHours(23, 59, 59, 999);
-      
-      const startUTC = new Date(startOfWeek.getTime() - istOffset);
-      const endUTC = new Date(endOfWeek.getTime() - istOffset);
-      
-      dateFilter.createdOn = { $gte: startUTC, $lte: endUTC };
-      console.log("Applying weekly filter:", dateFilter);
+      dateFilter.createdOn = { $gte: new Date(startOfWeek.getTime() - istOffset), $lte: new Date(endOfWeek.getTime() - istOffset) };
+
     } else if (filter === "monthly") {
-      const today = new Date();
-      const istOffset = 5.5 * 60 * 60 * 1000;
-      const istDate = new Date(today.getTime() + istOffset);
-      
-      const startOfMonth = new Date(istDate.getFullYear(), istDate.getMonth(), 1);
-      const endOfMonth = new Date(istDate.getFullYear(), istDate.getMonth() + 1, 0, 23, 59, 59, 999);
-      
-      const startUTC = new Date(startOfMonth.getTime() - istOffset);
-      const endUTC = new Date(endOfMonth.getTime() - istOffset);
-      
-      dateFilter.createdOn = { $gte: startUTC, $lte: endUTC };
-      console.log("Applying monthly filter:", dateFilter);
+      const today = new Date(now.getTime() + istOffset);
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+      dateFilter.createdOn = { $gte: new Date(startOfMonth.getTime() - istOffset), $lte: new Date(endOfMonth.getTime() - istOffset) };
+
     } else if (filter === "yearly") {
-      const today = new Date();
-      const istOffset = 5.5 * 60 * 60 * 1000;
-      const istDate = new Date(today.getTime() + istOffset);
-      
-      const startOfYear = new Date(istDate.getFullYear(), 0, 1);
-      const endOfYear = new Date(istDate.getFullYear(), 11, 31, 23, 59, 59, 999);
-      
-      const startUTC = new Date(startOfYear.getTime() - istOffset);
-      const endUTC = new Date(endOfYear.getTime() - istOffset);
-      
-      dateFilter.createdOn = { $gte: startUTC, $lte: endUTC };
-      console.log("Applying yearly filter:", dateFilter);
+      const today = new Date(now.getTime() + istOffset);
+      const startOfYear = new Date(today.getFullYear(), 0, 1);
+      const endOfYear = new Date(today.getFullYear(), 11, 31, 23, 59, 59, 999);
+      dateFilter.createdOn = { $gte: new Date(startOfYear.getTime() - istOffset), $lte: new Date(endOfYear.getTime() - istOffset) };
+
     } else if (filter === "custom" && startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
       end.setHours(23, 59, 59, 999);
-      
       dateFilter.createdOn = { $gte: start, $lte: end };
-      console.log("Applying custom filter:", dateFilter);
     }
 
-    const statusFilter = status ? { status: { $in: status.split(',') } } : {};
-    console.log("Applying status filter:", statusFilter);
+    // 🔹 Status filter
+    const statusFilter = status ? { status: { $in: status.split(",") } } : {};
 
+    // 🔹 Pagination setup
+    const limit = 10; // orders per page
+    const currentPage = parseInt(page) || 1;
+
+    // Total orders count (for pagination + summary)
+    const totalOrders = await Order.countDocuments({
+      ...dateFilter,
+      ...statusFilter,
+    });
+
+    // Paginated orders
     const orders = await Order.find({
       ...dateFilter,
-      ...statusFilter
+      ...statusFilter,
     })
       .populate("orderedItems.product")
       .populate("user")
       .sort({ createdOn: -1 })
+      .skip((currentPage - 1) * limit)
+      .limit(limit)
       .lean();
 
-    console.log("Orders found:", orders.length);
-    
-    const allOrders = await Order.find({
-      ...dateFilter,
-      ...statusFilter
-    }).lean();
+    // Summary (always from ALL filtered orders, not just current page)
+    const allOrders = await Order.find({ ...dateFilter, ...statusFilter }).lean();
 
-    const totalSalesCount = await Order.countDocuments({
-      ...dateFilter,
-      ...statusFilter
-    });
+    const totalSalesCount = totalOrders;
     const totalOrderAmount = allOrders.reduce((sum, order) => sum + (order.finalAmount || 0), 0);
-    const totalDiscount = allOrders.reduce((sum, order) => sum + ((order.discount || 0) + (order.couponDiscount || 0)), 0);
+    const totalDiscount = allOrders.reduce(
+      (sum, order) => sum + ((order.discount || 0) + (order.couponDiscount || 0)),
+      0
+    );
     const totalCouponDiscount = allOrders.reduce((sum, order) => sum + (order.couponDiscount || 0), 0);
 
     const summary = {
       totalSalesCount,
       totalOrderAmount,
       totalDiscount,
-      totalCouponDiscount
+      totalCouponDiscount,
     };
 
+    // 🔹 Render page
     res.render("salesReport", {
       orders,
       summary,
@@ -247,7 +227,9 @@ const getSalesReportPage = async (req, res) => {
       startDate,
       endDate,
       formatIndianCurrency,
-      status: status || ""
+      status: status || "",
+      currentPage,
+      totalPages: Math.ceil(totalOrders / limit),
     });
   } catch (error) {
     console.error("Error generating sales report:", error);
@@ -259,10 +241,13 @@ const getSalesReportPage = async (req, res) => {
       endDate: "",
       error: "Failed to generate sales report",
       formatIndianCurrency,
-      status: ""
+      status: "",
+      currentPage: 1,
+      totalPages: 1,
     });
   }
 };
+ 
 
 
 

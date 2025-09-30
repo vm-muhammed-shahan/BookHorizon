@@ -295,7 +295,7 @@ celled { background:#025b25; color:#991b1b; }
                     <tr>
                       <td class="p-3 border">
                         <% if (item.product && item.product.productImage && item.product.productImage.length> 0) { %>
-                          <img src="/uploads/<%= item.product.productImage[0] %>" alt="<%= item.product.productName %>"
+                          <img src="<%= item.product.productImage[0] %>" alt="<%= item.product.productName %>"
                             style="width:100px; height:100px; object-fit:cover; border-radius:8px;">
                           <% } else { %>
                             N/A

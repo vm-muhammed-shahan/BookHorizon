@@ -5,10 +5,11 @@ const Wallet = require("../../models/walletSchema");
 const Order = require("../../models/orderSchema");
 const Product = require("../../models/productSchema");
 const Coupon = require("../../models/couponSchema");
+const Offer = require("../../models/offerSchema");
 const Razorpay = require("razorpay");
 const { v4: uuidv4 } = require("uuid");
 const crypto = require("crypto");
-
+const { applyBestOffer } = require("../../controllers/admin/productController");
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -19,9 +20,9 @@ const checkoutPage = async (req, res) => {
   try {
     const userId = req.session.user._id;
     const cart = await Cart.findOne({ userId }).populate({
-    path: "items.productId",
-    populate: { path: "category" } // populate category here
-  });
+      path: "items.productId",
+      populate: { path: "category" } // populate category here
+    });
 
 
     if (!cart || cart.items.length === 0) {
@@ -29,11 +30,19 @@ const checkoutPage = async (req, res) => {
     }
 
 
-   const validItems = [];
-
+    const validItems = [];
+    const removedItems = [];
     let stockAdjusted = false;
 
+   const offers = await Offer.find({
+      offerType: { $in: ["product", "category"] },
+      isActive: true,
+      startDate: { $lte: new Date() },
+      endDate: { $gte: new Date() },
+    });
+
     for (const item of cart.items) {
+      const product = item.productId;
       if (
         item.productId &&
         !item.productId.isBlocked &&
@@ -42,27 +51,35 @@ const checkoutPage = async (req, res) => {
         item.quantity > 0 &&
         item.productId.category?.isListed !== false
       ) {
+
+        const { discountedPrice } = await applyBestOffer(product, offers);
+
+        item.price = discountedPrice;
+        item.totalPrice = item.quantity * discountedPrice;
+
         // force cart quantity <= available stock
-        if (item.quantity > item.productId.quantity) {
-          item.quantity = item.productId.quantity;
-          item.totalPrice =
-            item.quantity * (item.price || item.productId.salePrice);
-            stockAdjusted = true;   
+        if (item.quantity > product.quantity) {
+          item.quantity = product.quantity;
+          item.totalPrice = item.quantity * discountedPrice;
+          stockAdjusted = true;
         }
 
         validItems.push(item);
+      } else {
+        removedItems.push(item.productId?.productName || "Unknown item");
       }
     }
 
+    await cart.save();
+
+
     if (validItems.length === 0) {
       const userData = await User.findOne({ _id: userId });
-      return res.render("checkout", {
+      return res.render("cart", {
         user: userData,
-        message: "All items in your cart are out of stock or have zero quantity.",
         items: [],
-        subtotal: 0,
-        walletBalance: 0,
-        isWalletPaymentEnabled: false,
+        hasValidItems: false,
+        sweetAlertMessage: "Sorry, all the products in your cart are currently unavailable",
       });
     }
 
@@ -126,7 +143,8 @@ const checkoutPage = async (req, res) => {
       subtotal: subTotal,
       walletBalance: wallet.balance,
       isWalletPaymentEnabled,
-      stockAdjusted 
+      stockAdjusted,
+      removedItems
     });
   } catch (error) {
     console.error("Checkout page error:", error);

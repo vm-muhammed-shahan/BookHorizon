@@ -1,6 +1,8 @@
 const Product = require("../../models/productSchema");
 const Category = require("../../models/categorySchema");
 const Offer = require('../../models/offerSchema');
+const cloudinary = require("../../helpers/cloudinary");
+
 const fs = require("fs");
 const path = require("path");
 // const { session } = require("passport");
@@ -98,8 +100,8 @@ const addProducts = async (req, res) => {
 
     // Check for duplicate product name
     const productExist = await Product.findOne({
-  productName: { $regex: new RegExp(`^${productName.trim()}$`, "i") }
-});
+      productName: { $regex: new RegExp(`^${productName.trim()}$`, "i") }
+    });
     if (productExist) {
       return res.status(400).json({
         success: false,
@@ -118,13 +120,10 @@ const addProducts = async (req, res) => {
 
     // Save images
     const images = [];
-    const imageDir = path.join(__dirname, '../../public/uploads');
-    if (!fs.existsSync(imageDir)) {
-      fs.mkdirSync(imageDir, { recursive: true });
-    }
     for (let i = 0; i < req.files.length; i++) {
-      images.push(req.files[i].filename);
+      images.push(req.files[i].path); // Cloudinary returns URL in .path
     }
+
 
     // Create product
     const newProduct = new Product({
@@ -404,43 +403,63 @@ const editProduct = async (req, res) => {
     const data = req.body;
 
     // 🔒 Validation rules
-    if (!data.productName || !data.description || !data.category || data.regularPrice === undefined || data.quantity === undefined) {
+    if (
+      !data.productName ||
+      !data.description ||
+      !data.category ||
+      data.regularPrice === undefined ||
+      data.quantity === undefined
+    ) {
       return res.status(400).json({ error: "All required fields must be filled" });
     }
 
     // Product name: alphabets only, 2–75 chars
     if (!/^[A-Za-z\s]+$/.test(data.productName)) {
-      return res.status(400).json({ error: "Product name should contain alphabets and spaces only" });
+      return res.status(400).json({
+        error: "Product name should contain alphabets and spaces only"
+      });
     }
+
     if (data.productName.trim().length < 2 || data.productName.trim().length > 75) {
-      return res.status(400).json({ error: "Product name length must be between 2 and 75 characters" });
+      return res.status(400).json({
+        error: "Product name length must be between 2 and 75 characters"
+      });
     }
 
     // Description: alphabets only, max 1000 chars
     if (!/^[A-Za-z\s]+$/.test(data.description)) {
-      return res.status(400).json({ error: "Description should contain alphabets and spaces only" });
+      return res.status(400).json({
+        error: "Description should contain alphabets and spaces only"
+      });
     }
+
     if (data.description.length > 1000) {
-      return res.status(400).json({ error: "Description cannot exceed 1000 characters" });
+      return res.status(400).json({
+        error: "Description cannot exceed 1000 characters"
+      });
     }
 
     // Regular price > 0
     const regPrice = parseFloat(data.regularPrice);
     if (isNaN(regPrice) || regPrice <= 0) {
-      return res.status(400).json({ error: "Regular price must be greater than zero" });
+      return res.status(400).json({
+        error: "Regular price must be greater than zero"
+      });
     }
 
     // Quantity ≥ 0
     const qty = parseInt(data.quantity);
     if (isNaN(qty) || qty < 0) {
-      return res.status(400).json({ error: "Quantity must be zero or a positive number" });
+      return res.status(400).json({
+        error: "Quantity must be zero or a positive number"
+      });
     }
 
+    // Check for duplicate product name
     const existingProduct = await Product.findOne({
       productName: data.productName,
       _id: { $ne: id }
     });
-
     if (existingProduct) {
       return res.status(400).json({
         error: "Product with this name already exists. Please try with another name"
@@ -449,70 +468,51 @@ const editProduct = async (req, res) => {
 
     let finalImages = [];
 
+    // Process existing images that weren't replaced
     if (data.existingImages) {
       for (const index in data.existingImages) {
-        const imageName = data.existingImages[index];
-        if (imageName && imageName.trim() !== '') {
-          finalImages[parseInt(index)] = imageName;
+        const imagePath = data.existingImages[index];
+        if (imagePath && imagePath.trim() !== '') {
+          finalImages[parseInt(index)] = imagePath;
         }
       }
     }
 
+    // Process new uploaded images
     if (req.files) {
-      for (let i = 0; i < 3; i++) {
-        const fieldName = `images[${i}]`;
-        if (req.files[fieldName] && req.files[fieldName].length > 0) {
+      for (const fieldName in req.files) {
+        const match = fieldName.match(/images\[(\d+)\]/);
+        if (match) {
+          const index = parseInt(match[1]);
           const file = req.files[fieldName][0];
 
-          if (finalImages[i]) {
-            const oldImagePath = path.join(__dirname, '../../public/uploads/', finalImages[i]);
-            if (fs.existsSync(oldImagePath)) {
-              try {
+          // Delete old image if replacing
+          if (finalImages[index] && !finalImages[index].includes('cloudinary')) {
+            try {
+              const oldImagePath = path.join(__dirname, '../../public/uploads/', finalImages[index]);
+              if (fs.existsSync(oldImagePath)) {
                 fs.unlinkSync(oldImagePath);
-                console.log(`Deleted old image: ${finalImages[i]}`);
-              } catch (err) {
-                console.error(`Error deleting old image: ${err}`);
               }
+            } catch (err) {
+              console.error(`Error deleting old image: ${err}`);
             }
           }
-          finalImages[i] = file.filename;
+
+          finalImages[index] = file.path; // Cloudinary URL
         }
       }
     }
 
-    if (data.croppedImages) {
-      for (const index in data.croppedImages) {
-        const imageData = data.croppedImages[index];
-        if (imageData && imageData.trim() !== '' && imageData.startsWith('data:image')) {
-          const i = parseInt(index);
-          const base64Data = imageData.replace(/^data:image\/\w+;base64,/, "");
-          const buffer = Buffer.from(base64Data, 'base64');
-          const filename = `${Date.now()}_${getRandomNumber(0, 10)}_cropped.jpeg`;
-          const filePath = path.join(__dirname, '../../public/uploads/', filename);
+    // Remove undefined/null entries and validate
+    finalImages = finalImages.filter(img => img !== undefined && img !== null);
 
-          if (finalImages[i]) {
-            const oldImagePath = path.join(__dirname, '../../public/uploads/', finalImages[i]);
-            if (fs.existsSync(oldImagePath)) {
-              try {
-                fs.unlinkSync(oldImagePath);
-                console.log(`Deleted old image: ${finalImages[i]}`);
-              } catch (err) {
-                console.error(`Error deleting old image: ${err}`);
-              }
-            }
-          }
-          fs.writeFileSync(filePath, buffer);
-          finalImages[i] = filename;
-        }
-      }
+    if (finalImages.length !== 3) {
+      return res.status(400).json({
+        error: "Product must have exactly 3 images"
+      });
     }
 
-    finalImages = finalImages.filter(img => img !== undefined);
-
-    if (finalImages.length < 3) {
-      return res.status(400).json({ error: "Product must have exactly 3 images" });
-    }
-
+    // Update product
     product.productName = data.productName;
     product.description = data.description;
     product.category = data.category;
@@ -520,20 +520,24 @@ const editProduct = async (req, res) => {
     product.quantity = parseInt(data.quantity);
     product.productImage = finalImages;
 
+    // Recalculate sale price
     const offers = await Offer.find({
       offerType: { $in: ['product', 'category'] },
       isActive: true,
       startDate: { $lte: new Date() },
       endDate: { $gte: new Date() },
     });
+
     const { discountedPrice } = await applyBestOffer(product, offers);
     product.salePrice = discountedPrice;
 
     await product.save();
+
     return res.status(200).json({
       success: true,
       message: "Product updated successfully"
     });
+
   } catch (error) {
     console.error("Error in editProduct:", error);
     return res.status(500).json({
