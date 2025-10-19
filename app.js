@@ -10,8 +10,8 @@ const adminRouter = require("./routes/adminRouter");
 db();
 
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
@@ -48,8 +48,7 @@ app.use("/", userRouter);
 app.use("/admin", adminRouter);
 
 
-app.use("/", userRouter);
-app.use("/admin", adminRouter);
+
 
 
 app.use((req, res, next) => {
@@ -72,8 +71,20 @@ app.use((err, req, res, next) => {
 
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
+
+const server = app.listen(PORT, () => {
   console.log(`Server Running on Port ${PORT} 🗄️`);
 });
+
+
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(`Port ${PORT} is already in use. Kill the process or use a different port.`);
+    process.exit(1);
+  } else {
+    throw err;
+  }
+});
+
 
 module.exports = app;

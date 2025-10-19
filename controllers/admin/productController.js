@@ -1,9 +1,9 @@
 const Product = require("../../models/productSchema");
 const Category = require("../../models/categorySchema");
 const Offer = require('../../models/offerSchema');
-
 const fs = require("fs");
 const path = require("path");
+const http = require("../../helpers/const");
 
 
 
@@ -32,96 +32,96 @@ const addProducts = async (req, res) => {
       quantity,
     } = req.body;
 
-    // 1) All fields required
+    
     if (!productName || !description || !category || !regularPrice || quantity === undefined) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         success: false,
         message: "All required fields must be filled",
       });
     }
 
-    // 2) Product Name: alphabets & spaces only, length 2–75
+    
     if (!/^[A-Za-z\s]+$/.test(productName.trim())) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         success: false,
         message: "Product name should contain alphabets and spaces only",
       });
     }
     if (productName.trim().length < 2 || productName.trim().length > 75) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         success: false,
         message: "Product name length must be between 2 and 75 characters",
       });
     }
 
-    // 3) Description: alphabets & spaces only, max 1000 chars
+
     if (!/^[A-Za-z\s]+$/.test(description.trim())) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         success: false,
         message: "Description should contain alphabets and spaces only",
       });
     }
     if (description.trim().length > 1000) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         success: false,
         message: "Description cannot exceed 1000 characters",
       });
     }
 
-    // 4) Regular price: must be > 0
+    
     const regPrice = parseFloat(regularPrice);
     if (isNaN(regPrice) || regPrice <= 0) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         success: false,
         message: "Regular price must be a positive number greater than zero",
       });
     }
 
-    // 5) Quantity: must be >= 0
+    
     const productQty = parseInt(quantity);
     if (isNaN(productQty) || productQty < 0) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         success: false,
         message: "Quantity must be a number greater than or equal to zero",
       });
     }
 
-    // Check images (must be exactly 3)
+    
     if (!req.files || req.files.length !== 3) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         success: false,
         message: "Exactly 3 product images are required",
       });
     }
 
-    // Check for duplicate product name
+    
     const productExist = await Product.findOne({
       productName: { $regex: new RegExp(`^${productName.trim()}$`, "i") }
     });
     if (productExist) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         success: false,
         message: "Product already exists, please try with another name",
       });
     }
 
-    // Validate category exists
+  
     const categoryId = await Category.findOne({ _id: category });
     if (!categoryId) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         success: false,
         message: "Invalid category ID",
       });
     }
 
-    // Save images
+    
     const images = [];
     for (let i = 0; i < req.files.length; i++) {
-      images.push(req.files[i].path); // Cloudinary returns URL in .path
+      images.push(req.files[i].path); 
     }
 
 
-    // Create product
+    
     const newProduct = new Product({
       productName: productName.trim(),
       description: description.trim(),
@@ -132,16 +132,17 @@ const addProducts = async (req, res) => {
       status: 'Available',
     });
 
-    // Apply best offer for sale price
+    
     const { discountedPrice } = await applyBestOffer(newProduct, null, categoryId._id);
-    newProduct.salePrice = discountedPrice;
+newProduct.salePrice = discountedPrice;
 
-    await newProduct.save();
-    return res.status(200).json({ success: true, message: "Product added successfully" });
+await newProduct.save();
+return res.status(http.OK).json({ success: true, message: "Product added successfully" });
+
 
   } catch (error) {
     console.error("Error saving product", error);
-    return res.status(500).json({
+    return res.status(http. Internal_Server_Error).json({
       success: false,
       message: error.message || "An error occurred while adding the product",
     });
@@ -206,14 +207,14 @@ const addProductOffer = async (req, res) => {
     const endDate = new Date(req.body.endDate);
 
     if (startDate < new Date().setHours(0, 0, 0, 0)) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         status: false,
         message: "Start date cannot be in the past",
       });
     }
 
     if (endDate <= startDate) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         status: false,
         message: "End date must be after start date",
       });
@@ -221,7 +222,7 @@ const addProductOffer = async (req, res) => {
 
     const product = await Product.findById(productId);
     if (!product) {
-      return res.status(404).json({ status: false, message: "Product not found" });
+      return res.status(http.Not_Found).json({ status: false, message: "Product not found" });
     }
 
     const existingProductOffer = await Offer.findOne({
@@ -236,7 +237,7 @@ const addProductOffer = async (req, res) => {
       ]
     });
     if (existingProductOffer) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         status: false,
         message: "An active product offer already exists for this date range",
       });
@@ -284,7 +285,7 @@ const addProductOffer = async (req, res) => {
     res.json({ status: true, message: "Product offer added successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ status: false, message: "Failed to add product offer" });
+    res.status(http.Internal_Server_Error).json({ status: false, message: "Failed to add product offer" });
   }
 };
 
@@ -293,7 +294,7 @@ const removeProductOffer = async (req, res) => {
     const { productId } = req.body;
     const product = await Product.findById(productId);
     if (!product) {
-      return res.status(404).json({ status: false, message: "Product not found" });
+      return res.status(http.Not_Found).json({ status: false, message: "Product not found" });
     }
 
     await Offer.deleteOne({ offerType: 'product', applicableId: productId });
@@ -312,7 +313,7 @@ const removeProductOffer = async (req, res) => {
     res.json({ status: true, message: "Product offer removed successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ status: false, message: "Failed to remove product offer" });
+    res.status(http.Internal_Server_Error).json({ status: false, message: "Failed to remove product offer" });
   }
 };
 
@@ -329,7 +330,7 @@ const blockProduct = async (req, res) => {
     });
   } catch (error) {
     console.log(error)
-    res.status(500).json({
+    res.status(http.Internal_Server_Error).json({
       success: false,
       title: 'Error',
       text: 'Failed to block the product. Please try again.'
@@ -349,7 +350,7 @@ const unblockProduct = async (req, res) => {
       text: 'The product has been successfully unblocked.'
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(http.Internal_Server_Error).json({
       success: false,
       title: 'Error',
       text: 'Failed to unblock the product. Please try again.'
@@ -393,12 +394,11 @@ const editProduct = async (req, res) => {
     const product = await Product.findOne({ _id: id });
 
     if (!product) {
-      return res.status(404).json({ error: "Product not found" });
+      return res.status(http.Not_Found).json({ error: "Product not found" });
     }
 
     const data = req.body;
 
-    // 🔒 Validation rules
     if (
       !data.productName ||
       !data.description ||
@@ -406,65 +406,59 @@ const editProduct = async (req, res) => {
       data.regularPrice === undefined ||
       data.quantity === undefined
     ) {
-      return res.status(400).json({ error: "All required fields must be filled" });
+      return res.status(http.Bad_Request).json({ error: "All required fields must be filled" });
     }
 
-    // Product name: alphabets only, 2–75 chars
     if (!/^[A-Za-z\s]+$/.test(data.productName)) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         error: "Product name should contain alphabets and spaces only"
       });
     }
 
     if (data.productName.trim().length < 2 || data.productName.trim().length > 75) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         error: "Product name length must be between 2 and 75 characters"
       });
     }
 
-    // Description: alphabets only, max 1000 chars
     if (!/^[A-Za-z\s]+$/.test(data.description)) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         error: "Description should contain alphabets and spaces only"
       });
     }
 
     if (data.description.length > 1000) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         error: "Description cannot exceed 1000 characters"
       });
     }
 
-    // Regular price > 0
     const regPrice = parseFloat(data.regularPrice);
     if (isNaN(regPrice) || regPrice <= 0) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         error: "Regular price must be greater than zero"
       });
     }
 
-    // Quantity ≥ 0
     const qty = parseInt(data.quantity);
     if (isNaN(qty) || qty < 0) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         error: "Quantity must be zero or a positive number"
       });
     }
 
-    // Check for duplicate product name
     const existingProduct = await Product.findOne({
       productName: data.productName,
       _id: { $ne: id }
     });
     if (existingProduct) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         error: "Product with this name already exists. Please try with another name"
       });
     }
 
     let finalImages = [];
 
-    // Process existing images that weren't replaced
     if (data.existingImages) {
       for (const index in data.existingImages) {
         const imagePath = data.existingImages[index];
@@ -474,7 +468,6 @@ const editProduct = async (req, res) => {
       }
     }
 
-    // Process new uploaded images
     if (req.files) {
       for (const fieldName in req.files) {
         const match = fieldName.match(/images\[(\d+)\]/);
@@ -482,7 +475,6 @@ const editProduct = async (req, res) => {
           const index = parseInt(match[1]);
           const file = req.files[fieldName][0];
 
-          // Delete old image if replacing
           if (finalImages[index] && !finalImages[index].includes('cloudinary')) {
             try {
               const oldImagePath = path.join(__dirname, '../../public/uploads/', finalImages[index]);
@@ -494,21 +486,19 @@ const editProduct = async (req, res) => {
             }
           }
 
-          finalImages[index] = file.path; // Cloudinary URL
+          finalImages[index] = file.path; 
         }
       }
     }
 
-    // Remove undefined/null entries and validate
     finalImages = finalImages.filter(img => img !== undefined && img !== null);
 
     if (finalImages.length !== 3) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         error: "Product must have exactly 3 images"
       });
     }
 
-    // Update product
     product.productName = data.productName;
     product.description = data.description;
     product.category = data.category;
@@ -516,7 +506,6 @@ const editProduct = async (req, res) => {
     product.quantity = parseInt(data.quantity);
     product.productImage = finalImages;
 
-    // Recalculate sale price
     const offers = await Offer.find({
       offerType: { $in: ['product', 'category'] },
       isActive: true,
@@ -529,14 +518,14 @@ const editProduct = async (req, res) => {
 
     await product.save();
 
-    return res.status(200).json({
+    return res.status(http.OK).json({
       success: true,
       message: "Product updated successfully"
     });
 
   } catch (error) {
     console.error("Error in editProduct:", error);
-    return res.status(500).json({
+    return res.status(http.Internal_Server_Error).json({
       error: "An error occurred while updating the product"
     });
   }
@@ -558,7 +547,7 @@ const deleteSingleImage = async (req, res) => {
     res.send({ status: true });
   } catch (error) {
     console.error("Error in deleteSingleImage:", error);
-    res.status(500).json({ error: "An error occurred while deleting the image" });
+    res.status(http.Internal_Server_Error).json({ error: "An error occurred while deleting the image" });
   }
 }
 

@@ -2,6 +2,7 @@ const Cart = require("../../models/cartSchema");
 const Product = require("../../models/productSchema");
 const Wishlist = require("../../models/wishlistSchema");
 const User = require("../../models/userSchema");
+const http = require("../../helpers/const");
 const cleanCartItems = async (userId) => {
   try {
     const cart = await Cart.findOne({ userId }).populate({
@@ -41,7 +42,7 @@ const addToCart = async (req, res) => {
   try {
     const userId = req.session.user._id;
     if (!userId) {
-      return res.status(401).json({
+      return res.status(http.Unauthorized).json({
         success: false,
         message: 'You need to be logged in to add items to cart.'
       });
@@ -49,7 +50,7 @@ const addToCart = async (req, res) => {
     const { productId, quantity } = req.body;
     const product = await Product.findById(productId);
     if (!product || product.isBlocked || product.status !== 'Available') {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         success: false,
         message: 'Product is out of stock or unavailable.'
       });
@@ -60,13 +61,13 @@ const addToCart = async (req, res) => {
     }
     const item = cart.items.find(i => i.productId.toString() === productId);
     if (item) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         success: false,
         message: 'This product is already in your cart.'
       });
     }
     if (product.quantity < 1) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         success: false,
         message: 'Product is out of stock.'
       });
@@ -82,14 +83,14 @@ const addToCart = async (req, res) => {
       { userId },
       { $pull: { products: { productId: productId } } }
     );
-    res.status(200).json({
+    res.status(http.OK).json({
       success: true,
       message: `${product.productName} has been added to your cart.`,
       productName: product.productName
     });
   } catch (error) {
     console.log('Error adding to cart:', error);
-    res.status(500).json({
+    res.status(http.Internal_Server_Error).json({
       success: false,
       message: 'Failed to add item to cart. Please try again.'
     });
@@ -103,11 +104,11 @@ const updateQuantity = async (req, res) => {
     const userId = req.session.user._id;
     const cart = await Cart.findOne({ userId }).populate("items.productId");
     if (!cart) {
-      return res.status(404).json({ success: false, error: "Cart not found" });
+      return res.status(http.Not_Found).json({ success: false, error: "Cart not found" });
     }
     const item = cart.items.find(i => i.productId._id.toString() === productId);
     if (!item) {
-      return res.status(404).json({ success: false, error: "Item not found in cart" });
+      return res.status(http.Bad_Request).json({ success: false, error: "Item not found in cart" });
     }
     const currentStock = parseInt(item.productId.quantity) || 0;
     const maxQuantity = Math.min(5, currentStock);
@@ -115,23 +116,23 @@ const updateQuantity = async (req, res) => {
 
     if (action === "increment") {
       if (item.quantity >= maxQuantity) {
-        return res.status(400).json({ success: false, error: currentStock <= 5 ? `Only ${currentStock} items available in stock` : "Maximum quantity of 5 reached" });
+        return res.status(http.Bad_Request).json({ success: false, error: currentStock <= 5 ? `Only ${currentStock} items available in stock` : "Maximum quantity of 5 reached" });
       }
       newQuantity++;
     } else if (action === "decrement") {
       if (item.quantity <= 1) {
-        return res.status(400).json({ success: false, error: "Minimum quantity of 1 reached" });
+        return res.status(http.Bad_Request).json({ success: false, error: "Minimum quantity of 1 reached" });
       }
       newQuantity--;
     } else {
-      return res.status(400).json({ success: false, error: "Invalid action" });
+      return res.status(http.Bad_Request).json({ success: false, error: "Invalid action" });
     }
 
     item.quantity = newQuantity;
     item.totalPrice = item.quantity * item.price;
     await cart.save();
 
-    res.status(200).json({
+    res.status(http.OK).json({
       success: true,
       quantity: item.quantity,
       subtotal: item.totalPrice,
@@ -139,7 +140,7 @@ const updateQuantity = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating cart quantity:", error);
-    res.status(500).json({ success: false, error: "Internal server error" });
+    res.status(http.Internal_Server_Error).json({ success: false, error: "Internal server error" });
   }
 };
 
@@ -164,12 +165,12 @@ const removeItemPost = async (req, res) => {
 
     const cart = await Cart.findOne({ userId });
     if (!cart) {
-      return res.status(404).json({ success: false, message: 'Cart not found.' });
+      return res.status(http.Not_Found).json({ success: false, message: 'Cart not found.' });
     }
 
     const itemExists = cart.items.some(item => item.productId.toString() === productId);
     if (!itemExists) {
-      return res.status(404).json({ success: false, message: 'Item not found in cart.' });
+      return res.status(http.Not_Found).json({ success: false, message: 'Item not found in cart.' });
     }
 
     await Cart.updateOne(
@@ -177,10 +178,10 @@ const removeItemPost = async (req, res) => {
       { $pull: { items: { productId } } }
     );
 
-    res.status(200).json({ success: true, message: 'Item removed from cart.' });
+    res.status(http.OK).json({ success: true, message: 'Item removed from cart.' });
   } catch (error) {
     console.error('Error removing item from cart:', error);
-    res.status(500).json({ success: false, message: 'Failed to remove item from cart.' });
+    res.status(http.Internal_Server_Error).json({ success: false, message: 'Failed to remove item from cart.' });
   }
 };
 
@@ -221,7 +222,7 @@ const viewCart = async (req, res) => {
     if (cart) {
       await cart.save();
     }
-    // filter only valid items
+    
     const validItems = [];
     for (const item of items) {
       if (

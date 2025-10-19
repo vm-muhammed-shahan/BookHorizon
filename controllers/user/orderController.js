@@ -6,6 +6,7 @@ const Coupon = require("../../models/couponSchema");
 const formatDate = require("../../helpers/dateFormatter");
 const PDFDocument = require("pdfkit");
 const path = require("path");
+const http = require("../../helpers/const");
 
 
 
@@ -13,7 +14,13 @@ const getOrders = async (req, res) => {
   try {
     const userId = req.session.user._id;
     const search = req.query.search || "";
-    let query = { user: userId };
+    let query = {
+      user: userId,
+      $or: [
+        { paymentMethod: { $ne: "razorpay" } },
+        { paymentStatus: { $ne: "Pending" } }
+      ]
+    };
     if (search) {
       query.orderId = { $regex: search, $options: "i" };
     }
@@ -47,7 +54,7 @@ const getOrders = async (req, res) => {
     const userData = await User.findOne({ _id: userId }, 'name');
     res.render("orders", { orders, search, user: userData || req.session.user, wallet });
   } catch (error) {
-    res.status(500).render("error", { message: "Error fetching orders" });
+    res.status(http.Internal_Server_Error).render("error", { message: "Error fetching orders" });
   }
 };
 
@@ -56,13 +63,27 @@ const getOrderDetail = async (req, res) => {
   try {
     const { orderId } = req.params;
     const userId = req.session.user._id;
-    // console.log('Order ID:', orderId);
     const order = await Order.findOne({ orderId, user: userId })
       .populate({
         path: "orderedItems.product",
         select: "productName productImage"
       })
       .populate("user", "name email");
+    if (!order) {
+      req.session.message = { type: "error", text: "Order not found or you are not authorized to view it" };
+      return res.redirect("/orders");
+    }
+
+  
+    if (order.paymentMethod === "razorpay" && order.paymentStatus === "Failed") {
+      return res.redirect(`/order/failure/${order.orderId}`);
+    }
+
+    
+    if (order.paymentMethod === "razorpay" && order.paymentStatus === "Pending") {
+      req.session.message = { type: "error", text: "Order not found or you are not authorized to view it" };
+      return res.redirect("/orders");
+    }
     if (!order) {
       req.session.message = { type: "error", text: "Order not found or you are not authorized to view it" };
       return res.redirect("/orders");
@@ -106,9 +127,9 @@ const getOrderStatus = async (req, res) => {
       .populate("user", "name email");
 
     if (!order) {
-      return res.status(403).json({ error: "Order not found or you are not authorized to access it" });
+      return res.status(http.Forbidden).json({ error: "Order not found or you are not authorized to access it" });
     }
-    res.status(200).json({
+    res.status(http.OK).json({
       success: true,
       order: {
         status: order.status,
@@ -125,7 +146,7 @@ const getOrderStatus = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching order status:", error);
-    res.status(500).json({ error: "Server error while fetching order status" });
+    res.status(http.Internal_Server_Error).json({ error: "Server error while fetching order status" });
   }
 };
 
@@ -148,7 +169,7 @@ const getWalletDetails = async (req, res) => {
     res.render("wallet", { wallet, user: userData || req.session.user });
   } catch (error) {
     console.error("Error fetching wallet details:", error);
-    res.status(500).render("page-404", { message: "Error fetching wallet details" });
+    res.status(http.Internal_Server_Error).render("page-404", { message: "Error fetching wallet details" });
   }
 };
 
@@ -159,11 +180,20 @@ const cancelOrder = async (req, res) => {
     const userId = req.session.user._id;
     const order = await Order.findOne({ orderId, user: userId }).populate("orderedItems.product");
     if (!order) {
-      return res.status(403).json({ error: "Order not found or you are not authorized to cancel it" });
+      return res.status(http.Forbidden).json({ error: "Order not found or you are not authorized to cancel it" });
+    }
+
+    if (order.paymentMethod === "razorpay" && order.paymentStatus === "Pending") {
+      return res.status(http.Bad_Request).json({ error: "Cannot cancel unverified payment orders" });
+    }
+
+
+    if (!order) {
+      return res.status(http.Forbidden).json({ error: "Order not found or you are not authorized to cancel it" });
     }
 
     if (!["Pending", "Processing"].includes(order.status)) {
-      return res.status(400).json({ error: "Cannot cancel order in this status" });
+      return res.status(http.Bad_Request).json({ error: "Cannot cancel order in this status" });
     }
 
     let refundAmount = 0;
@@ -173,14 +203,14 @@ const cancelOrder = async (req, res) => {
     if (productId) {
       const itemIndex = order.orderedItems.findIndex(i => i.product._id.toString() === productId);
       if (itemIndex === -1) {
-        return res.status(404).json({ error: "Item not found in order" });
+        return res.status(http.Not_Found).json({ error: "Item not found in order" });
       }
       const item = order.orderedItems[itemIndex];
       if (item.cancelled) {
-        return res.status(400).json({ error: "Item already cancelled" });
+        return res.status(http.Bad_Request).json({ error: "Item already cancelled" });
       }
       if (item.returned) {
-        return res.status(400).json({ error: "Item has a return request and cannot be cancelled" });
+        return res.status(http.Bad_Request).json({ error: "Item has a return request and cannot be cancelled" });
       }
 
       const itemPrice = item.price * item.quantity;
@@ -227,7 +257,11 @@ const cancelOrder = async (req, res) => {
       if (allCancelled) {
         order.status = "Cancelled";
         order.cancelReason = reason || "No reason provided";
-        order.paymentStatus = "Cancelled";
+        if (["wallet", "razorpay", "wallet+razorpay"].includes(order.paymentMethod)) {
+          order.paymentStatus = "Completed";
+        } else {
+          order.paymentStatus = "Cancelled"; // COD
+        }
         order.finalAmount = 0;
         order.tax = 0;
         order.shippingCharge = 0;
@@ -235,10 +269,10 @@ const cancelOrder = async (req, res) => {
       }
     } else {
       if (order.status === "Cancelled") {
-        return res.status(400).json({ error: "Order already cancelled" });
+        return res.status(http.Bad_Request).json({ error: "Order already cancelled" });
       }
       if (order.orderedItems.some(i => i.returned)) {
-        return res.status(400).json({ error: "Order has return requests and cannot be cancelled" });
+        return res.status(http.Bad_Request).json({ error: "Order has return requests and cannot be cancelled" });
       }
 
       refundAmount = order.finalAmount;
@@ -288,16 +322,16 @@ const cancelOrder = async (req, res) => {
     }
 
     await order.save().catch(err => { throw new Error(`Failed to save order: ${err.message}`); });
-    return res.status(200).json({
+    return res.status(http.OK).json({
       success: true,
       message: `Item${productId ? "" : "s"} cancelled successfully. ${order.paymentMethod !== "cod" && refundAmount > 0
-          ? `Refund of ₹${refundAmount.toFixed(2)} credited to your wallet.`
-          : "No refund applicable for COD orders."
+        ? `Refund of ₹${refundAmount.toFixed(2)} credited to your wallet.`
+        : "No refund applicable for COD orders."
         }`,
     });
   } catch (error) {
     console.error("Error cancelling order:", error.stack);
-    return res.status(500).json({ error: "Server error while cancelling order" });
+    return res.status(http.Internal_Server_Error).json({ error: "Server error while cancelling order" });
   }
 };
 
@@ -309,29 +343,29 @@ const returnOrder = async (req, res) => {
     const order = await Order.findOne({ orderId, user: userId }).populate("orderedItems.product");
 
     if (!order) {
-      return res.status(403).json({ error: "Order not found or you are not authorized to return it" });
+      return res.status(http.Forbidden).json({ error: "Order not found or you are not authorized to return it" });
     }
 
     const returnWindowDays = 7;
     const deliveredDate = order.deliveredOn;
     if (!deliveredDate || new Date() > new Date(deliveredDate.getTime() + returnWindowDays * 24 * 60 * 60 * 1000)) {
-      return res.status(400).json({ error: "Return window has expired (7 days after delivery)" });
+      return res.status(http.Bad_Request).json({ error: "Return window has expired (7 days after delivery)" });
     }
 
     const itemIndex = order.orderedItems.findIndex(i => i.product._id.toString() === productId);
     if (itemIndex === -1) {
-      return res.status(404).json({ error: "Item not found in order" });
+      return res.status(http.Not_Found).json({ error: "Item not found in order" });
     }
 
     const item = order.orderedItems[itemIndex];
     if (item.cancelled) {
-      return res.status(400).json({ error: "Cannot return a cancelled item" });
+      return res.status(http.Bad_Request).json({ error: "Cannot return a cancelled item" });
     }
     if (item.returned) {
-      return res.status(400).json({ error: "Item already has a return request" });
+      return res.status(http.Bad_Request).json({ error: "Item already has a return request" });
     }
     if (!reason) {
-      return res.status(400).json({ error: "Return reason is mandatory" });
+      return res.status(http.Bad_Request).json({ error: "Return reason is mandatory" });
     }
 
     item.returned = true;
@@ -347,13 +381,13 @@ const returnOrder = async (req, res) => {
     }
 
     await order.save();
-    return res.status(200).json({
+    return res.status(http.OK).json({
       success: true,
       message: "Return request submitted successfully. Awaiting admin approval.",
     });
   } catch (error) {
     console.error("Error submitting return request:", error);
-    return res.status(500).json({ error: "Server error while submitting return request" });
+    return res.status(http.Internal_Server_Error).json({ error: "Server error while submitting return request" });
   }
 };
 
@@ -369,7 +403,7 @@ const downloadInvoice = async (req, res) => {
     })
 
     if (!order) {
-      return res.status(403).send("Order not found or you are not authorized to access it")
+      return res.status(http.Forbidden).send("Order not found or you are not authorized to access it")
     }
 
     const doc = new PDFDocument({ margin: 40, size: "A4" })
@@ -519,7 +553,7 @@ const downloadInvoice = async (req, res) => {
     drawLine()
     moveDown(25)
 
-    
+
     doc.fontSize(16).font("Helvetica-Bold").fillColor("#2c3e50").text("Items Ordered", margin, yPosition)
 
     moveDown(20)
@@ -661,14 +695,13 @@ const downloadInvoice = async (req, res) => {
       align: "right",
     })
 
-    
+
     yPosition = totalY + 40
-    
-    const footerHeight = 40 
-    const minFooterY = pageHeight - margin - footerHeight 
+
+    const footerHeight = 40
+    const minFooterY = pageHeight - margin - footerHeight
 
     if (yPosition > minFooterY - 30) {
-      // 30 points buffer
       doc.addPage()
       yPosition = margin
     }
@@ -692,7 +725,7 @@ const downloadInvoice = async (req, res) => {
     doc.end()
   } catch (error) {
     console.error("Error generating invoice:", error)
-    res.status(500).send("Error generating invoice")
+    res.status(http.Internal_Server_Error).send("Error generating invoice")
   }
 }
 

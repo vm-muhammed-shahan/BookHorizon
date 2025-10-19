@@ -9,6 +9,7 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const { session } = require("passport");
 const offerController = require("../admin/offerController");
+const http = require("../../helpers/const");
 function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
@@ -103,7 +104,7 @@ const loadHomepage = async (req, res) => {
     }
   } catch (error) {
     console.error("Home page error:", error.message);
-    res.status(500).send("Server error");
+    res.status(http.Internal_Server_Error).send("Server error");
   }
 };
 
@@ -111,7 +112,7 @@ const loadSignup = async (req, res) => {
   try {
     return res.render("signup");
   } catch (error) {
-    res.status(500).send("server Error")
+    res.status(http.Internal_Server_Error).send("server Error")
   }
 }
 
@@ -123,7 +124,6 @@ const signup = async (req, res) => {
     const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     const phonePattern = /^[6-9]\d{9}$/;
     const passPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
-
 
     if (!name || !phone || !email || !password || !cpassword) {
       return res.render("signup", { message: "All fields are required" });
@@ -170,7 +170,6 @@ const signup = async (req, res) => {
     req.session.userData = { name, phone, email, password };
 
     res.render("verify-otp");
-    console.log("OTP Sent:", otp);
   } catch (error) {
     console.error("Signup error:", error);
     res.render("signup", { message: "An error occurred. Please try again." });
@@ -205,14 +204,13 @@ const verifyOtp = async (req, res) => {
         });
       });
 
-      //  console.log("Session after OTP verification:", req.session); 
       res.json({ success: true, redirectUrl: "/login" });
     } else {
-      res.status(400).json({ success: false, message: "Invalid OTP, please try again" });
+      res.status(http.Bad_Request).json({ success: false, message: "Invalid OTP, please try again" });
     }
   } catch (error) {
     console.error("Error verifying OTP:", error);
-    res.status(500).json({ success: false, message: "An error occurred. Please try again." });
+    res.status(http.Internal_Server_Error).json({ success: false, message: "An error occurred. Please try again." });
   }
 };
 
@@ -220,7 +218,7 @@ const resendOtp = async (req, res) => {
   try {
     const { email } = req.session.userData;
     if (!email) {
-      return res.status(400).json({ success: false, message: "Email not found in session" })
+      return res.status(http.Bad_Request).json({ success: false, message: "Email not found in session" })
     }
 
     const otp = generateOtp()
@@ -229,14 +227,14 @@ const resendOtp = async (req, res) => {
     const emailSent = await sendVerificationEmail(email, otp);
     if (emailSent) {
       console.log("Resend OTP:", otp);
-      res.status(200).json({ success: true, message: "OTP Resend Successfull" })
+      res.status(http.OK).json({ success: true, message: "OTP Resend Successfull" })
     } else {
-      res.status(500).json({ success: false, message: "Failed to resend OTP. Please try again" });
+      res.status(http.Internal_Server_Error).json({ success: false, message: "Failed to resend OTP. Please try again" });
     }
 
   } catch (error) {
     console.error("Error resending OTP", error);
-    res.status(500).json({ success: false, message: "Internal Server Error. Please try again." });
+    res.status(http.Internal_Server_Error).json({ success: false, message: "Internal Server Error. Please try again." });
   }
 };
 
@@ -286,20 +284,13 @@ const login = async (req, res) => {
   }
 }
 
-const logout = async (req, res) => {
-  try {
-    req.session.destroy((err) => {
-      if (err) {
-        console.log("session destruction error", err.message);
-        return res.redirect("/pageNotFound");
-      }
-      return res.redirect("/login")
-    })
-  } catch (error) {
-    console.log("Logout error", error);
-    res.redirect("/pageNotFound");
+const logout = (req, res) => {
+  if (req.session.user) {
+    delete req.session.user;             
+    res.clearCookie("connect.sid");       
   }
-}
+  res.redirect("/login");
+};
 
 const filterProduct = async (req, res) => {
   try {
@@ -311,7 +302,6 @@ const filterProduct = async (req, res) => {
 
     const validCategories = selectedCategories.length > 0 ? await Category.find({ _id: { $in: selectedCategories }, isListed: true }) : [];
     if (selectedCategories.length > 0 && validCategories.length === 0) {
-      console.log("No valid categories found");
       return res.redirect("/shop");
     }
 
@@ -457,7 +447,7 @@ const updatedLoadShoppingPage = async (req, res) => {
     });
   } catch (error) {
     console.log("Error loading shop:", error);
-    res.status(500).render("errorPage", { message: "Something went wrong" });
+    res.status(http.Internal_Server_Error).render("errorPage", { message: "Something went wrong" });
   }
 };
 
@@ -472,7 +462,7 @@ const getProfile = async (req, res) => {
     });
   } catch (err) {
     console.error("Error loading profile", err);
-    res.status(500).send("Server Error");
+    res.status(http.Internal_Server_Error).send("Server Error");
   }
 };
 
@@ -482,7 +472,7 @@ const editProfilePage = async (req, res) => {
     res.render("editProfile", { user, errors: {} });
   } catch (err) {
     console.error("Error loading edit profile", err);
-    res.status(500).send("Server Error");
+    res.status(http.Internal_Server_Error).send("Server Error");
   }
 };
 
@@ -513,7 +503,7 @@ const updateProfile = async (req, res) => {
 
     if (Object.keys(errors).length > 0) {
       console.log('Validation Errors:', errors);
-      return res.status(400).json({ errors });
+      return res.status(http.Bad_Request).json({ errors });
     }
 
     const user = await User.findById(req.session.user._id);
@@ -531,7 +521,7 @@ const updateProfile = async (req, res) => {
     res.redirect('/profile');
   } catch (err) {
     console.error("Error updating profile", err);
-    res.status(500).json({ error: "Server Error" });
+    res.status(http.Internal_Server_Error).json({ error: "Server Error" });
   }
 };
 
@@ -577,38 +567,9 @@ const changePasswordValid = async (req, res) => {
   }
 }
 
-const verifyChangePassOtp = async (req, res) => {
-  try {
-    const enteredOtp = req.body.otp;
-    if (enteredOtp === req.session.userOtp) {
-      res.json({ success: true, redirectUrl: "/reset-password" })
-    } else {
-      res.json({ success: false, message: "OTP not matching" })
-    }
-  } catch (error) {
-    res.status(500).json({ success: false, message: "An error occurred. Please try again later" })
-  }
-}
 
-const changeEmail = async (req, res) => {
-  try {
-    res.render("change-email")
-  } catch (error) {
-    res.redirect("/pageNotFound")
-  }
-}
 
-const changeEmailEmailValid = async (req, res) => {
-  try {
-    const { email } = req.body;
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      const otp = generateOtp
-    }
-  } catch (error) {
 
-  }
-}
 
 
 

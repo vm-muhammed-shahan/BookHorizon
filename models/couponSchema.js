@@ -11,13 +11,13 @@ const couponSchema = new Schema({
   discountPercentage: {
     type: Number,
     required: true,
-    min: [0, "Discount must be at least 0%"],
-    max: [100, "Discount cannot exceed 100%"],
+    min: [1, "Discount must be at least 1%"],
+    max: [99, "Discount cannot exceed 99%"],
   },
   minimumPrice: {
     type: Number,
     required: true,
-    min: [0, "Minimum purchase amount must be at least 0"],
+    min: [1, "Minimum purchase amount must be at least 1"],
   },
   createdOn: {
     type: Date,
@@ -27,10 +27,16 @@ const couponSchema = new Schema({
     type: Date,
     required: true,
     validate: {
-      validator: function (value) {
-        return value > Date.now();
-      },
-      message: "Expiry date must be in the future",
+     validator: function (value) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const expDate = new Date(value);
+  expDate.setHours(0, 0, 0, 0);
+  return expDate >= tomorrow;
+},
+message: "Expiry date must be in the future (not today)",
     },
   },
   islist: {
@@ -40,12 +46,12 @@ const couponSchema = new Schema({
 
   usageLimit: {
     type: Number,
-    default: 1, 
+    default: 1,
     min: [1, "Usage limit must be at least 1"],
   },
   usedCount: {
     type: Number,
-    default: 0, 
+    default: 0,
   },
 
   userId: [

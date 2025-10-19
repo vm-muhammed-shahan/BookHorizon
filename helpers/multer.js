@@ -7,10 +7,10 @@ const ALLOWED_FILE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
-    let folder = "products"; // folder name in Cloudinary
+    let folder = "products"; 
     return {
       folder: folder,
-      format: file.mimetype.split("/")[1], // jpg, png, webp
+      format: file.mimetype.split("/")[1], 
       public_id: Date.now() + "-" + file.originalname.split(".")[0],
     };
   },
@@ -27,7 +27,7 @@ const fileFilter = (req, file, cb) => {
 const uploads = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 },
 });
 
 

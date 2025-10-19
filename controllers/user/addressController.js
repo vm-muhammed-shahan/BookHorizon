@@ -1,3 +1,4 @@
+const http = require("../../helpers/const");
 const Address = require("../../models/addressSchema");
 const User = require("../../models/userSchema");
 const validator = require("validator");
@@ -17,7 +18,7 @@ const getAddresses = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching addresses:", error);
-    res.status(500).send("An error occurred while fetching addresses.");
+    res.status(http.Internal_Server_Error).send("An error occurred while fetching addresses.");
   }
 };
 
@@ -45,47 +46,47 @@ const addAddress = async (req, res) => {
     const isOnlyUnderscoresOrHyphens = (val) =>
       /^_+$/.test(val) || /^-+$/.test(val);
 
-    // Validate required fields
+  
     if (!name || !phone || !city || !state || !landMark || !pincode || !altPhone || !addressType) {
-      return res.status(400).json({ error: "All fields are required" });
+      return res.status(http.Bad_Request).json({ error: "All fields are required" });
     }
 
-    // Validate text fields format
+    
     if (
       !nameCityRegex.test(name) ||
       !nameCityRegex.test(city) ||
       !nameCityRegex.test(state) ||
       !nameCityRegex.test(landMark)
     ) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         error: "Text fields must be 2–50 characters and valid format",
       });
     }
 
-    // Validate text fields for underscores or hyphens
+    
     const fieldsToCheck = { name, city, state, landMark };
     for (const [key, value] of Object.entries(fieldsToCheck)) {
       if (isOnlyUnderscoresOrHyphens(value)) {
-        return res.status(400).json({ error: `${key} cannot be only underscores or hyphens` });
+        return res.status(http.Bad_Request).json({ error: `${key} cannot be only underscores or hyphens` });
       }
     }
 
-    // Validate phone numbers
+    
     if (invalidPhone(phone) || invalidPhone(altPhone)) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         error: "Phone numbers must be valid 10-digit numbers starting with 6–9",
       });
     }
 
     if (phone === altPhone) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         error: "Phone and Alternative Phone must be different",
       });
     }
 
-    // Validate pincode
+    
     if (!pincodeRegex.test(pincode)) {
-      return res.status(400).json({ error: "Pincode must be a valid 6-digit Indian pincode" });
+      return res.status(http.Bad_Request).json({ error: "Pincode must be a valid 6-digit Indian pincode" });
     }
 
     let doc = await Address.findOne({ userId });
@@ -115,7 +116,7 @@ const addAddress = async (req, res) => {
     await doc.save();
     const savedAddr = doc.address[doc.address.length - 1]; 
     if (req.xhr || req.headers.accept?.includes("application/json")) {
-  return res.status(200).json({ success: true, message: "Address saved successfully" });
+  return res.status(http.OK).json({ success: true, message: "Address saved successfully",newAddress: savedAddr });
 }
 
 if (req.body.from === "checkout") {
@@ -126,7 +127,7 @@ if (req.body.from === "checkout") {
   } catch (err) {
     console.error("Address Error:", err);
     return res
-      .status(500)
+      .status(http.Internal_Server_Error)
       .json({ error: "Server error while adding address" });
   }
 };
@@ -141,13 +142,13 @@ const getEdit = async (req, res) => {
     const address = doc.address.id(addrId);
 
     if (!address) {
-      return res.status(404).send("Address not found");
+      return res.status(http.Not_Found).send("Address not found");
     }
 
     res.render("edit-address", { address });
   } catch (error) {
     console.log(error);
-    res.status(500).send("Server Error");
+    res.status(http.Internal_Server_Error).send("Server Error");
   }
 };
 
@@ -172,7 +173,7 @@ const editAddress = async (req, res) => {
 
     
     if (!name || !phone || !city || !state || !landMark || !pincode || !altPhone || !addressType) {
-      return res.status(400).json({ error: "All fields are required" });
+      return res.status(http.Bad_Request).json({ error: "All fields are required" });
     }
 
     
@@ -182,7 +183,7 @@ const editAddress = async (req, res) => {
       !nameCityRegex.test(state) ||
       !nameCityRegex.test(landMark)
     ) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         error: "Text fields must be 2–50 characters and valid format",
       });
     }
@@ -191,38 +192,38 @@ const editAddress = async (req, res) => {
     const fieldsToCheck = { name, city, state, landMark };
     for (const [key, value] of Object.entries(fieldsToCheck)) {
       if (isOnlyUnderscoresOrHyphens(value)) {
-        return res.status(400).json({ error: `${key} cannot be only underscores or hyphens` });
+        return res.status(http.Bad_Request).json({ error: `${key} cannot be only underscores or hyphens` });
       }
     }
 
     
     if (invalidPhone(phone) || invalidPhone(altPhone)) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         error: "Phone numbers must be valid 10-digit numbers starting with 6–9",
       });
     }
 
     if (phone === altPhone) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         error: "Phone and Alternative Phone must be different",
       });
     }
 
     
     if (!pincodeRegex.test(pincode)) {
-      return res.status(400).json({ error: "Pincode must be a valid 6-digit Indian pincode" });
+      return res.status(http.Bad_Request).json({ error: "Pincode must be a valid 6-digit Indian pincode" });
     }
 
     
     const doc = await Address.findOne({ userId });
     if (!doc) {
-      return res.status(404).json({ error: "User address record not found" });
+      return res.status(http.Not_Found).json({ error: "User address record not found" });
     }
 
   
     const index = doc.address.findIndex((a) => a._id.toString() === addrId);
     if (index === -1) {
-      return res.status(404).json({ error: "Address not found" });
+      return res.status(http.Not_Found).json({ error: "Address not found" });
     }
 
     const updatedIsDefault =
@@ -251,10 +252,10 @@ const editAddress = async (req, res) => {
 
     await doc.save();
     console.log("Address updated successfully:", doc.address[index]);
-    return res.status(200).json({ success: true, message: "Address updated successfully" });
+    return res.status(http.OK).json({ success: true, message: "Address updated successfully" });
   } catch (err) {
     console.error("Error updating address:", err);
-    return res.status(500).json({ error: "Server error while updating address" });
+    return res.status(http.Internal_Server_Error).json({ error: "Server error while updating address" });
   }
 };
 
@@ -267,12 +268,12 @@ const deleteAddress = async (req, res) => {
 
     const doc = await Address.findOne({ userId });
     if (!doc) {
-      return res.status(404).json({ error: 'User address record not found' });
+      return res.status(http.Not_Found).json({ error: 'User address record not found' });
     }
 
     const index = doc.address.findIndex(a => a._id.toString() === addrId);
     if (index === -1) {
-      return res.status(404).json({ error: 'Address not found' });
+      return res.status(http.Not_Found).json({ error: 'Address not found' });
     }
 
     const wasDefault = doc.address[index].isDefault;
@@ -283,10 +284,10 @@ const deleteAddress = async (req, res) => {
     }
 
     await doc.save();
-    return res.status(200).json({ success: true, message: 'Address deleted successfully' });
+    return res.status(http.OK).json({ success: true, message: 'Address deleted successfully' });
   } catch (err) {
     console.error("Error deleting address:", err);
-    return res.status(500).json({ error: 'Server error while deleting address' });
+    return res.status(http.Internal_Server_Error).json({ error: 'Server error while deleting address' });
   }
 };
 
@@ -298,22 +299,22 @@ const setDefaultAddress = async (req, res) => {
 
     const doc = await Address.findOne({ userId });
     if (!doc) {
-      return res.status(404).json({ error: 'User address record not found' });
+      return res.status(http.Not_Found).json({ error: 'User address record not found' });
     }
 
     const index = doc.address.findIndex(a => a._id.toString() === addrId);
     if (index === -1) {
-      return res.status(404).json({ error: 'Address not found' });
+      return res.status(http.Not_Found).json({ error: 'Address not found' });
     }
     doc.address.forEach((addr, i) => {
       addr.isDefault = i === index;
     });
 
     await doc.save();
-    return res.status(200).json({ success: true, message: 'Default address updated successfully' });
+    return res.status(http.OK).json({ success: true, message: 'Default address updated successfully' });
   } catch (err) {
     console.error("Error setting default address:", err);
-    return res.status(500).json({ error: 'Server error while setting default address' });
+    return res.status(http.Internal_Server_Error).json({ error: 'Server error while setting default address' });
   }
 };
 

@@ -347,7 +347,9 @@
                                     <%= coupon.islist ? 'Active' : 'Inactive' %>
                                 </td>
                                 <td>
-                                    <% if (new Date(coupon.expireOn)> new Date()) { %>
+                                    <% const today=new Date(); today.setHours(0, 0, 0, 0); const expDate=new
+                                        Date(coupon.expireOn); expDate.setHours(0, 0, 0, 0); if (expDate>= today) {
+                                        %>
                                         <button class="btn btn-sm btn-danger"
                                             onclick="deleteCoupon('<%= coupon._id %>')">
                                             <%= coupon.islist ? 'Delete' : 'Restore' %>
@@ -388,19 +390,20 @@
                     <div class="form-group">
                         <label for="discountPercentage" class="form-label">Discount Percentage (%)</label>
                         <input type="number" class="form-input" id="discountPercentage" name="discountPercentage"
-                            min="0.01" max="100" step="0.01" required>
+                            min="1" max="99" step="1" required>
                         <div id="discountPercentageError" class="error-message">Discount must be between 0.01% and 100%.
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="minimumPrice" class="form-label">Minimum Purchase (₹)</label>
-                        <input type="number" class="form-input" id="minimumPrice" name="minimumPrice" min="0.01"
-                            step="0.01" required>
+                        <input type="number" class="form-input" id="minimumPrice" name="minimumPrice" min="1" step="1"
+                            required>
                         <div id="minimumPriceError" class="error-message">Minimum purchase must be greater than 0.</div>
                     </div>
                     <div class="form-group">
                         <label for="expireOn" class="form-label">Expiry Date</label>
-                        <input type="date" class="form-input" id="expireOn" name="expireOn" required>
+                        <input type="date" class="form-input" id="expireOn" name="expireOn"
+                            min="<%= new Date().toISOString().split('T')[0] %>" required>
                         <div id="expireOnError" class="error-message">Expiry date must be a future date.</div>
                     </div>
                 </div>
@@ -427,17 +430,19 @@
 
                 <div class="form-group">
                     <label for="editDiscountPercentage">Discount %:</label>
-                    <input type="number" id="editDiscountPercentage" name="discountPercentage" required>
+                    <input type="number" id="editDiscountPercentage" name="discountPercentage" min="1" max="99" step="1"
+                        required>
                 </div>
 
                 <div class="form-group">
                     <label for="editMinimumPrice">Minimum Price:</label>
-                    <input type="number" id="editMinimumPrice" name="minimumPrice" required>
+                    <input type="number" id="editMinimumPrice" name="minimumPrice" min="1" step="1" required>
                 </div>
 
                 <div class="form-group">
                     <label for="editExpireOn">Expiry Date:</label>
-                    <input type="date" id="editExpireOn" name="expireOn" required>
+                    <input type="date" id="editExpireOn" name="expireOn"
+                        min="<%= new Date().toISOString().split('T')[0] %>" required>
                 </div>
 
                 <div id="editModalMessage"></div>
@@ -481,11 +486,12 @@
 
             let matchFound = false;
             rows.forEach(row => {
-                const couponCode = row.cells[0].textContent.toLowerCase();
+                const couponCode = row.cells[0].textContent.toUpperCase();
                 const isMatch = couponCode === searchValue;
                 row.style.display = isMatch ? '' : 'none';
                 if (isMatch) matchFound = true;
             });
+
 
             if (!matchFound) {
                 Swal.fire({
@@ -554,31 +560,31 @@
 
             switch (inputId) {
                 case 'couponName':
-                    if (value.length < 3 || value.length > 20 || !/^[A-Z0-9_]+$/.test(value)) {
-                        showError(inputId, 'Coupon code must be 3-20 characters (uppercase letters, numbers, underscores only)');
+                    if (value.length < 3 || value.length > 20 || !/^[A-Z0-9]+$/.test(value)) {
+                        showError(inputId, 'Coupon code must be 3-20 characters (uppercase letters and numbers only)');
                         isValid = false;
                     }
                     break;
                 case 'discountPercentage':
-                    const discount = parseFloat(value);
-                    if (isNaN(discount) || discount < 0.01 || discount > 100) {
-                        showError(inputId, 'Discount must be between 0.01% and 100%');
+                    const discount = parseInt(value);
+                    if (isNaN(discount) || discount < 1 || discount > 99) {
+                        showError(inputId, 'Discount must be an integer between 1% and 99%');
                         isValid = false;
                     }
                     break;
                 case 'minimumPrice':
-                    const price = parseFloat(value);
+                    const price = parseInt(value);
                     if (isNaN(price) || price <= 0) {
-                        showError(inputId, 'Minimum purchase must be greater than 0');
+                        showError(inputId, 'Minimum purchase must be a positive integer');
                         isValid = false;
                     }
                     break;
                 case 'expireOn':
-                    const expireDate = new Date(value);
+                    const expireDate = new Date(value + 'T00:00:00');
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
-                    if (isNaN(expireDate.getTime()) || expireDate <= today) {
-                        showError(inputId, 'Expiry date must be a future date');
+                    if (isNaN(expireDate.getTime()) || expireDate < today) {
+                        showError(inputId, 'Expiry date must be today or in the future');
                         isValid = false;
                     }
                     break;
@@ -764,12 +770,6 @@
         document.getElementById('editCouponForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('editCouponId').value;
-            const updatedData = {
-                name: document.getElementById('editCouponName').value.trim().toUpperCase(),
-                discountPercentage: document.getElementById('editDiscountPercentage').value,
-                minimumPrice: document.getElementById('editMinimumPrice').value,
-                expireOn: document.getElementById('editExpireOn').value
-            };
 
             const submitBtn = document.getElementById('updateCouponBtn');
             const originalText = submitBtn.textContent;
@@ -777,6 +777,45 @@
             submitBtn.textContent = 'Updating...';
             const messageDiv = document.getElementById('editModalMessage');
             messageDiv.innerHTML = '';
+
+            // ✅ NEW VALIDATION CODE STARTS HERE
+            const name = document.getElementById('editCouponName').value.trim().toUpperCase();
+            const discount = parseInt(document.getElementById('editDiscountPercentage').value);
+            const minPrice = parseInt(document.getElementById('editMinimumPrice').value);
+            const expireValue = document.getElementById('editExpireOn').value;
+            const expireDate = new Date(expireValue + 'T00:00:00');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let errors = [];
+
+            if (name.length < 3 || name.length > 20 || !/^[A-Z0-9]+$/.test(name)) {
+                errors.push('Coupon code must be 3-20 characters (uppercase letters and numbers only)');
+            }
+            if (isNaN(discount) || discount < 1 || discount > 99) {
+                errors.push('Discount must be an integer between 1% and 99%');
+            }
+            if (isNaN(minPrice) || minPrice <= 0) {
+                errors.push('Minimum purchase must be a positive integer');
+            }
+            if (isNaN(expireDate.getTime()) || expireDate < today) {
+                errors.push('Expiry date must be today or in the future');
+            }
+
+            if (errors.length > 0) {
+                messageDiv.innerHTML = `<div class="alert alert-danger">${errors.join('<br>')}</div>`;
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                return;
+            }
+
+            const updatedData = {
+                name,
+                discountPercentage: discount,
+                minimumPrice: minPrice,
+                expireOn: expireValue
+            };
+            // ✅ NEW VALIDATION CODE ENDS HERE
+
 
             try {
                 const response = await fetch(`/admin/coupons/${id}`, {
@@ -806,6 +845,38 @@
                 submitBtn.textContent = originalText;
             }
         });
+
+
+        ['editCouponName', 'editDiscountPercentage', 'editMinimumPrice', 'editExpireOn'].forEach(field => {
+            const input = document.getElementById(field);
+            input.addEventListener('input', () => {
+                let value = input.value;
+                if (field === 'editCouponName') value = value.trim().toUpperCase();
+                else if (field === 'editDiscountPercentage' || field === 'editMinimumPrice') value = parseInt(value);
+                else if (field === 'editExpireOn') {
+                    const expireDate = new Date(value + 'T00:00:00');
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (isNaN(expireDate.getTime()) || expireDate < today) {
+                        input.classList.add('error');
+                        input.classList.remove('success');
+                        return;
+                    }
+                }
+                // Simple border feedback (no per-field errors in edit modal)
+                if ((field === 'editCouponName' && (value.length < 3 || value.length > 20 || !/^[A-Z0-9]+$/.test(value))) ||
+                    (field === 'editDiscountPercentage' && (isNaN(parseInt(value)) || parseInt(value) < 1 || parseInt(value) > 99)) ||
+                    (field === 'editMinimumPrice' && (isNaN(parseInt(value)) || parseInt(value) <= 0)) ||
+                    (field === 'editExpireOn' && (isNaN(new Date(value + 'T00:00:00').getTime()) || new Date(value + 'T00:00:00') < today))) {
+                    input.classList.add('error');
+                    input.classList.remove('success');
+                } else {
+                    input.classList.add('success');
+                    input.classList.remove('error');
+                }
+            });
+        });
+
 
     </script>
 

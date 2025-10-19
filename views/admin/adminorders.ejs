@@ -225,16 +225,18 @@
                   <td class="p-4 border">
                     <% if (order.paymentStatus) { %>
                       <span class="status-badge 
-                    <% if (order.paymentStatus === 'Pending') { %>payment-badge-pending<% } %>
-                    <% if (order.paymentStatus === 'Completed') { %>payment-badge-completed<% } %>
-                    <% if (order.paymentStatus === 'Failed') { %>payment-badge-failed<% } %>
-                  ">
+      <% if (order.paymentStatus === 'Pending') { %>payment-badge-pending<% } %>
+      <% if (order.paymentStatus === 'Completed') { %>payment-badge-completed<% } %>
+      <% if (order.paymentStatus === 'Failed') { %>payment-badge-failed<% } %>
+    ">
                         <%= order.paymentStatus %>
+                          <% if (order.paymentStatus==='Failed' ) { %> (Payment Failed) <% } %>
                       </span>
                       <% } else { %>
                         N/A
                         <% } %>
                   </td>
+
                   <td class="p-4 border">₹<%= order.finalAmount ? order.finalAmount.toFixed(2) : '0.00' %>
                   </td>
                   <td class="p-4 border">
@@ -242,7 +244,7 @@
                   </td>
                 </tr>
                 <% }) %>
-                    
+
                   <% } %>
         </tbody>
       </table>

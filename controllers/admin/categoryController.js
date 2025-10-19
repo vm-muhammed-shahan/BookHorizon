@@ -2,6 +2,7 @@ const Category = require("../../models/categorySchema");
 const Product = require("../../models/productSchema");
 const Offer = require("../../models/offerSchema");
 const { applyBestOffer } = require("../admin/productController");
+const { http } = require("../../helpers/const");
 
 
 const categoryInfo = async (req, res) => {
@@ -48,29 +49,29 @@ const addCategory = async (req, res) => {
     const { name, description } = req.body;
 
     if (!name || !description) {
-      return res.status(400).json({ error: "All fields are required" });
+      return res.status(http.Bad_Request).json({ error: "All fields are required" });
     }
 
 
     if (!/^[A-Za-z\s]+$/.test(name)) {
-      return res.status(400).json({ error: "Category name should contain only alphabets and spaces" });
+      return res.status(http.Bad_Request).json({ error: "Category name should contain only alphabets and spaces" });
     }
     if (name.trim().length < 2 || name.trim().length > 50) {
-      return res.status(400).json({ error: "Category name must be 2–50 characters long" });
+      return res.status(http.Bad_Request).json({ error: "Category name must be 2–50 characters long" });
     }
 
 
     if (!/^[A-Za-z\s]+$/.test(description)) {
-      return res.status(400).json({ error: "Description should contain only alphabets and spaces" });
+      return res.status(http.Bad_Request).json({ error: "Description should contain only alphabets and spaces" });
     }
     if (description.trim().length < 2 || description.trim().length > 50) {
-      return res.status(400).json({ error: "Description must be 2–50 characters long" });
+      return res.status(http.Bad_Request).json({ error: "Description must be 2–50 characters long" });
     }
 
     const existingCategory = await Category.findOne({ name: { $regex: new RegExp('^' + name + '$', 'i') } });
 
     if (existingCategory) {
-      return res.status(400).json({ error: "Category already exists" });
+      return res.status(http.Bad_Request).json({ error: "Category already exists" });
     }
 
     const newCategory = new Category({ name, description });
@@ -80,7 +81,7 @@ const addCategory = async (req, res) => {
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(http.Internal_Server_Error).json({ error: "Internal Server Error" });
   }
 };
 
@@ -95,7 +96,7 @@ const addCategoryOffer = async (req, res) => {
     startOfToday.setHours(0, 0, 0, 0);
 
     if (startDate < startOfToday) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         status: false,
         message: "Start date cannot be in the past",
       });
@@ -106,7 +107,7 @@ const addCategoryOffer = async (req, res) => {
 
 
     if (endDate < startDate) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         status: false,
         message: "End date cannot be before start date",
       });
@@ -115,7 +116,7 @@ const addCategoryOffer = async (req, res) => {
 
     const category = await Category.findById(categoryId);
     if (!category) {
-      return res.status(404).json({ status: false, message: "Category not found" });
+      return res.status(http.Not_Found).json({ status: false, message: "Category not found" });
     }
 
     const existingCategoryOffer = await Offer.findOne({
@@ -130,7 +131,7 @@ const addCategoryOffer = async (req, res) => {
       ]
     });
     if (existingCategoryOffer) {
-      return res.status(400).json({
+      return res.status(http.Bad_Request).json({
         status: false,
         message: "An active category offer already exists for this date range",
       });
@@ -173,7 +174,7 @@ const addCategoryOffer = async (req, res) => {
     res.json({ status: true, message: "Category offer added successfully", offer: offer });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ status: false, message: "Internal Server Error" });
+    res.status(http.Internal_Server_Error).json({ status: false, message: "Internal Server Error" });
   }
 };
 
@@ -182,7 +183,7 @@ const removeCategoryOffer = async (req, res) => {
     const categoryId = req.body.categoryId;
     const category = await Category.findById(categoryId);
     if (!category) {
-      return res.status(404).json({ status: false, message: "Category not found" });
+      return res.status(http.Not_Found).json({ status: false, message: "Category not found" });
     }
     const percentage = category.categoryOffer;
     const products = await Product.find({ category: category._id });
@@ -201,7 +202,7 @@ const removeCategoryOffer = async (req, res) => {
     res.json({ status: true, message: "Category offer removed successfully" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ status: false, message: "Internal Server Error" });
+    res.status(http.Internal_Server_Error).json({ status: false, message: "Internal Server Error" });
   }
 };
 
@@ -243,22 +244,22 @@ const editCategory = async (req, res) => {
 
 
     if (!categoryName || !description) {
-      return res.status(400).json({ success: false, message: "All fields are required" });
+      return res.status(http.Bad_Request).json({ success: false, message: "All fields are required" });
     }
 
     if (!/^[A-Za-z\s]+$/.test(categoryName)) {
-      return res.status(400).json({ success: false, message: "Category name should contain only alphabets and spaces" });
+      return res.status(http.Bad_Request).json({ success: false, message: "Category name should contain only alphabets and spaces" });
     }
     if (categoryName.trim().length < 2 || categoryName.trim().length > 50) {
-      return res.status(400).json({ success: false, message: "Category name must be 2–50 characters long" });
+      return res.status(http.Bad_Request).json({ success: false, message: "Category name must be 2–50 characters long" });
     }
 
 
     if (!/^[A-Za-z\s]+$/.test(description)) {
-      return res.status(400).json({ success: false, message: "Description should contain only alphabets and spaces" });
+      return res.status(http.Bad_Request).json({ success: false, message: "Description should contain only alphabets and spaces" });
     }
     if (description.trim().length < 2 || description.trim().length > 50) {
-      return res.status(400).json({ success: false, message: "Description must be 2–50 characters long" });
+      return res.status(http.Bad_Request).json({ success: false, message: "Description must be 2–50 characters long" });
     }
 
 
@@ -267,7 +268,7 @@ const editCategory = async (req, res) => {
       _id: { $ne: id }
     });
     if (duplicate) {
-      return res.status(400).json({ success: false, message: "A category with this name already exists" });
+      return res.status(http.Bad_Request).json({ success: false, message: "A category with this name already exists" });
     }
     const updated = await Category.findByIdAndUpdate(
       id,
@@ -277,11 +278,11 @@ const editCategory = async (req, res) => {
     if (updated) {
       return res.json({ success: true, message: "Category updated successfully" });
     } else {
-      return res.status(404).json({ success: false, message: "Category not found" });
+      return res.status(http.Not_Found).json({ success: false, message: "Category not found" });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    res.status(http.Internal_Server_Error).json({ success: false, message: "Internal Server Error" });
   }
 };
 

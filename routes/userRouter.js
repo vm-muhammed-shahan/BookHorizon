@@ -11,8 +11,6 @@ const checkoutController = require("../controllers/user/checkoutController");
 const orderController = require("../controllers/user/orderController");
 const wishlistController = require("../controllers/user/wishlistController");
 const { userAuth } = require('../middlewares/auth');
-// const user = require('../models/userSchema');
-// const upload = multer({ dest: 'public/uploads/' });
 
 
 // user Management
@@ -53,9 +51,6 @@ router.get("/change-password", userAuth, profileController.changePassword);
 router.post("/change-password", userAuth, profileController.changePasswordValid);
 
 
-
-
-
 // Shop Page 
 router.get("/shop", userController.loadShoppingPage);
 router.get("/filter", userController.filterProduct);
@@ -85,6 +80,9 @@ router.post("/clear-wishlist", userAuth, wishlistController.clearWishlist);
 router.post("/toggleWishlist", userAuth, wishlistController.toggleWishlist);
 
 
+
+
+
 // Cart Management
 router.get("/cart", userAuth, cartController.viewCart);
 router.post("/cart/add", userAuth, cartController.addToCart);
@@ -110,7 +108,7 @@ router.post('/checkout/cancel-order', userAuth, checkoutController.cancelOrder);
 router.get("/orders", userAuth, orderController.getOrders);
 router.get("/orders/:orderId", userAuth, orderController.getOrderDetail);
 router.post("/orders/cancel", userAuth, orderController.cancelOrder);
-router.get('/wallet', orderController.getWalletDetails);
+router.get('/wallet', userAuth, orderController.getWalletDetails);
 router.post("/orders/return", userAuth, orderController.returnOrder);
 router.get("/orders/invoice/:orderId", userAuth, orderController.downloadInvoice);
 router.get("/orders/status/:orderId", userAuth, orderController.getOrderStatus);

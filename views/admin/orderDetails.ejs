@@ -79,92 +79,99 @@
       background-color: #f9fafb;
     }
 
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #000;
-}
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #000;
+    }
 
-h2 {
-  font-size: 22px;
-  font-weight: 600;
-  color: #000;
-  margin-bottom: 15px;
-  border-bottom: 2px solid #000;
-  padding-bottom: 8px;
-}
+    h2 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #000;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #000;
+      padding-bottom: 8px;
+    }
 
-h3 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #000;
-  margin-bottom: 12px;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 6px;
-}
+    h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #000;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 6px;
+    }
 
-p, td, th {
-  font-size: 15px;
-  color: #333;
-  line-height: 1.6;
-}
+    p,
+    td,
+    th {
+      font-size: 15px;
+      color: #333;
+      line-height: 1.6;
+    }
 
-strong {
-  font-weight: 600;
-  color: #000;
-}
+    strong {
+      font-weight: 600;
+      color: #000;
+    }
 
-.notification {
-  font-size: 14px;
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 20px;
-}
+    .notification {
+      font-size: 14px;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
 
-.notification-info {
-  background-color: #d1ecf1;
-  color: #0c5460;
-  border-left: 4px solid #17a2b8;
-}
-.notification-success {
-  background-color: #d4edda;
-  color: #155724;
-  border-left: 4px solid #28a745;
-}
-.notification-error {
-  background-color: #f8d7da;
-  color: #721c24;
-  border-left: 4px solid #dc3545;
-}
+    .notification-info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border-left: 4px solid #17a2b8;
+    }
 
-table th {
-  font-size: 15px;
-  font-weight: 600;
-  color: #000;
-}
-table td {
-  font-size: 14px;
-  color: #333;
-}
+    .notification-success {
+      background-color: #d4edda;
+      color: #155724;
+      border-left: 4px solid #28a745;
+    }
 
-.section-card {
-  background: #fff;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-}
+    .notification-error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border-left: 4px solid #dc3545;
+    }
 
-.amount-highlight {
-  font-size: 16px;
-  font-weight: bold;
-  background: #f9fafb;
-  padding: 6px 12px;
-  border-radius: 6px;
-  display: inline-block;
-}
+    table th {
+      font-size: 15px;
+      font-weight: 600;
+      color: #000;
+    }
 
-celled { background:#025b25; color:#991b1b; }
+    table td {
+      font-size: 14px;
+      color: #333;
+    }
 
+    .section-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .amount-highlight {
+      font-size: 16px;
+      font-weight: bold;
+      background: #f9fafb;
+      padding: 6px 12px;
+      border-radius: 6px;
+      display: inline-block;
+    }
+
+    celled {
+      background: #025b25;
+      color: #991b1b;
+    }
   </style>
 </head>
 
@@ -187,7 +194,9 @@ celled { background:#025b25; color:#991b1b; }
                 <p class="mb-2"><strong>Date:</strong>
                   <%= order.createdOn ? new Date(order.createdOn).toLocaleString() : 'N/A' %>
                 </p>
-                <p class="mb-2"><strong>Delivery Status:</strong> <%= order.status %> </p>
+                <p class="mb-2"><strong>Delivery Status:</strong>
+                  <%= order.status %>
+                </p>
                 <p class="mb-2"><strong>Payment Status:</strong>
                   <%= order.paymentStatus %>
                 </p>
@@ -211,8 +220,9 @@ celled { background:#025b25; color:#991b1b; }
                     order.shippingCharge.toFixed(2) : '0.00' %>
                 </p>
                 <p class="mb-2"><strong>Final Amount:</strong>
-  <span class="amount-highlight">₹<%= order.finalAmount ? order.finalAmount.toFixed(2) : '0.00' %></span>
-</p>
+                  <span class="amount-highlight">₹<%= order.finalAmount ? order.finalAmount.toFixed(2) : '0.00' %>
+                  </span>
+                </p>
                 <% if (order.couponApplied) { %>
                   <p class="mb-2"><strong>Coupon Applied:</strong>
                     <%= order.couponCode || 'Yes' %>
@@ -252,11 +262,14 @@ celled { background:#025b25; color:#991b1b; }
             </div>
 
             <div class="mb-8">
-              <h2 class="text-lg font-semibold mb-3 text-gray-700">Update Order Status</h2>
-              <form action="/admin/orders/<%= order.orderId %>/status" method="POST" class="flex gap-4 items-center" id="statusForm">
-                <select name="status"  id="statusSelect"
-                  class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 <%= (order.status === 'Delivered' || order.status === 'Return Request') ? 'opacity-50 cursor-not-allowed' : '' %>"
-                  <%=(order.status==='Delivered' || order.status==='Return Request' ) ? 'disabled' : '' %>>
+              <h2 class="text-lg font-semibold mb-3 text-black-700">Update Order Status</h2>
+              <form action="/admin/orders/<%= order.orderId %>/status" method="POST" class="flex gap-4 items-center"
+                id="statusForm">
+
+                <select id="statusSelect" name="status"
+                  class="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 <%= (order.paymentStatus === 'Failed' || order.status === 'Delivered' || order.status === 'Return Request') ? 'opacity-50 cursor-not-allowed' : '' %>"
+                  <%=(order.paymentStatus==='Failed' || order.status==='Delivered' || order.status==='Return Request' )
+                  ? 'disabled' : '' %>>
 
                   <% const allowedStatuses={ 'Pending' : ['Processing', 'Cancelled' ], 'Processing' :
                     ['Shipped', 'Cancelled' ], 'Shipped' : ['Out for Delivery'], 'Out for Delivery' :
@@ -272,10 +285,13 @@ celled { background:#025b25; color:#991b1b; }
                           <% }) %>
                 </select>
 
-                <button type="submit"  id="updateBtn"
-                  class="bg-blue-500 text-black p-2 rounded hover:bg-blue-600 action-btn <%= (order.status === 'Delivered' || order.status === 'Return Request') ? 'opacity-50 cursor-not-allowed' : '' %>"
-                  <%=(order.status==='Delivered' || order.status==='Return Request' ) ? 'disabled' : '' %>>Update
-                  Status</button>
+                <button type="submit" id="updateBtn"
+                  class="bg-blue-500 text-black p-2 rounded hover:bg-blue-600 action-btn <%= (order.paymentStatus === 'Failed' || order.status === 'Delivered' || order.status === 'Return Request') ? 'opacity-50 cursor-not-allowed' : '' %>"
+                  <%=(order.paymentStatus==='Failed' || order.status==='Delivered' || order.status==='Return Request' )
+                  ? 'disabled' : '' %>>
+                  Update Status
+                </button>
+
               </form>
             </div>
 
@@ -313,10 +329,12 @@ celled { background:#025b25; color:#991b1b; }
                         <%= item.quantity %>
                       </td>
 
-                      <td class="p-3 border text-center align-middle">₹<%= item.price ? item.price.toFixed(2) : '0.00' %>
+                      <td class="p-3 border text-center align-middle">₹<%= item.price ? item.price.toFixed(2) : '0.00'
+                          %>
                       </td>
 
-                      <td class="p-3 border text-center align-middle">₹<%= item.price ? (item.price * item.quantity).toFixed(2) : '0.00' %>
+                      <td class="p-3 border text-center align-middle">₹<%= item.price ? (item.price *
+                          item.quantity).toFixed(2) : '0.00' %>
                       </td>
 
                       <td class="p-3 border text-center align-middle">
@@ -401,28 +419,30 @@ celled { background:#025b25; color:#991b1b; }
       }
     </script>
     <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const statusSelect = document.getElementById("statusSelect");
-    const updateBtn = document.getElementById("updateBtn");
-    const initialStatus = statusSelect.value;
+      document.addEventListener("DOMContentLoaded", () => {
+        const statusSelect = document.getElementById("statusSelect");
+        const updateBtn = document.getElementById("updateBtn");
+        const initialStatus = statusSelect.value;
+        const isFailed = '<%= order.paymentStatus %>' === 'Failed';
 
-    function toggleButton() {
-      if (statusSelect.value === initialStatus) {
-        updateBtn.disabled = true;
-        updateBtn.classList.add("opacity-50", "cursor-not-allowed");
-      } else {
-        updateBtn.disabled = false;
-        updateBtn.classList.remove("opacity-50", "cursor-not-allowed");
-      }
-    }
+        function toggleButton() {
+          if (statusSelect.value === initialStatus || isFailed) {
+            updateBtn.disabled = true;
+            updateBtn.classList.add("opacity-50", "cursor-not-allowed");
+          } else {
+            updateBtn.disabled = false;
+            updateBtn.classList.remove("opacity-50", "cursor-not-allowed");
+          }
+        }
 
-    // Initialize on load
-    toggleButton();
 
-    // Watch for changes
-    statusSelect.addEventListener("change", toggleButton);
-  });
-</script>
+        // Initialize on load
+        toggleButton();
+
+        // Watch for changes
+        statusSelect.addEventListener("change", toggleButton);
+      });
+    </script>
 
 </body>
 

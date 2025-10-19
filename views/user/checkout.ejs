@@ -2,8 +2,7 @@
 
 <!-- Include SweetAlert CDN -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<!-- Include Razorpay SDK -->
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
 
 <style>
     * {
@@ -759,9 +758,17 @@
     <li><%= itemName %></li>
   <% }) %>
 </ul>
-
   </div>
 <% } %>
+
+<!-- remove this if it not works -->
+<% if (typeof removedCouponMessage !== "undefined" && removedCouponMessage) { %>
+  <div class="stock-adjusted-message" style="background:#fff3cd; color:#856404; padding:10px; border-radius:5px; margin-bottom:15px;">
+    ⚠️ <%= removedCouponMessage %>
+  </div>
+<% } %>
+<!-- ends here -->
+
 
 
     <form id="checkoutForm">
@@ -996,6 +1003,9 @@
         </form>
     </div>
 </div>
+
+<!-- Include Razorpay SDK -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <script>
     const addressesData = <%- JSON.stringify(addresses) %>;

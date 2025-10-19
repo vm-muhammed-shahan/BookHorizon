@@ -2,6 +2,7 @@ const Order = require("../../models/orderSchema");
 const Wallet = require("../../models/walletSchema");
 const Product = require("../../models/productSchema");
 const formatDate = require("../../helpers/dateFormatter");
+const http = require("../../helpers/const");
 
 
 
@@ -23,9 +24,20 @@ const getOrders = async (req, res) => {
       matchQuery.paymentStatus = paymentFilter;
     }
 
-
     const orders = await Order.aggregate([
-      { $match: matchQuery },
+      {
+        $match: {
+          $and: [
+            matchQuery, // Existing search/status/payment filters
+            {
+              $or: [
+                { paymentMethod: { $ne: "razorpay" } },  // Include non-Razorpay
+                { paymentStatus: { $ne: "Pending" } }    // Include Razorpay only if not Pending
+              ]
+            }
+          ]
+        }
+      },
       {
         $lookup: {
           from: "users",
@@ -73,10 +85,6 @@ const getOrders = async (req, res) => {
       order.formattedDate = formatDate(order.createdOn);
     });
 
-
-
-
-
     res.render("adminorders", {
       title: "Order Management",
       orders: orders || [],
@@ -90,12 +98,13 @@ const getOrders = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in getOrders:', error);
-    res.status(500).render("admin/admin-error", {
+    res.status(http.Internal_Server_Error).render("admin/admin-error", {
       title: "Error",
       message: "Unable to load orders. Please try again later.",
     });
   }
 };
+
 
 const getOrderDetails = async (req, res) => {
   try {
@@ -103,7 +112,15 @@ const getOrderDetails = async (req, res) => {
       .populate("user", "name email")
       .populate("orderedItems.product", "productName price productImage");
     if (!order) {
-      return res.status(404).render("admin-error", {
+      return res.status(http.Not_Found).render("admin-error", {
+        title: "Error",
+        message: `Order ${req.params.orderId} not found`,
+      });
+    }
+
+    // Add this check
+    if (order.paymentMethod === "razorpay" && order.paymentStatus === "Pending") {
+      return res.status(http.Not_Found).render("admin-error", {
         title: "Error",
         message: `Order ${req.params.orderId} not found`,
       });
@@ -119,7 +136,7 @@ const getOrderDetails = async (req, res) => {
       notification,
     });
   } catch (error) {
-    res.status(500).render("admin-error", {
+    res.status(http.Internal_Server_Error).render("admin-error", {
       title: "Error",
       message: "Unable to load order details. Please try again later.",
     });
@@ -127,15 +144,24 @@ const getOrderDetails = async (req, res) => {
 };
 
 
+
 const updateOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
     const { status } = req.body;
+
     const order = await Order.findOne({ orderId }).populate("orderedItems.product");
     if (!order) {
-      return res.status(404).render("admin-error", {
+      return res.status(http.Not_Found).render("admin-error", {
         title: "Error",
         message: `Order ${orderId} not found`,
+      });
+    }
+
+    if (order.paymentStatus === "Failed") {
+      return res.status(http.Bad_Request).render("admin-error", {
+        title: "Error",
+        message: "Cannot update status for orders with failed payments"
       });
     }
 
@@ -151,19 +177,23 @@ const updateOrderStatus = async (req, res) => {
     };
 
     if (!validTransitions[order.status].includes(status)) {
-      return res.status(400).render("admin-error", {
+      return res.status(http.Bad_Request).render("admin-error", {
         title: "Error",
         message: `Invalid status transition from ${order.status} to ${status}`,
       });
     }
 
     order.status = status;
+
+    const userId = order.user._id ? order.user._id : order.user;
+
     if (status === "Delivered") {
       order.paymentStatus = order.paymentMethod === "cod" ? "Completed" : order.paymentStatus;
       order.deliveredOn = new Date();
     } else if (status === "Cancelled") {
-      order.paymentStatus = "Cancelled";
       let refundAmount = order.finalAmount;
+
+      // Cancel all items and restock
       for (const item of order.orderedItems) {
         if (!item.cancelled && !item.returned) {
           await Product.findByIdAndUpdate(item.product._id, { $inc: { quantity: item.quantity } });
@@ -171,11 +201,13 @@ const updateOrderStatus = async (req, res) => {
           item.cancelReason = "Order cancelled by admin";
         }
       }
+
+      // Refund Wallet / Online payments
       if (refundAmount > 0 && order.paymentMethod !== "cod") {
-        let wallet = await Wallet.findOne({ user: order.user });
+        let wallet = await Wallet.findOne({ user: userId });
         if (!wallet) {
           wallet = new Wallet({
-            user: order.user,
+            user: userId,
             balance: refundAmount,
             transactions: [
               {
@@ -197,15 +229,26 @@ const updateOrderStatus = async (req, res) => {
         }
         await wallet.save();
       }
+
+      // Reset amounts
       order.finalAmount = 0;
       order.tax = 0;
       order.shippingCharge = 0;
+      order.discount = 0;
+
+      // Update paymentStatus depending on payment method
+      if (["wallet", "razorpay", "wallet+razorpay"].includes(order.paymentMethod)) {
+        order.paymentStatus = "Completed";  // Wallet / Online payments
+      } else {
+        order.paymentStatus = "Cancelled";  // COD
+      }
     } else if (status === "Returned") {
       const activeItems = order.orderedItems.filter(i => !i.cancelled && i.returnStatus !== "approved");
       order.totalPrice = activeItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
       order.tax = order.totalPrice > 0 ? order.totalPrice * 0.05 : 0;
       order.shippingCharge = order.totalPrice > 0 ? 50 : 0;
       order.finalAmount = order.totalPrice + order.tax + order.shippingCharge - order.discount - order.walletAmount;
+
       if (order.paymentMethod === "cod" && activeItems.length === 0) {
         order.paymentStatus = "Completed";
       }
@@ -216,7 +259,7 @@ const updateOrderStatus = async (req, res) => {
     res.redirect(`/admin/orders/${orderId}`);
   } catch (error) {
     console.error("Error in updateOrderStatus:", error);
-    res.status(500).render("admin-error", {
+    res.status(http.Internal_Server_Error).render("admin-error", {
       title: "Error",
       message: "Unable to update order status. Please try again later.",
     });
@@ -224,17 +267,18 @@ const updateOrderStatus = async (req, res) => {
 };
 
 
+
 const verifyReturnRequest = async (req, res) => {
   try {
     const { orderId, itemIndex, action } = req.body;
     const order = await Order.findOne({ orderId }).populate("orderedItems.product");
     if (!order) {
-      return res.status(404).json({ success: false, error: `Order ${orderId} not found` });
+      return res.status(http.Not_Found).json({ success: false, error: `Order ${orderId} not found` });
     }
 
     const item = order.orderedItems[itemIndex];
     if (!item || item.returnStatus !== "pending" || item.cancelled) {
-      return res.status(400).json({ success: false, error: "Invalid return request" });
+      return res.status(http.Bad_Request).json({ success: false, error: "Invalid return request" });
     }
 
     let notificationMessage = "";
@@ -283,7 +327,7 @@ const verifyReturnRequest = async (req, res) => {
       order.finalAmount = order.totalPrice + order.tax + order.shippingCharge - order.discount - (order.walletAmount || 0);
 
 
-      if (refundAmount > 0 && order.paymentMethod !== "cod") {
+      if (refundAmount > 0) {
         let wallet = await Wallet.findOne({ user: order.user });
         if (!wallet) {
           wallet = new Wallet({
@@ -330,12 +374,13 @@ const verifyReturnRequest = async (req, res) => {
     }
 
     await order.save().catch(err => { throw new Error(`Failed to save order: ${err.message}`); });
-    res.status(200).json({ success: true, message: notificationMessage });
+    res.status(http.OK).json({ success: true, message: notificationMessage });
   } catch (error) {
     console.error("Error in verifyReturnRequest:", error);
-    res.status(500).json({ success: false, error: "Unable to process return request. Please try again later." });
+    res.status(http.Internal_Server_Error).json({ success: false, error: "Unable to process return request. Please try again later." });
   }
 };
+
 
 const clearFilters = async (req, res) => {
   res.redirect("/admin/orders");

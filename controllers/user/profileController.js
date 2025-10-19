@@ -10,6 +10,7 @@ const { resendOtp } = require("./userController");
 const user = require("../../models/userSchema");
 const { log } = require("console");
 const { console } = require("inspector");
+const http = require("../../helpers/const");
 
 
 const securePassword = async (password) => {
@@ -135,15 +136,14 @@ const resendotp = async (req, res) => {
     const otp = generateOtp();
     req.session.userOtp = otp;
     const email = req.session.email;
-    // console.log("Resending OTP to email:", email);
     const emailSent = await sendVerificationEmail(email, otp);
     if (emailSent) {
       console.log("Resend OTP:", otp);
-      res.status(200).json({ success: true, message: "Resend OTP Successful" });
+      res.status(http.OK).json({ success: true, message: "Resend OTP Successful" });
     }
   } catch (error) {
     console.error("Error in resend otp", error);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    res.status(http.Internal_Server_Error).json({ success: false, message: "Internal Server Error" });
   }
 }
 

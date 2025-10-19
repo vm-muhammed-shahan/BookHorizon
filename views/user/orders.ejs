@@ -356,6 +356,18 @@
         display: flex;
         gap: 0.75rem;
       }
+
+      .status-badge.failed {
+        background-color: #dc3545;
+        color: #fff;
+      }
+
+      .status-badge.paid {
+        background-color: #28a745;
+        color: #fff;
+      }
+
+      
     </style>
 </head>
 
@@ -420,9 +432,12 @@
                   <td data-label="Status:"><span class="status-badge">
                       <%= order.status || 'N/A' %>
                     </span></td>
-                  <td data-label="Payment Status:"><span class="status-badge">
+                  <td data-label="Payment Status:">
+                    <span class="status-badge <%= order.paymentStatus ? order.paymentStatus.toLowerCase() : '' %>">
                       <%= order.paymentStatus || 'N/A' %>
-                    </span></td>
+                        <% if (order.paymentStatus==='Failed' ) { %> (Retry Available) <% } %>
+                    </span>
+                  </td>
                   <td data-label="Discount:">₹<%= order.discount ? order.discount.toFixed(2) : '0.00' %>
                   </td>
                   <td data-label="Total:">₹<%= order.finalAmount ? order.finalAmount.toFixed(2) : '0.00' %>

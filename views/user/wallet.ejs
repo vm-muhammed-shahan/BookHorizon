@@ -307,7 +307,7 @@
               <% wallet.transactions.sort((a, b)=> b.date - a.date).forEach(transaction => { %>
                 <tr>
                   <td data-label="Date:">
-                    <%= transaction.date.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }) %>
+                    <%= transaction.date.toLocaleString('en-GB', { timeZone: 'Asia/Kolkata' }) %>
                   </td>
                   <td data-label="Type:">
                     <span class="transaction-type <%= transaction.type %>">

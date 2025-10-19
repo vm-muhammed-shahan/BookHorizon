@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const PDFDocument = require("pdfkit");
 const ExcelJS = require("exceljs");
 const path = require("path");
+const http = require("../../helpers/const");
 const formatIndianCurrency = (amount) => {
   if (!amount && amount !== 0 || isNaN(amount)) return '₹0';
   return `Rs ${parseFloat(amount).toLocaleString('en-IN', { 
@@ -140,7 +141,6 @@ const getSalesReportPage = async (req, res) => {
     const now = new Date();
     const istOffset = 5.5 * 60 * 60 * 1000;
 
-    // 🔹 Date filter logic
     if (filter === "daily") {
       const today = new Date(now.getTime() + istOffset);
       const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -176,20 +176,16 @@ const getSalesReportPage = async (req, res) => {
       dateFilter.createdOn = { $gte: start, $lte: end };
     }
 
-    // 🔹 Status filter
     const statusFilter = status ? { status: { $in: status.split(",") } } : {};
 
-    // 🔹 Pagination setup
-    const limit = 10; // orders per page
+    const limit = 10; 
     const currentPage = parseInt(page) || 1;
 
-    // Total orders count (for pagination + summary)
     const totalOrders = await Order.countDocuments({
       ...dateFilter,
       ...statusFilter,
     });
 
-    // Paginated orders
     const orders = await Order.find({
       ...dateFilter,
       ...statusFilter,
@@ -201,7 +197,6 @@ const getSalesReportPage = async (req, res) => {
       .limit(limit)
       .lean();
 
-    // Summary (always from ALL filtered orders, not just current page)
     const allOrders = await Order.find({ ...dateFilter, ...statusFilter }).lean();
 
     const totalSalesCount = totalOrders;
@@ -219,7 +214,6 @@ const getSalesReportPage = async (req, res) => {
       totalCouponDiscount,
     };
 
-    // 🔹 Render page
     res.render("salesReport", {
       orders,
       summary,
@@ -248,8 +242,6 @@ const getSalesReportPage = async (req, res) => {
   }
 };
  
-
-
 
 const downloadSalesReport = async (req, res) => {
   try {
@@ -465,11 +457,11 @@ const downloadSalesReport = async (req, res) => {
       await workbook.xlsx.write(res);
       res.end();
     } else {
-      res.status(400).json({ error: "Unsupported format. Use 'pdf' or 'excel'." });
+      res.status(http.Bad_Request).json({ error: "Unsupported format. Use 'pdf' or 'excel'." });
     }
   } catch (err) {
     console.error("Sales Report Generation Error:", err.message);
-    res.status(500).json({ error: "Failed to generate sales report due to server error. Please try again or contact support." });
+    res.status(http.Internal_Server_Error).json({ error: "Failed to generate sales report due to server error. Please try again or contact support." });
   }
 };
 

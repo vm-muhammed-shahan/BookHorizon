@@ -40,7 +40,7 @@ const { applyBestOffer } = require("../admin/productController");
     const { discountedPrice, bestDiscount, bestOfferType } = await applyBestOffer(product, offers);
     if (discountedPrice !== product.salePrice || !product.salePrice) {
       product.salePrice = discountedPrice;
-      // update category offer based on the best offer
+      
       const categoryOfferDoc = offers.find(offer => 
         offer.offerType === 'category' && 
         offer.applicableId.toString() === product.category._id.toString() && 
@@ -58,7 +58,7 @@ const { applyBestOffer } = require("../admin/productController");
       quantity: { $gt: 0 }
     }).limit(4);
 
-    // identify the best offer to display
+  
     const productOffer = offers.find(offer => 
       offer.offerType === 'product' && 
       offer.applicableId.toString() === product._id.toString() &&
