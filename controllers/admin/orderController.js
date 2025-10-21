@@ -299,8 +299,8 @@ const verifyReturnRequest = async (req, res) => {
       order.shippingCharge = order.shippingCharge || 0;
       order.discount = order.discount || 0;
 
-      const originalItemTotal = itemPrice + (itemProportion * order.tax) + (itemProportion * order.shippingCharge);
-      let proratedDiscount = order.discount * itemProportion;
+     const originalItemTotal = itemPrice + (itemProportion * order.tax)  + (itemProportion * order.shippingCharge);
+let proratedDiscount = order.discount * itemProportion;
 
 
       const remainingSubTotal = originalTotalItemsPrice - itemPrice;

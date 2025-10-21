@@ -104,7 +104,7 @@ const checkoutPage = async (req, res) => {
       minimumPrice: { $lte: subTotal },
     });
 
-    // 🔹 NEW LOGIC STARTS: Coupon revalidation   if not working remove it
+  
     let discount = 0;
     let couponApplied = cart.coupon?.couponId ? true : false;
     let couponName = cart.coupon?.couponName || "";
@@ -119,14 +119,12 @@ const checkoutPage = async (req, res) => {
         expDate.setHours(0, 0, 0, 0);
 
         if (expDate < now || subTotal < coupon.minimumPrice) {
-          // Coupon expired or subtotal below min — remove it
           cart.coupon = { couponId: null, discount: 0, couponName: "" };
           await cart.save();
           couponApplied = false;
           couponName = "";
           removedCouponMessage = `Coupon "${coupon.name}" was removed as your cart no longer meets the minimum purchase requirement (₹${coupon.minimumPrice.toFixed(2)}).`;
         } else {
-          // Coupon still valid — recalc discount
           const preTaxTotal = subTotal;
           const tax = preTaxTotal * 0.05;
           const shipping = 50;
@@ -135,7 +133,6 @@ const checkoutPage = async (req, res) => {
           if (discount > totalBeforeDiscount) discount = totalBeforeDiscount;
         }
       } else {
-        // Coupon not found in DB — remove
         cart.coupon = { couponId: null, discount: 0, couponName: "" };
         await cart.save();
         couponApplied = false;
@@ -143,10 +140,6 @@ const checkoutPage = async (req, res) => {
         removedCouponMessage = "Applied coupon was invalid and has been removed.";
       }
     }
-    //  end here remove it
-
-
-
     const shipping = 50;
     const tax = subTotal * 0.05;
     const totalBeforeDiscount = subTotal + tax + shipping;
@@ -423,7 +416,6 @@ const createRazorpayOrder = async (req, res) => {
         wallet.transactions.push({
           type: "debit",
           amount: walletAmountUsed,
-          // description: `Payment for order ${uuidv4()}`
           description: "Payment for order (ID will be linked after creation)",
           date: new Date(),
         });
@@ -515,7 +507,7 @@ const createRazorpayOrder = async (req, res) => {
         totalPrice: subTotal,
         discount,
         finalAmount,
-        walletAmount: walletAmountUsed,  // 0 for razorpay
+        walletAmount: walletAmountUsed,  
         user: userId,
         address: selectedAddress,
         invoiceDate: new Date(),
@@ -528,13 +520,13 @@ const createRazorpayOrder = async (req, res) => {
         razorpayOrderId: razorpayOrder.id,
       });
 
-      await order.save();  // Generates orderId via pre-save hook
+      await order.save();  
 
       return res.json({
         razorpayOrderId: razorpayOrder.id,
         amount: finalAmount * 100,
         currency: "INR",
-        orderId: order.orderId,  // Add this for frontend failure redirect
+        orderId: order.orderId,  
         key: process.env.RAZORPAY_KEY_ID,
       });
     }
@@ -774,7 +766,6 @@ const cancelOrder = async (req, res) => {
       return res.status(http.Not_Found).json({ error: "Order not found" });
     }
 
-    // Add this check
     if (order.paymentMethod === "razorpay" && order.paymentStatus === "Pending") {
       return res.status(http.Bad_Request).json({ error: "Cannot cancel unverified payment orders" });
     }

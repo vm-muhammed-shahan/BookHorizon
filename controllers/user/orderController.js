@@ -260,7 +260,7 @@ const cancelOrder = async (req, res) => {
         if (["wallet", "razorpay", "wallet+razorpay"].includes(order.paymentMethod)) {
           order.paymentStatus = "Completed";
         } else {
-          order.paymentStatus = "Cancelled"; // COD
+          order.paymentStatus = "Cancelled"; 
         }
         order.finalAmount = 0;
         order.tax = 0;
@@ -739,3 +739,6 @@ module.exports = {
   getWalletDetails,
   getOrderStatus,
 };
+
+
+

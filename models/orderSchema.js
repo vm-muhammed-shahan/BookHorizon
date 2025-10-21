@@ -77,6 +77,28 @@ const orderSchema = new Schema({
     type: Number,
     required: true,
   },
+//  i am adding this
+
+
+originalTax: {
+  type: Number,
+  default: 0,
+},
+originalDiscount: {
+  type: Number,
+  default: 0,
+},
+originalShippingCharge: {
+  type: Number,
+  default: 50,
+},
+originalFinalAmount: {
+  type: Number,
+  default: 0,
+},
+
+
+
   walletAmount: {
     type: Number,
     default: 0,

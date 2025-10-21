@@ -72,8 +72,8 @@
                 <%= bestOffer ? bestOffer.discountPercentage + '%' : '0%' %>
             </td>
             <td class="align-middle text-center">
-              <%= bestOffer ? `${new Date(bestOffer.startDate).toLocaleDateString()} - ${new
-                Date(bestOffer.endDate).toLocaleDateString()}` : '-' %>
+              <%= bestOffer ? `${new Date(bestOffer.startDate).toLocaleDateString('en-GB')} - ${new
+                Date(bestOffer.endDate).toLocaleDateString('en-GB')}` : '-' %>
             </td>
             <td class="align-middle text-center">
               <%= data[i].quantity %>
@@ -294,7 +294,9 @@
         html:
           '<p style="margin-bottom: 15px;">Set a discount for this product. The offer will be active from start date to end date.</p>' +
           '<input id="swal-input2" type="number" class="swal2-input" placeholder="Discount Percentage (%)" min="1" max="100">' +
+          '<label for="swal-input3" style="display:block; text-align:left; font-weight:500; margin:10px 0 5px;">Start Date</label>' +
           '<input id="swal-input3" type="date" class="swal2-input" placeholder="Start Date" value="' + today + '">' +
+          '<label for="swal-input4" style="display:block; text-align:left; font-weight:500; margin:10px 0 5px;">Expiry Date</label>' +
           '<input id="swal-input4" type="date" class="swal2-input" placeholder="End Date">',
         focusConfirm: false,
         preConfirm: () => {
