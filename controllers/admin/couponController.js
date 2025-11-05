@@ -41,14 +41,14 @@ const createCoupon = async (req, res) => {
     }
 
     const today = new Date();
-today.setHours(0, 0, 0, 0);
-const tomorrow = new Date(today);
-tomorrow.setDate(tomorrow.getDate() + 1);
-const expiryDate = new Date(expireOn);
-expiryDate.setHours(0, 0, 0, 0);
-if (isNaN(expiryDate.getTime()) || expiryDate < tomorrow) {
-  return res.status(http.Bad_Request).json({ error: 'Expiry date must be in the future (not today)' });
-}
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const expiryDate = new Date(expireOn);
+    expiryDate.setHours(0, 0, 0, 0);
+    if (isNaN(expiryDate.getTime()) || expiryDate < tomorrow) {
+      return res.status(http.Bad_Request).json({ error: 'Expiry date must be in the future (not today)' });
+    }
 
     const coupon = new Coupon({
       name: trimmedName,
@@ -108,15 +108,15 @@ const editCoupon = async (req, res) => {
 
     if (expireOn) {
       const today = new Date();
-today.setHours(0, 0, 0, 0);
-const tomorrow = new Date(today);
-tomorrow.setDate(tomorrow.getDate() + 1);
-const expiryDate = new Date(expireOn);
-expiryDate.setHours(0, 0, 0, 0);
-if (isNaN(expiryDate.getTime()) || expiryDate < tomorrow) {
-  return res.status(http.Bad_Request).json({ error: 'Expiry date must be in the future (not today)' });
-}
-coupon.expireOn = expiryDate;
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const expiryDate = new Date(expireOn);
+      expiryDate.setHours(0, 0, 0, 0);
+      if (isNaN(expiryDate.getTime()) || expiryDate < tomorrow) {
+        return res.status(http.Bad_Request).json({ error: 'Expiry date must be in the future (not today)' });
+      }
+      coupon.expireOn = expiryDate;
     }
 
     if (usageLimit !== undefined) {
